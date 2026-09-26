@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\ApiExceptionRenderer;
+use App\Http\Middleware\SetLocaleFromHeader;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,9 +19,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->appendToGroup('api', SetLocaleFromHeader::class);
+
+        // Set the locale before authentication and throttling so their errors are translated too.
+        $middleware->prependToPriorityList(
+            before: AuthenticatesRequests::class,
+            prepend: SetLocaleFromHeader::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(fn (Throwable $exception, Request $request) => (new ApiExceptionRenderer)($exception, $request));
     })->create();

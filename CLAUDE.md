@@ -108,7 +108,16 @@ app/
 - Two API areas:
   - `/api/v1/*`: **storefront** (public endpoints + authenticated customer endpoints).
   - `/api/v1/admin/*`: **admin** (authenticated staff only, every endpoint permission-checked).
-- Admin and storefront have separate Resources; storefront resources must never expose admin-only fields.
+- Admin and storefront have separate Resources; storefront resources must never expose admin-only fields. A resource with no account data (e.g. `OtpChallengeResource`) may live at `Http/Resources/V1/` and be shared.
+- Errors are rendered by `App\Exceptions\ApiExceptionRenderer` (framework errors) and `App\Exceptions\AuthException` (auth error codes). Add new domain error codes as named constructors on a dedicated exception, with messages in `lang/{fa,en}`.
+- `SetLocaleFromHeader` runs before authentication/throttling so every error is translated. The SPAs must always send `Accept-Language` with the user's chosen locale.
+
+### Auth API (`/api/v1`)
+- Storefront `auth/*`: `register`, `register/otp` (resend), `register/verify`, `login`, `login/otp`, `login/otp/verify`, `password/otp`, `password/reset`, `me`, `logout`.
+- Admin `admin/auth/*`: `login`, `login/otp`, `login/otp/verify`, `me`, `logout`.
+- SPA flow: `GET /sanctum/csrf-cookie` first, then send the `X-XSRF-TOKEN` header (axios does this automatically).
+- Form requests share phone/code normalization and rules via `App\Http\Requests\Concerns\HasAuthFields`.
+- SMS drivers: `log` (local dev, codes appear in `storage/logs/laravel.log`), `array` (tests; read codes with the `sms()` Pest helper), `faraz` (production).
 - Success responses use the default Laravel Resource shape (`{ data, meta, links }`).
 - One error shape for every error, messages localized from the `Accept-Language` header (`fa` / `en`):
 

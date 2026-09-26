@@ -1,0 +1,199 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation Language Lines
+    |--------------------------------------------------------------------------
+    */
+
+    'accepted' => ':attribute باید پذیرفته شود.',
+    'accepted_if' => 'وقتی :other برابر :value است، :attribute باید پذیرفته شود.',
+    'active_url' => ':attribute باید یک آدرس معتبر باشد.',
+    'after' => ':attribute باید تاریخی بعد از :date باشد.',
+    'after_or_equal' => ':attribute باید تاریخی برابر یا بعد از :date باشد.',
+    'alpha' => ':attribute فقط می‌تواند شامل حروف باشد.',
+    'alpha_dash' => ':attribute فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد.',
+    'alpha_num' => ':attribute فقط می‌تواند شامل حروف و اعداد باشد.',
+    'any_of' => ':attribute نامعتبر است.',
+    'array' => ':attribute باید یک آرایه باشد.',
+    'array_keys' => ':attribute فقط می‌تواند شامل این کلیدها باشد: :values.',
+    'ascii' => ':attribute فقط می‌تواند شامل حروف، اعداد و نمادهای تک‌بایتی باشد.',
+    'base64' => ':attribute باید یک رشته Base64 معتبر باشد.',
+    'before' => ':attribute باید تاریخی قبل از :date باشد.',
+    'before_or_equal' => ':attribute باید تاریخی برابر یا قبل از :date باشد.',
+    'between' => [
+        'array' => ':attribute باید بین :min و :max مورد داشته باشد.',
+        'file' => 'حجم :attribute باید بین :min و :max کیلوبایت باشد.',
+        'numeric' => ':attribute باید بین :min و :max باشد.',
+        'string' => ':attribute باید بین :min و :max کاراکتر باشد.',
+    ],
+    'boolean' => ':attribute باید درست یا نادرست باشد.',
+    'can' => ':attribute شامل مقدار غیرمجاز است.',
+    'confirmed' => 'تکرار :attribute مطابقت ندارد.',
+    'contains' => ':attribute یک مقدار الزامی را ندارد.',
+    'current_password' => 'رمز عبور نادرست است.',
+    'date' => ':attribute باید یک تاریخ معتبر باشد.',
+    'date_equals' => ':attribute باید تاریخی برابر با :date باشد.',
+    'date_format' => ':attribute باید با قالب :format مطابقت داشته باشد.',
+    'decimal' => ':attribute باید :decimal رقم اعشار داشته باشد.',
+    'declined' => ':attribute باید رد شود.',
+    'declined_if' => 'وقتی :other برابر :value است، :attribute باید رد شود.',
+    'different' => ':attribute و :other باید متفاوت باشند.',
+    'digits' => ':attribute باید :digits رقم باشد.',
+    'digits_between' => ':attribute باید بین :min و :max رقم باشد.',
+    'dimensions' => 'ابعاد تصویر :attribute نامعتبر است.',
+    'distinct' => ':attribute مقدار تکراری دارد.',
+    'doesnt_contain' => ':attribute نباید شامل هیچ‌یک از این موارد باشد: :values.',
+    'doesnt_end_with' => ':attribute نباید با هیچ‌یک از این موارد تمام شود: :values.',
+    'doesnt_start_with' => ':attribute نباید با هیچ‌یک از این موارد شروع شود: :values.',
+    'email' => ':attribute باید یک ایمیل معتبر باشد.',
+    'encoding' => ':attribute باید با کدگذاری :encoding باشد.',
+    'ends_with' => ':attribute باید با یکی از این موارد تمام شود: :values.',
+    'enum' => ':attribute انتخاب‌شده نامعتبر است.',
+    'exists' => ':attribute انتخاب‌شده نامعتبر است.',
+    'extensions' => ':attribute باید یکی از این پسوندها را داشته باشد: :values.',
+    'file' => ':attribute باید یک فایل باشد.',
+    'filled' => ':attribute باید مقدار داشته باشد.',
+    'gt' => [
+        'array' => ':attribute باید بیشتر از :value مورد داشته باشد.',
+        'file' => 'حجم :attribute باید بیشتر از :value کیلوبایت باشد.',
+        'numeric' => ':attribute باید بزرگ‌تر از :value باشد.',
+        'string' => ':attribute باید بیشتر از :value کاراکتر باشد.',
+    ],
+    'gte' => [
+        'array' => ':attribute باید :value مورد یا بیشتر داشته باشد.',
+        'file' => 'حجم :attribute باید حداقل :value کیلوبایت باشد.',
+        'numeric' => ':attribute باید بزرگ‌تر یا مساوی :value باشد.',
+        'string' => ':attribute باید حداقل :value کاراکتر باشد.',
+    ],
+    'hex_color' => ':attribute باید یک رنگ هگزادسیمال معتبر باشد.',
+    'image' => ':attribute باید یک تصویر باشد.',
+    'in' => ':attribute انتخاب‌شده نامعتبر است.',
+    'in_array' => ':attribute باید در :other وجود داشته باشد.',
+    'in_array_keys' => ':attribute باید حداقل یکی از این کلیدها را داشته باشد: :values.',
+    'integer' => ':attribute باید یک عدد صحیح باشد.',
+    'ip' => ':attribute باید یک آدرس IP معتبر باشد.',
+    'ipv4' => ':attribute باید یک آدرس IPv4 معتبر باشد.',
+    'ipv6' => ':attribute باید یک آدرس IPv6 معتبر باشد.',
+    'json' => ':attribute باید یک رشته JSON معتبر باشد.',
+    'list' => ':attribute باید یک فهرست باشد.',
+    'lowercase' => ':attribute باید با حروف کوچک باشد.',
+    'lt' => [
+        'array' => ':attribute باید کمتر از :value مورد داشته باشد.',
+        'file' => 'حجم :attribute باید کمتر از :value کیلوبایت باشد.',
+        'numeric' => ':attribute باید کوچک‌تر از :value باشد.',
+        'string' => ':attribute باید کمتر از :value کاراکتر باشد.',
+    ],
+    'lte' => [
+        'array' => ':attribute نباید بیشتر از :value مورد داشته باشد.',
+        'file' => 'حجم :attribute باید حداکثر :value کیلوبایت باشد.',
+        'numeric' => ':attribute باید کوچک‌تر یا مساوی :value باشد.',
+        'string' => ':attribute باید حداکثر :value کاراکتر باشد.',
+    ],
+    'mac_address' => ':attribute باید یک آدرس MAC معتبر باشد.',
+    'max' => [
+        'array' => ':attribute نباید بیشتر از :max مورد داشته باشد.',
+        'file' => 'حجم :attribute نباید بیشتر از :max کیلوبایت باشد.',
+        'numeric' => ':attribute نباید بزرگ‌تر از :max باشد.',
+        'string' => ':attribute نباید بیشتر از :max کاراکتر باشد.',
+    ],
+    'max_digits' => ':attribute نباید بیشتر از :max رقم داشته باشد.',
+    'mimes' => ':attribute باید فایلی از این نوع‌ها باشد: :values.',
+    'mimetypes' => ':attribute باید فایلی از این نوع‌ها باشد: :values.',
+    'min' => [
+        'array' => ':attribute باید حداقل :min مورد داشته باشد.',
+        'file' => 'حجم :attribute باید حداقل :min کیلوبایت باشد.',
+        'numeric' => ':attribute باید حداقل :min باشد.',
+        'string' => ':attribute باید حداقل :min کاراکتر باشد.',
+    ],
+    'min_digits' => ':attribute باید حداقل :min رقم داشته باشد.',
+    'missing' => ':attribute نباید وجود داشته باشد.',
+    'missing_if' => 'وقتی :other برابر :value است، :attribute نباید وجود داشته باشد.',
+    'missing_unless' => ':attribute نباید وجود داشته باشد، مگر اینکه :other برابر :value باشد.',
+    'missing_with' => 'وقتی :values وجود دارد، :attribute نباید وجود داشته باشد.',
+    'missing_with_all' => 'وقتی :values وجود دارند، :attribute نباید وجود داشته باشد.',
+    'multiple_of' => ':attribute باید مضربی از :value باشد.',
+    'not_in' => ':attribute انتخاب‌شده نامعتبر است.',
+    'not_regex' => 'قالب :attribute نامعتبر است.',
+    'numeric' => ':attribute باید عدد باشد.',
+    'password' => [
+        'letters' => ':attribute باید حداقل یک حرف داشته باشد.',
+        'mixed' => ':attribute باید حداقل یک حرف بزرگ و یک حرف کوچک داشته باشد.',
+        'numbers' => ':attribute باید حداقل یک عدد داشته باشد.',
+        'symbols' => ':attribute باید حداقل یک نماد داشته باشد.',
+        'uncompromised' => ':attribute وارد شده در یک نشت اطلاعات دیده شده است. لطفاً :attribute دیگری انتخاب کنید.',
+    ],
+    'present' => ':attribute باید وجود داشته باشد.',
+    'present_if' => 'وقتی :other برابر :value است، :attribute باید وجود داشته باشد.',
+    'present_unless' => ':attribute باید وجود داشته باشد، مگر اینکه :other برابر :value باشد.',
+    'present_with' => 'وقتی :values وجود دارد، :attribute باید وجود داشته باشد.',
+    'present_with_all' => 'وقتی :values وجود دارند، :attribute باید وجود داشته باشد.',
+    'prohibited' => 'وارد کردن :attribute مجاز نیست.',
+    'prohibited_if' => 'وقتی :other برابر :value است، وارد کردن :attribute مجاز نیست.',
+    'prohibited_if_accepted' => 'وقتی :other پذیرفته شده است، وارد کردن :attribute مجاز نیست.',
+    'prohibited_if_declined' => 'وقتی :other رد شده است، وارد کردن :attribute مجاز نیست.',
+    'prohibited_unless' => 'وارد کردن :attribute مجاز نیست، مگر اینکه :other یکی از :values باشد.',
+    'prohibits' => 'وجود :attribute مانع وجود :other می‌شود.',
+    'regex' => 'قالب :attribute نامعتبر است.',
+    'required' => 'وارد کردن :attribute الزامی است.',
+    'required_array_keys' => ':attribute باید شامل این موارد باشد: :values.',
+    'required_if' => 'وقتی :other برابر :value است، وارد کردن :attribute الزامی است.',
+    'required_if_accepted' => 'وقتی :other پذیرفته شده است، وارد کردن :attribute الزامی است.',
+    'required_if_declined' => 'وقتی :other رد شده است، وارد کردن :attribute الزامی است.',
+    'required_unless' => 'وارد کردن :attribute الزامی است، مگر اینکه :other یکی از :values باشد.',
+    'required_with' => 'وقتی :values وجود دارد، وارد کردن :attribute الزامی است.',
+    'required_with_all' => 'وقتی :values وجود دارند، وارد کردن :attribute الزامی است.',
+    'required_without' => 'وقتی :values وجود ندارد، وارد کردن :attribute الزامی است.',
+    'required_without_all' => 'وقتی هیچ‌یک از :values وجود ندارند، وارد کردن :attribute الزامی است.',
+    'same' => ':attribute و :other باید یکسان باشند.',
+    'size' => [
+        'array' => ':attribute باید :size مورد داشته باشد.',
+        'file' => 'حجم :attribute باید :size کیلوبایت باشد.',
+        'numeric' => ':attribute باید :size باشد.',
+        'string' => ':attribute باید :size کاراکتر باشد.',
+    ],
+    'starts_with' => ':attribute باید با یکی از این موارد شروع شود: :values.',
+    'string' => ':attribute باید متن باشد.',
+    'timezone' => ':attribute باید یک منطقه زمانی معتبر باشد.',
+    'unique' => ':attribute قبلاً ثبت شده است.',
+    'uploaded' => 'بارگذاری :attribute ناموفق بود.',
+    'uppercase' => ':attribute باید با حروف بزرگ باشد.',
+    'url' => ':attribute باید یک آدرس معتبر باشد.',
+    'ulid' => ':attribute باید یک ULID معتبر باشد.',
+    'uuid' => ':attribute باید یک UUID معتبر باشد.',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Language Lines
+    |--------------------------------------------------------------------------
+    */
+
+    'custom' => [
+        'phone_number' => [
+            'regex' => 'شماره موبایل معتبر وارد کنید؛ مانند ۰۹۱۲۳۴۵۶۷۸۹.',
+            'unique' => 'حسابی با این شماره موبایل قبلاً ثبت شده است.',
+        ],
+        'email' => [
+            'unique' => 'حسابی با این ایمیل قبلاً ثبت شده است.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Attributes
+    |--------------------------------------------------------------------------
+    */
+
+    'attributes' => [
+        'name' => 'نام',
+        'phone_number' => 'شماره موبایل',
+        'email' => 'ایمیل',
+        'password' => 'رمز عبور',
+        'code' => 'کد تأیید',
+    ],
+
+];

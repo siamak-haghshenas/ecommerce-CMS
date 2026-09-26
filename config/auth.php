@@ -116,4 +116,20 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Account
+    |--------------------------------------------------------------------------
+    |
+    | Credentials used by the SuperAdminSeeder to create the initial super
+    | admin. Leave the phone number or password empty to skip seeding it.
+    |
+    */
+
+    'super_admin' => [
+        'name' => env('SUPER_ADMIN_NAME', 'Super Admin'),
+        'phone_number' => env('SUPER_ADMIN_PHONE_NUMBER'),
+        'password' => env('SUPER_ADMIN_PASSWORD'),
+    ],
+
 ];
