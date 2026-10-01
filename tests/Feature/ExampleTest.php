@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-test('the application returns a successful response', function () {
-    $response = $this->get('/');
+it('redirects the root URL to the admin panel because there is no built-in storefront', function () {
+    $this->get('/')->assertRedirect('/admin');
+});
 
-    $response->assertStatus(200);
+it('serves the admin panel SPA for any admin path', function () {
+    $this->get('/admin/customers/42')->assertOk()->assertViewIs('admin');
 });

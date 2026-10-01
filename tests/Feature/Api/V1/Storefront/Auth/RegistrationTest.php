@@ -5,9 +5,7 @@ declare(strict_types=1);
 use App\Enums\UserRole;
 use App\Models\User;
 
-use function Pest\Laravel\assertAuthenticatedAs;
 use function Pest\Laravel\assertDatabaseCount;
-use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\travel;
 use function Pest\Laravel\withHeader;
@@ -43,7 +41,7 @@ describe('register', function () {
             ->and($user->hasRole(UserRole::Customer))->toBeTrue()
             ->and(sms()->lastCodeFor('09121234567'))->toMatch('/^\d{5}$/');
 
-        assertGuest();
+        assertNoTokenIssued();
     });
 
     it('normalizes the phone number before storing it', function (string $input) {
@@ -168,21 +166,21 @@ describe('resend registration code', function () {
 });
 
 describe('verify registration', function () {
-    it('verifies the phone number and logs the customer in', function () {
+    it('verifies the phone number and returns a working API token', function () {
         postJson(route('api.v1.auth.register'), registrationPayload());
 
-        postJson(route('api.v1.auth.register.verify'), [
+        $response = postJson(route('api.v1.auth.register.verify'), [
             'phone_number' => '09121234567',
             'code' => sms()->lastCodeFor('09121234567'),
         ])
             ->assertOk()
-            ->assertJsonPath('data.phone_number', '09121234567')
-            ->assertJsonPath('data.name', 'Sara Ahmadi');
+            ->assertJsonPath('data.customer.phone_number', '09121234567')
+            ->assertJsonPath('data.customer.name', 'Sara Ahmadi');
 
         $user = User::query()->sole();
 
         expect($user->hasVerifiedPhoneNumber())->toBeTrue();
-        assertAuthenticatedAs($user);
+        assertIssuedTokenFor($response, $user);
     });
 
     it('accepts a code typed with Persian digits', function () {
@@ -203,7 +201,7 @@ describe('verify registration', function () {
             ->assertJsonValidationErrors(['code' => 'The verification code is incorrect.']);
 
         expect(User::query()->sole()->hasVerifiedPhoneNumber())->toBeFalse();
-        assertGuest();
+        assertNoTokenIssued();
     });
 
     it('returns 422 when the code has expired', function () {

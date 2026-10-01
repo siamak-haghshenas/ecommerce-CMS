@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\V1\Admin;
 
+use App\Enums\Permission;
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * The logged-in staff member.
+ *
  * @mixin User
  */
 class UserResource extends JsonResource
@@ -28,9 +32,24 @@ class UserResource extends JsonResource
             'locale' => $this->locale,
             'is_active' => $this->is_active,
             'roles' => $this->getRoleNames(),
-            'permissions' => $this->getAllPermissions()->pluck('name'),
+            'permissions' => $this->effectivePermissions(),
             'phone_verified_at' => $this->phone_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Every permission the user actually has. The super admin holds none directly
+     * (a Gate::before rule grants everything), so list them all for the UI.
+     *
+     * @return list<string>
+     */
+    private function effectivePermissions(): array
+    {
+        if ($this->hasRole(UserRole::SuperAdmin->value)) {
+            return array_map(fn (Permission $permission): string => $permission->value, Permission::cases());
+        }
+
+        return $this->getAllPermissions()->pluck('name')->values()->all();
     }
 }

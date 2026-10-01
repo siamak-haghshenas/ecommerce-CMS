@@ -13,6 +13,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -36,7 +37,18 @@ class AppServiceProvider extends ServiceProvider
 
         Password::defaults(fn () => Password::min(8));
 
+        $this->configureRouteBindings();
         $this->configureRateLimiting();
+    }
+
+    /**
+     * Admin routes address customers and staff separately, so a customer id can never
+     * reach a staff endpoint (or the reverse): it simply is not found.
+     */
+    private function configureRouteBindings(): void
+    {
+        Route::bind('customer', fn (string $id): User => User::query()->customers()->findOrFail($id));
+        Route::bind('staffMember', fn (string $id): User => User::query()->staff()->findOrFail($id));
     }
 
     private function configureRateLimiting(): void

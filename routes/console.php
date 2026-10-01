@@ -12,3 +12,6 @@ Artisan::command('inspire', function () {
 
 // Removes unverified registrations and expired one-time passwords.
 Schedule::command('model:prune')->hourly()->withoutOverlapping();
+
+// Removes customer API tokens that expired more than a day ago.
+Schedule::command('sanctum:prune-expired --hours=24')->daily();

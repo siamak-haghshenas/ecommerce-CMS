@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\User;
 
@@ -31,14 +32,39 @@ it('returns the current staff member with roles and permissions', function () {
         ->assertJsonPath('data.id', $admin->id)
         ->assertJsonPath('data.is_active', true)
         ->assertJsonPath('data.roles', ['admin'])
-        ->assertJsonPath('data.permissions', ['access-admin-panel']);
+        ->assertJsonPath('data.permissions', [
+            'access-admin-panel',
+            'customers.view',
+            'customers.update',
+            'customers.deactivate',
+            'staff.view',
+        ]);
 });
 
-it('lets a super admin use the admin API without explicit permissions', function () {
+it('lists every permission for a super admin, who holds none directly', function () {
     actingAs(User::factory()->withRole(UserRole::SuperAdmin)->create())
         ->getJson(route('api.v1.admin.auth.me'))
         ->assertOk()
-        ->assertJsonPath('data.roles', ['super-admin']);
+        ->assertJsonPath('data.roles', ['super-admin'])
+        ->assertJsonPath('data.permissions', array_map(fn (Permission $permission) => $permission->value, Permission::cases()));
+});
+
+it('gives an author panel access only', function () {
+    actingAs(User::factory()->withRole(UserRole::Author)->create())
+        ->getJson(route('api.v1.admin.auth.me'))
+        ->assertOk()
+        ->assertJsonPath('data.permissions', ['access-admin-panel']);
+});
+
+it('logs out a staff member who was deactivated while logged in', function () {
+    $admin = User::factory()->withRole(UserRole::Admin)->inactive()->create();
+
+    actingAs($admin)
+        ->getJson(route('api.v1.admin.auth.me'))
+        ->assertForbidden()
+        ->assertJsonPath('code', 'account_inactive');
+
+    assertGuest('web');
 });
 
 it('logs the current staff member out', function () {

@@ -41,7 +41,7 @@ final readonly class RegisterCustomerAction
             return $user;
         });
 
-        $this->sendOtp->handle($user->phone_number, OtpPurpose::Register, ipAddress: $ipAddress);
+        $this->sendOtp->handle($data->phoneNumber, OtpPurpose::Register, ipAddress: $ipAddress);
 
         return $user;
     }

@@ -8,12 +8,13 @@ use App\Enums\OtpPurpose;
 use App\Exceptions\AuthException;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final readonly class ResetPasswordAction
 {
-    public function __construct(private VerifyOtpAction $verifyOtp) {}
+    public function __construct(
+        private VerifyOtpAction $verifyOtp,
+        private EndUserSessionsAction $endSessions,
+    ) {}
 
     /**
      * Set a new password after confirming the reset code, ending every existing session.
@@ -29,12 +30,9 @@ final readonly class ResetPasswordAction
             ->whereNotNull('phone_verified_at')
             ->first() ?? throw AuthException::otpInvalid();
 
-        $user->forceFill([
-            'password' => $password,
-            'remember_token' => Str::random(60),
-        ])->save();
+        $user->forceFill(['password' => $password])->save();
 
-        $this->endExistingSessions($user);
+        $this->endSessions->handle($user);
 
         event(new PasswordReset($user));
 
@@ -43,14 +41,5 @@ final readonly class ResetPasswordAction
         }
 
         return $user;
-    }
-
-    private function endExistingSessions(User $user): void
-    {
-        $user->tokens()->delete();
-
-        if (config('session.driver') === 'database') {
-            DB::table((string) config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
-        }
     }
 }

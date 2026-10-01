@@ -24,6 +24,22 @@ trait HasAuthFields
     }
 
     /**
+     * Optional label for the issued API token (e.g. "iPhone app"), so customers can tell devices apart.
+     */
+    public function deviceName(): ?string
+    {
+        return $this->filled('device_name') ? $this->string('device_name')->trim()->toString() : null;
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    protected function deviceNameRules(): array
+    {
+        return ['nullable', 'string', 'max:100'];
+    }
+
+    /**
      * Normalize Persian/Arabic digits and phone number prefixes before validation.
      */
     protected function prepareForValidation(): void

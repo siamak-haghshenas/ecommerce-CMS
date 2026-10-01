@@ -6,8 +6,101 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Semantic color tokens. Components use these (bg-surface, text-fg, border-line, ...)
+ * and never raw colors, so light/dark switching happens here in one place.
+ */
+:root {
+    color-scheme: light;
+    --app-bg: #f6f5f1;
+    --app-surface: #ffffff;
+    --app-surface-muted: #eceae4;
+    --app-segment-active: #ffffff;
+    --app-line: #e4e2dc;
+    --app-line-strong: #d6d3cb;
+    --app-fg: #1c1b18;
+    --app-fg-muted: #5f5c55;
+    --app-icon: #6b6760;
+    --app-primary: #0f766e;
+    --app-primary-hover: #115e59;
+    --app-on-primary: #ffffff;
+    --app-primary-soft: rgb(15 118 110 / 0.15);
+    --app-danger: #b42318;
+    --app-danger-soft: #fef3f2;
+    --app-danger-line: #fecdca;
+    --app-on-danger: #ffffff;
+    --app-warning: #8a5a00;
+    --app-warning-soft: #fef6e7;
+    --app-disabled: #eceae4;
+    --app-on-disabled: #8a867e;
+}
+
+.dark {
+    color-scheme: dark;
+    --app-bg: #0e1211;
+    --app-surface: #161b1a;
+    --app-surface-muted: #1f2624;
+    --app-segment-active: #2c3533;
+    --app-line: #2c3533;
+    --app-line-strong: #3a4441;
+    --app-fg: #eceeec;
+    --app-fg-muted: #a3aba8;
+    --app-icon: #a3aba8;
+    --app-primary: #2dd4bf;
+    --app-primary-hover: #5eead4;
+    --app-on-primary: #042f2c;
+    --app-primary-soft: rgb(45 212 191 / 0.18);
+    --app-danger: #fda29b;
+    --app-danger-soft: #2a1714;
+    --app-danger-line: #5c2a22;
+    --app-on-danger: #2a1714;
+    --app-warning: #f5c46b;
+    --app-warning-soft: #2b2210;
+    --app-disabled: #1f2624;
+    --app-on-disabled: #7d8784;
+}
+
+@theme inline {
+    --color-bg: var(--app-bg);
+    --color-surface: var(--app-surface);
+    --color-surface-muted: var(--app-surface-muted);
+    --color-segment-active: var(--app-segment-active);
+    --color-line: var(--app-line);
+    --color-line-strong: var(--app-line-strong);
+    --color-fg: var(--app-fg);
+    --color-fg-muted: var(--app-fg-muted);
+    --color-icon: var(--app-icon);
+    --color-primary: var(--app-primary);
+    --color-primary-hover: var(--app-primary-hover);
+    --color-on-primary: var(--app-on-primary);
+    --color-primary-soft: var(--app-primary-soft);
+    --color-danger: var(--app-danger);
+    --color-danger-soft: var(--app-danger-soft);
+    --color-danger-line: var(--app-danger-line);
+    --color-on-danger: var(--app-on-danger);
+    --color-warning: var(--app-warning);
+    --color-warning-soft: var(--app-warning-soft);
+    --color-disabled: var(--app-disabled);
+    --color-on-disabled: var(--app-on-disabled);
+}
+
 @theme {
     --font-sans:
         'Vazirmatn', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+}
+
+@layer base {
+    body {
+        @apply bg-bg font-sans text-fg antialiased;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+    }
 }

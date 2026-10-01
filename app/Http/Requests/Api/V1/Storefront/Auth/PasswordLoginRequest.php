@@ -22,6 +22,7 @@ class PasswordLoginRequest extends FormRequest
         return [
             'phone_number' => $this->phoneNumberRules(),
             'password' => ['required', 'string'],
+            'device_name' => $this->deviceNameRules(),
         ];
     }
 }

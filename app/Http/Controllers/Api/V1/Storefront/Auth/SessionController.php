@@ -4,30 +4,30 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Storefront\Auth;
 
-use App\Http\Controllers\Concerns\ManagesAuthSession;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Storefront\UserResource;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class SessionController extends Controller
 {
-    use ManagesAuthSession;
-
     /**
-     * The currently logged-in customer.
+     * The customer the Bearer token belongs to.
      */
-    public function show(Request $request): UserResource
+    public function show(#[CurrentUser] User $customer): UserResource
     {
-        return new UserResource($request->user());
+        return new UserResource($customer);
     }
 
     /**
-     * Log out.
+     * Log out: revoke only the Bearer token sent with this request (other devices stay logged in).
      */
     public function destroy(Request $request): Response
     {
-        $this->endSession($request);
+        PersonalAccessToken::findToken((string) $request->bearerToken())?->delete();
 
         return response()->noContent();
     }

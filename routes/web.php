@@ -8,6 +8,5 @@ Route::view('/admin/{path?}', 'admin')
     ->where('path', '.*')
     ->name('admin');
 
-Route::view('/{path?}', 'storefront')
-    ->where('path', '^(?!api|sanctum|up|admin|build|storage).*$')
-    ->name('storefront');
+// This project is a headless CMS: there is no built-in storefront, so the root opens the admin panel.
+Route::redirect('/', '/admin');

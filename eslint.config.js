@@ -3,25 +3,6 @@ import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
-/**
- * Keeps the storefront and admin apps independent: shared code belongs in resources/js/shared.
- *
- * @param {string} forbiddenApp
- */
-const forbidImportsFrom = (forbiddenApp) => ({
-    'no-restricted-imports': [
-        'error',
-        {
-            patterns: [
-                {
-                    group: [`@/${forbiddenApp}/*`, `**/${forbiddenApp}/*`],
-                    message: 'The storefront and admin apps must not import from each other. Move shared code to @/shared.',
-                },
-            ],
-        },
-    ],
-});
-
 export default defineConfig(
     {
         ignores: ['vendor/**', 'node_modules/**', 'public/**', 'storage/**', 'bootstrap/**'],
@@ -36,16 +17,13 @@ export default defineConfig(
                 sourceType: 'module',
             },
         },
+        rules: {
+            // Optional TypeScript props are intentionally `undefined` when omitted.
+            'vue/require-default-prop': 'off',
+        },
     },
     {
-        files: ['resources/js/storefront/**/*.{ts,vue}'],
-        rules: forbidImportsFrom('admin'),
-    },
-    {
-        files: ['resources/js/admin/**/*.{ts,vue}'],
-        rules: forbidImportsFrom('storefront'),
-    },
-    {
+        // Shared code (UI kit, HTTP client, i18n) stays reusable: it must not depend on the admin app.
         files: ['resources/js/shared/**/*.{ts,vue}'],
         rules: {
             'no-restricted-imports': [
@@ -53,8 +31,8 @@ export default defineConfig(
                 {
                     patterns: [
                         {
-                            group: ['@/admin/*', '@/storefront/*', '**/admin/*', '**/storefront/*'],
-                            message: 'Shared code must not depend on the storefront or admin apps.',
+                            group: ['@/admin/*', '**/admin/*'],
+                            message: 'Shared code must not depend on the admin app.',
                         },
                     ],
                 },

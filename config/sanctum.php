@@ -52,7 +52,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Customer (storefront) API tokens; 43200 minutes = 30 days. The admin panel uses sessions.
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 43200),
 
     /*
     |--------------------------------------------------------------------------

@@ -15,9 +15,9 @@ class RegisterController extends Controller
 {
     public function __invoke(RegisterRequest $request, RegisterCustomerAction $register): JsonResponse
     {
-        $user = $register->handle($request->toData(), $request->ip());
+        $register->handle($request->toData(), $request->ip());
 
-        return (new OtpChallengeResource($user->phone_number))
+        return (new OtpChallengeResource($request->phoneNumber()))
             ->response()
             ->setStatusCode(Response::HTTP_ACCEPTED);
     }

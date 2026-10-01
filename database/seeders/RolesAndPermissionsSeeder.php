@@ -14,9 +14,8 @@ use Spatie\Permission\PermissionRegistrar;
 class RolesAndPermissionsSeeder extends Seeder
 {
     /**
-     * Create the roles and permissions. Safe to run repeatedly.
-     *
-     * The super-admin role needs no permissions: a Gate::before rule grants it everything.
+     * Create the roles and permissions and sync each role's permissions from
+     * UserRole::permissions(). Safe to run repeatedly.
      */
     public function run(): void
     {
@@ -35,9 +34,11 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $registrar->forgetCachedPermissions();
 
-        Role::findByName(UserRole::Admin->value, 'web')->syncPermissions([
-            PermissionName::AccessAdminPanel->value,
-        ]);
+        foreach (UserRole::cases() as $role) {
+            Role::findByName($role->value, 'web')->syncPermissions(
+                array_map(fn (PermissionName $permission): string => $permission->value, $role->permissions()),
+            );
+        }
 
         $registrar->forgetCachedPermissions();
     }

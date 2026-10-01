@@ -22,6 +22,7 @@ class ResetPasswordRequest extends FormRequest
         return [
             'phone_number' => $this->phoneNumberRules(),
             'code' => $this->codeRules(),
+            'device_name' => $this->deviceNameRules(),
             'password' => $this->newPasswordRules(),
         ];
     }

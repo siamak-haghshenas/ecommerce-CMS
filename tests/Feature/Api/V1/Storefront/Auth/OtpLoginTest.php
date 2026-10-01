@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 use App\Models\User;
 
-use function Pest\Laravel\assertAuthenticatedAs;
-use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\travel;
 
-it('sends a login code and logs the customer in with it', function () {
+it('sends a login code and returns a working API token for it', function () {
     $user = User::factory()->create(['phone_number' => '09121234567']);
 
     postJson(route('api.v1.auth.login.otp'), ['phone_number' => '09121234567'])
         ->assertAccepted()
         ->assertJsonPath('data.phone_number', '09121234567');
 
-    postJson(route('api.v1.auth.login.otp.verify'), [
+    $response = postJson(route('api.v1.auth.login.otp.verify'), [
         'phone_number' => '09121234567',
         'code' => sms()->lastCodeFor('09121234567'),
-    ])
-        ->assertOk()
-        ->assertJsonPath('data.id', $user->id);
+    ])->assertOk();
 
-    assertAuthenticatedAs($user);
+    assertIssuedTokenFor($response, $user);
 });
 
 it('responds identically without sending a code when the phone number is not registered', function (?callable $arrange) {
@@ -66,7 +62,7 @@ it('returns 403 after a correct code when the account is inactive', function () 
         ->assertForbidden()
         ->assertJsonPath('code', 'account_inactive');
 
-    assertGuest();
+    assertNoTokenIssued();
 });
 
 it('does not accept a password reset code for login', function () {
@@ -79,7 +75,7 @@ it('does not accept a password reset code for login', function () {
         'code' => sms()->lastCodeFor('09121234567'),
     ])->assertJsonPath('code', 'otp_invalid');
 
-    assertGuest();
+    assertNoTokenIssued();
 });
 
 it('returns 429 after five codes are requested for one phone number in an hour', function () {
