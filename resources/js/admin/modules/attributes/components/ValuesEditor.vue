@@ -85,7 +85,6 @@ const inputClass =
                     />
                     <input
                         :value="row.value"
-                        dir="auto"
                         :aria-label="t('admin.attributes.valueText', { n: index + 1 })"
                         :placeholder="t('admin.attributes.valuePlaceholder')"
                         :class="[inputClass, 'grow basis-0']"

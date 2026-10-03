@@ -13,16 +13,18 @@ const props = withDefaults(
         optional?: boolean;
         autocomplete?: string;
         inputmode?: 'text' | 'email' | 'tel' | 'numeric';
+        /** Defaults to the page direction (right-to-left in Farsi); "ltr" for Latin-only values (slug, SKU, URL, email). */
         dir?: 'ltr' | 'rtl' | 'auto';
         placeholder?: string;
         autofocus?: boolean;
     }>(),
-    { type: 'text', dir: 'auto', optional: false, autofocus: false },
+    { type: 'text', optional: false, autofocus: false },
 );
 
 const model = defineModel<string>({ required: true });
 
 const { t } = useI18n();
+const { locale } = useI18n();
 const id = useId();
 const passwordVisible = ref(false);
 
@@ -63,6 +65,8 @@ const describedBy = computed(
                 :autofocus="autofocus"
                 :aria-invalid="error ? 'true' : undefined"
                 :aria-describedby="describedBy"
+                :dir="locale === 'fa' ? 'rtl' : 'ltr'"
+                :class="locale === 'fa' ? 'text-right' : 'text-left'"
                 class="h-full min-w-0 grow bg-transparent text-[17px] text-fg outline-none placeholder:text-fg-muted/70"
             />
             <button

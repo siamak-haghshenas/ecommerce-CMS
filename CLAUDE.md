@@ -288,7 +288,7 @@ resources/js/
 
 ### Frontend Conventions
 - **Colors:** use the semantic Tailwind tokens from `resources/css/app.css` (`bg-bg`, `bg-surface`, `text-fg`, `text-fg-muted`, `border-line`, `bg-primary`, `text-on-primary`, `text-danger`, ...). They switch automatically in dark mode, so components don't repeat `dark:` variants. Never use raw hex colors in components.
-- **RTL:** use logical utilities (`ps-*`, `pe-*`, `text-start`, `rtl:*`); phone numbers and codes are always `dir="ltr"`.
+- **RTL:** use logical utilities (`ps-*`, `pe-*`, `text-start`, `rtl:*`); phone numbers and codes are always `dir="ltr"`. Text, number and rich-text inputs follow the page direction (right-to-left in Farsi); only Latin-only values (slug, SKU, URL, email, phone, codes) set `dir="ltr"`.
 - **Digits:** v-models hold Latin digits; show Persian digits in Farsi with `useLocale().localizeDigits()` (inputs: `PhoneField`, `OtpInput`).
 - **API calls:** go through `@/shared/http/client` (`http`), which handles the CSRF cookie, `Accept-Language` and turns every failure into `ApiError`. Forms use `useApiForm([...fields])` for loading state and inline/general errors.
 - **`defineModel` is one step behind:** after `model.value = next`, reading `model.value` in the same function still returns the old value until the parent re-renders. Compute the new value into a local variable and use that (see `VariantsEditor` `choose()`, `CategoriesField` `remove()`).

@@ -101,7 +101,6 @@ const describedBy = computed(
                 :value="text"
                 type="text"
                 inputmode="numeric"
-                dir="ltr"
                 autocomplete="off"
                 :disabled="disabled"
                 :placeholder="placeholder"

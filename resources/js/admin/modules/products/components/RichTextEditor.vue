@@ -36,7 +36,6 @@ const editor = useEditor({
     editorProps: {
         attributes: {
             id,
-            dir: 'auto',
             class: 'rich-text min-h-48 px-4 py-3 text-[15px] leading-loose text-fg outline-none',
             'aria-labelledby': `${id}-label`,
             role: 'textbox',

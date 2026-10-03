@@ -77,7 +77,6 @@ const inputClass =
             <input
                 v-else-if="attribute.type === 'text'"
                 v-model="entry(attribute.id).text"
-                dir="auto"
                 :aria-labelledby="`${id}-${attribute.id}`"
                 :class="inputClass"
             />
@@ -85,7 +84,6 @@ const inputClass =
             <input
                 v-else-if="attribute.type === 'number'"
                 v-model="entry(attribute.id).number"
-                dir="ltr"
                 inputmode="decimal"
                 :aria-labelledby="`${id}-${attribute.id}`"
                 :class="[inputClass, 'max-w-48']"

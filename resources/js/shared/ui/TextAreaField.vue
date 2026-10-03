@@ -42,7 +42,6 @@ const describedBy = computed(
         <textarea
             :id="id"
             v-model="model"
-            dir="auto"
             :rows="rows"
             :maxlength="maxlength"
             :aria-invalid="error ? 'true' : undefined"

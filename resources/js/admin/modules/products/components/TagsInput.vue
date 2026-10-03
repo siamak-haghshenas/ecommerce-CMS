@@ -88,7 +88,6 @@ function remove(name: string): void {
             <input
                 :id="id"
                 v-model="text"
-                dir="auto"
                 autocomplete="off"
                 role="combobox"
                 :aria-expanded="open && suggestions.length > 0"
