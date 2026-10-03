@@ -24,12 +24,20 @@ trait HasSeo
         return new SeoInput(
             name: (string) $this->getAttribute('name'),
             slug: (string) $this->getAttribute('slug'),
-            description: (string) $this->getAttribute('description'),
+            description: $this->seoDescription(),
             metaTitle: (string) $this->getAttribute('meta_title'),
             metaDescription: (string) $this->getAttribute('meta_description'),
             focusKeyphrase: (string) $this->getAttribute('focus_keyphrase'),
             hasImage: $this->hasMedia($this->seoImageCollection()),
             keyphraseUsedBy: $keyphraseUsedBy,
         );
+    }
+
+    /**
+     * The description as plain text; models storing HTML override this.
+     */
+    public function seoDescription(): string
+    {
+        return (string) $this->getAttribute('description');
     }
 }

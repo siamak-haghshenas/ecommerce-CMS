@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Catalog;
 
 use App\Data\Catalog\ValueData;
+use App\Exceptions\CatalogException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -19,9 +20,12 @@ final class SyncValuesAction
      *
      * @param  HasMany<covariant Model, covariant Model>  $relation
      * @param  list<ValueData>  $values
+     * @param  (callable(int): bool)|null  $inUse  whether products use the value with this id (it can't be removed then)
      * @return bool whether anything changed
+     *
+     * @throws CatalogException when a removed value is used by products
      */
-    public function handle(HasMany $relation, array $values, bool $withColor = false): bool
+    public function handle(HasMany $relation, array $values, bool $withColor = false, ?callable $inUse = null): bool
     {
         $existing = $relation->getQuery()->clone()->get()->keyBy('id');
 
@@ -45,6 +49,10 @@ final class SyncValuesAction
         $created = array_filter($wanted, fn (array $item): bool => $item[0] === null);
 
         foreach ($removed as $value) {
+            if ($inUse !== null && $inUse((int) $value->getKey())) {
+                throw CatalogException::valueInUse((string) $value->getAttribute('value'));
+            }
+
             $value->delete();
         }
 

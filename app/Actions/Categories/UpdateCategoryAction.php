@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace App\Actions\Categories;
 
+use App\Actions\Products\RefreshProductSearchTextAction;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Categories\CategoryData;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 use App\Support\CategoryTree;
 
 final class UpdateCategoryAction
 {
-    public function __construct(private readonly ScoreSeoAction $scoreSeo) {}
+    public function __construct(
+        private readonly ScoreSeoAction $scoreSeo,
+        private readonly RefreshProductSearchTextAction $refreshSearchText,
+    ) {}
 
     /**
      * Update a category. A new parent places it last among its new siblings.
@@ -52,6 +57,11 @@ final class UpdateCategoryAction
         }
 
         $category->save();
+
+        // Product search includes category names.
+        if (in_array('name', $changedFields, true)) {
+            $this->refreshSearchText->forQuery(Product::query()->whereHas('categories', fn ($query) => $query->whereKey($category->id)));
+        }
         $this->scoreSeo->handle($category, $previousKeyphrase);
 
         if ($changedFields !== []) {

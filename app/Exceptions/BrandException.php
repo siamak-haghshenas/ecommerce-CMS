@@ -29,6 +29,14 @@ final class BrandException extends Exception implements ShouldntReport
         return new self('brand_list_changed');
     }
 
+    /**
+     * Products (including deleted ones, which orders refer to) still have this brand.
+     */
+    public static function hasProducts(): self
+    {
+        return new self('brand_has_products');
+    }
+
     public function render(): JsonResponse
     {
         return response()->json([

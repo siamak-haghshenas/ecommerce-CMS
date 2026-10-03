@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\Catalog;
 
 use App\Data\Catalog\AttributeData;
+use App\Exceptions\CatalogException;
 use App\Models\Attribute;
+use App\Models\ProductAttributeValue;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -31,12 +33,19 @@ final readonly class SaveAttributeAction
                 'is_filterable' => $data->isFilterable,
             ]);
 
+            // Products store values in the column of the type, so it can't change once they use it.
+            if (! $isNew && $attribute->isDirty('type') && ProductAttributeValue::query()->where('attribute_id', $attribute->id)->exists()) {
+                throw CatalogException::typeLocked();
+            }
+
             $changedFields = array_keys($attribute->getDirty());
             $attribute->save();
 
             $values = $data->type->hasValues() ? $data->values : [];
 
-            if ($this->syncValues->handle($attribute->values(), $values)) {
+            $inUse = fn (int $valueId): bool => ProductAttributeValue::query()->where('attribute_value_id', $valueId)->exists();
+
+            if ($this->syncValues->handle($attribute->values(), $values, inUse: $inUse)) {
                 $changedFields[] = 'values';
             }
 

@@ -8,6 +8,7 @@ use App\Actions\Seo\ScoreSeoAction;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 final class DeleteCategoryAction
 {
@@ -23,6 +24,11 @@ final class DeleteCategoryAction
     {
         if ($category->children()->exists()) {
             throw CategoryException::hasChildren();
+        }
+
+        // Deleted products count too: orders keep referring to them.
+        if (DB::table('category_product')->where('category_id', $category->id)->exists()) {
+            throw CategoryException::hasProducts();
         }
 
         // Category names are not personal data; keeping them makes the entry readable after deletion.

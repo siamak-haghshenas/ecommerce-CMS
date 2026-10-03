@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth as AdminAuth;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandLogoController;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandOrderController;
+use App\Http\Controllers\Api\V1\Admin\Catalog\ApplicableAttributeController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\AttributeController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\OptionController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryAttributeController;
@@ -18,7 +19,12 @@ use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerStatusController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
+use App\Http\Controllers\Api\V1\Admin\Products\ProductImageController;
+use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
+use App\Http\Controllers\Api\V1\Admin\Products\TagController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
+use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffRoleController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
@@ -182,6 +188,48 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::delete('{brand}/logo', [BrandLogoController::class, 'destroy'])->whereNumber('brand')->name('logo.destroy');
                 });
             });
+
+            // Products. {product} also resolves deleted products, so they can be viewed and restored.
+            Route::prefix('products')->name('products.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewProducts))->group(function () {
+                    Route::get('/', [ProductController::class, 'index'])->name('index');
+                    Route::get('{product}', [ProductController::class, 'show'])->whereNumber('product')->withTrashed()->name('show');
+                    Route::get('{product}/stock-movements', StockMovementController::class)->whereNumber('product')->withTrashed()->name('stock-movements');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageProducts))->group(function () {
+                    Route::post('/', [ProductController::class, 'store'])->name('store');
+                    Route::post('status', [ProductController::class, 'changeStatus'])->name('status');
+                    Route::put('{product}', [ProductController::class, 'update'])->whereNumber('product')->name('update');
+                    Route::delete('{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
+                    Route::post('{product}/restore', [ProductController::class, 'restore'])->whereNumber('product')->withTrashed()->name('restore');
+                    Route::post('{product}/images', [ProductImageController::class, 'store'])->whereNumber('product')->name('images.store');
+                    Route::put('{product}/images/order', [ProductImageController::class, 'reorder'])->whereNumber('product')->name('images.order');
+                    Route::delete('{product}/images/{media}', [ProductImageController::class, 'destroy'])->whereNumber(['product', 'media'])->name('images.destroy');
+                });
+            });
+
+            // The specification fields of the product editor for the chosen categories.
+            Route::get('attributes/applicable', ApplicableAttributeController::class)
+                ->middleware(PermissionMiddleware::using(Permission::ViewProducts))
+                ->name('attributes.applicable');
+
+            Route::prefix('tags')->name('tags.')->group(function () {
+                Route::get('/', [TagController::class, 'index'])
+                    ->middleware(PermissionMiddleware::using(Permission::ViewProducts))
+                    ->name('index');
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageProducts))->group(function () {
+                    Route::put('{tag}', [TagController::class, 'update'])->whereNumber('tag')->name('update');
+                    Route::post('{tag}/merge', [TagController::class, 'merge'])->whereNumber('tag')->name('merge');
+                    Route::delete('{tag}', [TagController::class, 'destroy'])->whereNumber('tag')->name('destroy');
+                });
+            });
+
+            Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
+            Route::put('settings', [SettingsController::class, 'update'])
+                ->middleware(PermissionMiddleware::using(Permission::ManageSettings))
+                ->name('settings.update');
 
             // Shared by every content type with SEO fields. Paid AI calls: limited per user and
             // store-wide (rate limiter "ai"); the request checks the content type's manage permission.

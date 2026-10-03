@@ -44,6 +44,8 @@ it('returns the current staff member with roles and permissions', function () {
             'brands.manage',
             'attributes.view',
             'attributes.manage',
+            'products.view',
+            'products.manage',
         ]);
 });
 

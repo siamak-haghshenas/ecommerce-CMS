@@ -41,6 +41,14 @@ const EVENTS: ActivityEvent[] = [
     'option.reordered',
     'option.deleted',
     'category.attributes_changed',
+    'product.created',
+    'product.updated',
+    'product.deleted',
+    'product.restored',
+    'tag.renamed',
+    'tag.merged',
+    'tag.deleted',
+    'settings.updated',
 ];
 
 const { t } = useI18n();

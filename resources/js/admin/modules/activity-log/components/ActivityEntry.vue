@@ -40,12 +40,33 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'option.reordered': { icon: 'swap', tone: 'neutral' },
     'option.deleted': { icon: 'trash', tone: 'danger' },
     'category.attributes_changed': { icon: 'sliders', tone: 'neutral' },
+    'product.created': { icon: 'plus', tone: 'primary' },
+    'product.updated': { icon: 'pen', tone: 'neutral' },
+    'product.deleted': { icon: 'trash', tone: 'danger' },
+    'product.restored': { icon: 'refresh', tone: 'primary' },
+    'tag.renamed': { icon: 'pen', tone: 'neutral' },
+    'tag.merged': { icon: 'swap', tone: 'neutral' },
+    'tag.deleted': { icon: 'trash', tone: 'danger' },
+    'settings.updated': { icon: 'settings', tone: 'neutral' },
 };
 
 /** 'staff.role_changed' → 'staffRoleChanged' (the i18n key). */
 const eventKey = computed(() => props.activity.event.replace(/[._](\w)/g, (_, letter: string) => letter.toUpperCase()));
 const look = computed(() => ICONS[props.activity.event] ?? { icon: 'history' as const, tone: 'neutral' as const });
-const isCustomerEvent = computed(() => props.activity.event.startsWith('customer.'));
+/** Customers and products open their page from the log. */
+const subjectLink = computed(() => {
+    const subject = props.activity.subject;
+
+    if (!subject || subject.is_anonymised) {
+        return null;
+    }
+
+    if (props.activity.event.startsWith('customer.')) {
+        return { name: 'customer', params: { id: subject.id } };
+    }
+
+    return subject.type === 'product' ? { name: 'product', params: { id: subject.id } } : null;
+});
 
 /** Shown when there is no subject: a deleted category keeps its name, a top-level reorder has no parent. */
 const missingSubject = computed(() => {
@@ -55,7 +76,7 @@ const missingSubject = computed(() => {
         return t('admin.activity.topLevel');
     }
 
-    if (/^(category|brand|attribute|option)\./.test(event) && typeof properties.name === 'string') {
+    if (/^(category|brand|attribute|option|product|tag)\./.test(event) && typeof properties.name === 'string') {
         return properties.name;
     }
 
@@ -118,8 +139,8 @@ const detail = computed<string | null>(() => {
                 </template>
                 <template #subject>
                     <RouterLink
-                        v-if="activity.subject && isCustomerEvent && !activity.subject.is_anonymised"
-                        :to="{ name: 'customer', params: { id: activity.subject.id } }"
+                        v-if="activity.subject && subjectLink"
+                        :to="subjectLink"
                         class="font-semibold text-primary hover:text-primary-hover"
                     >
                         {{ activity.subject.name }}

@@ -51,6 +51,8 @@ enum UserRole: string
                 Permission::ManageBrands,
                 Permission::ViewAttributes,
                 Permission::ManageAttributes,
+                Permission::ViewProducts,
+                Permission::ManageProducts,
             ],
             // Content permissions are added with the content (pages/blog) module.
             self::Author => [Permission::AccessAdminPanel],

@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\Brands;
 
+use App\Actions\Products\RefreshProductSearchTextAction;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Brands\BrandData;
 use App\Models\Brand;
+use App\Models\Product;
 use App\Models\User;
 
 final readonly class UpdateBrandAction
 {
-    public function __construct(private ScoreSeoAction $scoreSeo) {}
+    public function __construct(
+        private ScoreSeoAction $scoreSeo,
+        private RefreshProductSearchTextAction $refreshSearchText,
+    ) {}
 
     public function handle(User $actor, Brand $brand, BrandData $data): Brand
     {
@@ -36,6 +41,11 @@ final readonly class UpdateBrandAction
         }
 
         $brand->save();
+
+        // Product search includes brand names.
+        if (array_intersect($changedFields, ['name', 'persian_name']) !== []) {
+            $this->refreshSearchText->forQuery(Product::query()->where('brand_id', $brand->id));
+        }
         $this->scoreSeo->handle($brand, $previousKeyphrase);
 
         activity('admin')

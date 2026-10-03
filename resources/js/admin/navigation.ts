@@ -38,7 +38,12 @@ export const navigation: NavGroup[] = [
     {
         label: 'admin.nav.groupCatalog',
         items: [
-            { label: 'admin.nav.products', icon: 'package' },
+            {
+                label: 'admin.nav.products',
+                icon: 'package',
+                to: { name: 'products' },
+                permission: Permission.ViewProducts,
+            },
             {
                 label: 'admin.nav.categories',
                 icon: 'tag',
@@ -57,6 +62,7 @@ export const navigation: NavGroup[] = [
                 to: { name: 'attributes' },
                 permission: Permission.ViewAttributes,
             },
+            { label: 'admin.nav.tags', icon: 'tag', to: { name: 'tags' }, permission: Permission.ViewProducts },
         ],
     },
     {
@@ -77,7 +83,7 @@ export const navigation: NavGroup[] = [
                 to: { name: 'activity-log' },
                 permission: Permission.ViewActivityLog,
             },
-            { label: 'admin.nav.settings', icon: 'settings' },
+            { label: 'admin.nav.settings', icon: 'settings', to: { name: 'settings' } },
         ],
     },
 ];

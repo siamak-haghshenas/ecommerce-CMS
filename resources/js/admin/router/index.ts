@@ -60,6 +60,38 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.attributes', permission: Permission.ViewAttributes },
             },
             {
+                path: 'products',
+                name: 'products',
+                component: () => import('../modules/products/pages/ProductsPage.vue'),
+                meta: { title: 'pageTitles.products', permission: Permission.ViewProducts },
+            },
+            {
+                path: 'products/new',
+                name: 'product-create',
+                component: () => import('../modules/products/pages/ProductEditorPage.vue'),
+                props: { id: null },
+                meta: { title: 'pageTitles.productCreate', permission: Permission.ManageProducts },
+            },
+            {
+                path: 'products/:id(\\d+)',
+                name: 'product',
+                component: () => import('../modules/products/pages/ProductEditorPage.vue'),
+                props: (route) => ({ id: Number(route.params.id) }),
+                meta: { title: 'pageTitles.product', permission: Permission.ViewProducts },
+            },
+            {
+                path: 'tags',
+                name: 'tags',
+                component: () => import('../modules/products/pages/TagsPage.vue'),
+                meta: { title: 'pageTitles.tags', permission: Permission.ViewProducts },
+            },
+            {
+                path: 'settings',
+                name: 'settings',
+                component: () => import('../modules/settings/pages/SettingsPage.vue'),
+                meta: { title: 'pageTitles.settings' },
+            },
+            {
                 path: 'staff',
                 name: 'staff',
                 component: () => import('../modules/staff/pages/StaffPage.vue'),

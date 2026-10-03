@@ -27,8 +27,8 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Font:** Vazirmatn (self-hosted via the `vazirmatn` npm package, no CDN).
 
 ### Approved Packages
-- **PHP:** `laravel/sanctum`, `spatie/laravel-permission`, `spatie/laravel-activitylog` (audit log; do not build a custom one), `spatie/laravel-medialibrary` (all uploaded images), `larastan/larastan` (dev).
-- **JS:** `vue`, `@vitejs/plugin-vue`, `vue-router`, `pinia`, `axios`, `vue-i18n`, `vazirmatn`, `vue-draggable-plus` (drag-and-drop sorting).
+- **PHP:** `laravel/sanctum`, `spatie/laravel-permission`, `spatie/laravel-activitylog` (audit log; do not build a custom one), `spatie/laravel-medialibrary` (all uploaded images), `symfony/html-sanitizer` (rich text), `larastan/larastan` (dev).
+- **JS:** `vue`, `@vitejs/plugin-vue`, `vue-router`, `pinia`, `axios`, `vue-i18n`, `vazirmatn`, `vue-draggable-plus` (drag-and-drop sorting), `@tiptap/vue-3` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-image` (product description editor).
 - **JS dev:** `typescript`, `vue-tsc`, `eslint`, `eslint-plugin-vue`, `typescript-eslint`, `prettier`, `eslint-config-prettier`, `prettier-plugin-tailwindcss`.
 - Any other package requires the user's approval first.
 
@@ -76,7 +76,7 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Store content is not translated.** Categories, products, pages etc. have one name/description/SEO text, stored and returned exactly as the admin typed it. No translations package.
 - Admin panel: Farsi/English with **RTL** layout switching, **Dark** and **Light** mode.
 
-### Products (built in 4 phases, each reviewed and committed: 1 attributes & options ✅, 2 products core, 3 admin UI, 4 storefront catalog API)
+### Products (built in 4 phases, each reviewed and committed: 1 attributes & options ✅, 2 products core backend ✅, 3 admin UI ✅, 4 storefront catalog API)
 - **Variants** are generated from **options** (e.g. Size × Color) into a grid; unwanted combinations can be disabled. Each variant (SKU) has its own price, sale price and stock. A simple product has one default variant.
 - **Specifications** use global **attributes** assigned to categories (inherited by sub-categories). A product in several categories gets the combined attributes of all its categories and their ancestors. Filterable attributes become storefront filters.
 - **Categories:** several per product, one primary (breadcrumbs, URLs). **Brand:** one, optional. **Tags:** typed freely with suggestions, plus a Tags page (rename, merge, delete); tags have slugs for storefront filtering.
@@ -87,7 +87,33 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Search:** a normalized `search_text` column (name, brand names, SKUs, tags, categories) using the SEO text normalization, so Arabic/Persian letters, half-spaces and digits match.
 - **Status:** draft / published / archived (+ scheduled `published_at`). Products and variants are **soft-deleted** (orders will point at them). Deleting a category or brand with products is refused.
 - **Who manages:** Super Admin and Admin (`products.view`, `products.manage`).
-- **Planned tables (phase 2):** `products`, `category_product` (is_primary), `product_options`, `product_variants`, `option_value_product_variant`, `product_attribute_values` (value_text / value_number / value_boolean / attribute_value_id), `tags`, `product_tag`, `stock_movements`, `settings` (key-value: price display currency, low-stock default). The gallery uses medialibrary.
+- **Tables:** `products`, `category_product` (is_primary), `product_options`, `product_variants`, `option_value_product_variant`, `product_attribute_values` (value_text / value_number / value_boolean / attribute_value_id), `tags`, `product_tag`, `stock_movements`, `settings`. The gallery uses medialibrary (collection `gallery`, conversions `thumb` 320 fitted, `medium` 800, `large` 1600, webp; max 30 images; the first is the main image).
+
+#### Products backend (phase 2)
+- **One save endpoint for the whole form** (`POST`/`PUT admin/products`, `SaveProductRequest` → `SaveProductAction`): fields, `category_ids` + `primary_category_id` (default: first), `tags` (names), `option_ids`, `variants` (in order) and `specifications`. Structure errors are standard validation errors with field keys like `variants.2.sku`; cross-field checks live in the request's `after()` (SKU unique across all variants incl. deleted, case-insensitive; sale price < price and end > start; variant image from the product's gallery; a variable product's variant has exactly one value of each chosen option, no duplicate combinations; a simple product has exactly one variant; publishing needs ≥1 category and ≥1 enabled variant; specifications only for attributes applicable to the categories, with a value of the right kind).
+- **Variants:** updated by id, new ones created, missing ones **soft-deleted** (their SKU stays taken). `ProductVariant::currentPrice()` / `isOnSale()` / `discountPercent()` apply the optional sale window.
+- **Stock** only changes through `AdjustStockAction` (row lock + `stock_movements` row). New variants: `stock_quantity` becomes an `initial` movement. Existing variants: the form sends `stock_quantity` with `stock_quantity_was` (the number the admin saw); if stock moved meanwhile → 409 `stock_changed` and nothing is saved, otherwise an `adjustment` movement. History: `GET admin/products/{product}/stock-movements`.
+- **Description** is cleaned by `App\Support\RichText::sanitize()` (allow-list of formatting tags, `https/http/mailto` links get `rel="noopener noreferrer"`; scripts, styles, iframes and event handlers are dropped). The SEO analysis reads `RichText::toPlainText()` (`Product::seoDescription()`); the admin editor must analyse the same plain text.
+- **Tags** typed in the form are matched by normalized name («هديه» = «هدیه») or created with a Finglish slug (`ResolveTagsAction`). Tags page API: list (`q`, product counts), rename, merge into another, delete.
+- **Search text** (`RefreshProductSearchTextAction`) is rebuilt on save, and for affected products when a brand, category or tag is renamed/merged/deleted. Admin list search: every normalized word must appear.
+- **Admin list filters:** `q`, `status`, `category_id` (includes sub-categories), `brand_id`, `tag_id`, `stock` (`low` = an enabled variant ≤ threshold; `out` = no enabled variant > 0 and no backorders), `needs_seo`, `trashed`, `sort` (`newest`, `name`, `updated`). Rows include price range (current prices of enabled variants), stock summary, main image, primary category.
+- **Delete** is a soft delete (`DELETE`, `POST {product}/restore`; `{product}` resolves deleted products for show/restore). **Bulk status** `POST admin/products/status` (`ids`, `status`) skips products that can't be published.
+- **Store settings** (`App\Support\Settings`, cached): `price_display_currency` (`IRT` default / `IRR`) and `low_stock_threshold` (default 5). `GET admin/settings` for all staff; `PUT` needs `settings.manage` (no role lists it: super admin only).
+- **Protections now active:** deleting a category or brand with products (deleted ones included) → 409 `category_has_products` / `brand_has_products`; deleting an attribute or option products use → 409 `catalog_item_in_use`; removing a value products use → 409 `catalog_value_in_use`; changing the type of an attribute products use → 422 `attribute_type_locked`.
+- **Audit log:** `product.created|updated|deleted|restored` (updated lists changed parts: fields, `categories`, `tags`, `options`, `variants`, `specifications`, `images`), `tag.renamed|merged|deleted`, `settings.updated`. Stock changes are in `stock_movements`, not the audit log.
+- The SEO system covers products too (`SeoContentType::Product`, AI page description "a product page").
+
+#### Products admin UI (phase 3)
+- **Money in the admin:** `useMoney()` (`admin/modules/settings/store.ts`) formats Rials in the display currency from the settings store (loaded once); price inputs are `NumberField`s with `factor = rialsPerUnit` (10 for Toman), so the API always gets Rials.
+- **Product list** (`/admin/products`): filters in the URL query (`q`, `status`, `category`, `brand`, `stock`, `needs_seo`, `trashed`, `tag`, `page`), row selection with bulk publish / draft / archive, restore for deleted products.
+- **Product editor** (`/admin/products/new`, `/admin/products/:id`): one page with section links (General, Categories/brand/tags, Price/stock/variants, Images, Specifications, Shipping, SEO) and a sticky save bar (status, publish date, Save). Everything except the gallery is saved by one Save; the gallery saves immediately and needs a saved product. Leaving with unsaved changes asks first (route guard + `beforeunload`).
+  - Variants (`products/variants.ts`, tested by `tests/js/variants.test.mjs`): the grid is the combinations of the chosen option values; regenerating keeps existing variants (id, price, stock) and prices new ones like the first row. SKUs are suggested from the slug and value slugs until typed. Stock is sent only when changed, with `stock_quantity_was`.
+  - Specifications are fetched for the chosen categories (`attributes/applicable`); only filled-in ones are sent; their errors are placed by attribute id.
+  - Description: Tiptap (headings, bold/italic/underline, lists, quote, links, images from the gallery). The SEO panel analyses `htmlToText()` of it, matching the server's `RichText::toPlainText()`. The live duplicate-keyphrase check is not available for products (the server still checks on save).
+  - Errors: fields with their own error display show it in place; any other error goes in the alert at the top (never hidden).
+- **Tags page** (`/admin/tags`): rename, merge, delete; "N products" opens the filtered product list.
+- **Settings page** (`/admin/settings`): visible to all staff, editable by the super admin (`settings.manage`).
+- Sale and publish dates use the browser's `datetime-local` picker (Gregorian); a Jalali date picker would need an extra package.
 
 ### Attributes & Options (products phase 1)
 - **Attributes** (`attributes`, `attribute_values`): name, Latin slug (unique; used in storefront filter URLs), `type` (`text`, `number` + optional `unit`, `boolean`, `select` with ordered values), `is_filterable`, manual `position`. Only `select` attributes have values; values have a Latin slug unique within the attribute. Saving an attribute syncs its values (update by id, create new, delete missing, order = array order).
@@ -95,7 +121,7 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Category attributes** (`attribute_category`, ordered): `PUT admin/categories/{category}/attributes` sets a category's own attributes; `GET` returns own + inherited (from ancestors, with the category they come from). Products (phase 2) get the union over all their categories.
 - **Who manages:** Super Admin and Admin (`attributes.view`, `attributes.manage`; assigning attributes to a category needs `categories.manage`).
 - Reordering (`PUT attributes/order`, `PUT options/order`) takes every id of the list (409 `catalog_list_changed` otherwise), like brands.
-- Deleting an attribute, option or value is free for now; phase 2 adds "refused while products use it".
+- Deleting an attribute, option or value products use is refused (see Products backend), as is changing a used attribute's type.
 - **Audit log:** `attribute.created|updated|deleted|reordered`, `option.created|updated|deleted|reordered`, `category.attributes_changed`.
 - Admin UI: Catalog › Attributes (tabs Attributes / Options, drag-and-drop order, form dialog with a values editor) and an "Attributes" section in the category form.
 
@@ -221,6 +247,12 @@ app/
 | `POST`/`PUT`/`DELETE attributes[/{attribute}]` · `PUT attributes/order` · the same for `options` | `attributes.manage` |
 | `GET categories/{category}/attributes` (own + inherited) | `categories.view` |
 | `PUT categories/{category}/attributes` (`ids`, ordered) | `categories.manage` |
+| `GET products` (filters) · `GET products/{product}` · `GET products/{product}/stock-movements` · `GET attributes/applicable?category_ids[]=` · `GET tags` | `products.view` |
+| `POST products` · `PUT products/{product}` · `DELETE products/{product}` · `POST products/{product}/restore` · `POST products/status` | `products.manage` |
+| `POST products/{product}/images` · `PUT products/{product}/images/order` · `DELETE products/{product}/images/{media}` | `products.manage` |
+| `PUT tags/{tag}` · `POST tags/{tag}/merge` · `DELETE tags/{tag}` | `products.manage` |
+| `GET settings` | any staff |
+| `PUT settings` | `settings.manage` (super admin) |
 
 - Category rule violations return `CategoryException` codes: `category_has_children`, `category_invalid_parent`, `category_tree_changed` (409: the `ids` sent don't include every current child, reload and retry).
 - **Storefront catalog API** (public): `GET /api/v1/categories` (nested tree of visible categories) and `GET /api/v1/categories/{slug}` (detail with description, SEO fields, image, breadcrumb and visible children; hidden or unknown → 404).
@@ -259,8 +291,9 @@ resources/js/
 - **RTL:** use logical utilities (`ps-*`, `pe-*`, `text-start`, `rtl:*`); phone numbers and codes are always `dir="ltr"`.
 - **Digits:** v-models hold Latin digits; show Persian digits in Farsi with `useLocale().localizeDigits()` (inputs: `PhoneField`, `OtpInput`).
 - **API calls:** go through `@/shared/http/client` (`http`), which handles the CSRF cookie, `Accept-Language` and turns every failure into `ApiError`. Forms use `useApiForm([...fields])` for loading state and inline/general errors.
+- **`defineModel` is one step behind:** after `model.value = next`, reading `model.value` in the same function still returns the old value until the parent re-renders. Compute the new value into a local variable and use that (see `VariantsEditor` `choose()`, `CategoriesField` `remove()`).
 - **Text:** every UI string lives in `resources/js/shared/i18n/{fa,en}.ts` (`en` is typed against `fa`, so a missing key fails typecheck).
-- **Shared UI kit** (`resources/js/shared/ui`): `AppButton` (variants primary/secondary/danger/danger-outline, sizes lg/md), `TextField`, `TextAreaField` (optional character counter), `PhoneField`, `OtpInput`, `SegmentedControl`, `SelectField` (native select), `SearchInput` (debounced), `AppDialog` (focus trap, Esc, bottom sheet on phones), `ActionMenu` (row "⋯" menu, keyboard navigable), `AppPagination`, `AppBadge`, `AppAvatar`, `EmptyState`, `FormAlert`, `ToastHost` + `useToast()`, `PreferenceSwitches`, `BrandMark`, `AppIcon`, `AppSpinner`. Reuse these before creating new ones.
+- **Shared UI kit** (`resources/js/shared/ui`): `AppButton` (variants primary/secondary/danger/danger-outline, sizes lg/md), `TextField`, `TextAreaField` (optional character counter), `NumberField` (whole numbers typed with any digits, grouped when not editing; `factor` converts shown ↔ stored, e.g. Toman ↔ Rial; `compact` for table cells), `ImageField` (pick one image, uploaded by the form after saving), `PhoneField`, `OtpInput`, `SegmentedControl`, `SelectField` (native select), `SearchInput` (debounced), `AppDialog` (focus trap, Esc, bottom sheet on phones), `ActionMenu` (row "⋯" menu, keyboard navigable), `AppPagination`, `AppBadge`, `AppAvatar`, `EmptyState`, `FormAlert`, `ToastHost` + `useToast()`, `PreferenceSwitches`, `BrandMark`, `AppIcon`, `AppSpinner`. Reuse these before creating new ones.
 - **Formatting:** `useLocale()` gives `formatNumber`, `formatDate` (Solar Hijri in Farsi), `formatDateTime`, `formatRelativeTime`, `localizeDigits`.
 - **Admin app:** `AdminLayout`: on desktop (`lg`+) the sidebar is open by default and the menu button collapses it to an icon rail (choice remembered in `localStorage`, content widens); below `lg` it is a drawer over the page. Menu items live in `admin/navigation.ts` with the permission they need; pages declare `meta.permission` and the router redirects users who lack it. Show actions only when `useAdminAuthStore().can(...)` allows them. Lists keep their filters in the URL query (customers). Destructive actions go through a confirmation dialog; irreversible ones (anonymise) require typing the customer's phone number.
 - Language and theme preferences are stored in `localStorage` and applied before first paint by `resources/views/partials/spa-head.blade.php`.

@@ -7,6 +7,7 @@ namespace App\Enums;
 use App\Contracts\SeoSubject;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -17,6 +18,7 @@ enum SeoContentType: string
 {
     case Category = 'category';
     case Brand = 'brand';
+    case Product = 'product';
 
     /**
      * @return class-string<Model&SeoSubject>
@@ -26,6 +28,7 @@ enum SeoContentType: string
         return match ($this) {
             self::Category => Category::class,
             self::Brand => Brand::class,
+            self::Product => Product::class,
         };
     }
 
@@ -37,6 +40,7 @@ enum SeoContentType: string
         return match ($this) {
             self::Category => Permission::ManageCategories,
             self::Brand => Permission::ManageBrands,
+            self::Product => Permission::ManageProducts,
         };
     }
 
@@ -48,6 +52,7 @@ enum SeoContentType: string
         return match ($this) {
             self::Category => 'a product category page',
             self::Brand => 'a brand page listing the products of one brand',
+            self::Product => 'a product page',
         };
     }
 }

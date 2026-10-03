@@ -31,7 +31,10 @@ final readonly class SaveOptionAction
             $changedFields = array_keys($option->getDirty());
             $option->save();
 
-            if ($this->syncValues->handle($option->values(), $data->values, withColor: true)) {
+            // Variants (deleted ones too, which orders refer to) keep their option values.
+            $inUse = fn (int $valueId): bool => DB::table('option_value_product_variant')->where('option_value_id', $valueId)->exists();
+
+            if ($this->syncValues->handle($option->values(), $data->values, withColor: true, inUse: $inUse)) {
                 $changedFields[] = 'values';
             }
 

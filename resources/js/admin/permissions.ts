@@ -17,6 +17,9 @@ export const Permission = {
     ManageBrands: 'brands.manage',
     ViewAttributes: 'attributes.view',
     ManageAttributes: 'attributes.manage',
+    ViewProducts: 'products.view',
+    ManageProducts: 'products.manage',
+    ManageSettings: 'settings.manage',
 } as const;
 
 export type PermissionName = (typeof Permission)[keyof typeof Permission];

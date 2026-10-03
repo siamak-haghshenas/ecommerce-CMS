@@ -25,11 +25,19 @@ export type ActivityEvent =
     | 'option.updated'
     | 'option.reordered'
     | 'option.deleted'
-    | 'category.attributes_changed';
+    | 'category.attributes_changed'
+    | 'product.created'
+    | 'product.updated'
+    | 'product.deleted'
+    | 'product.restored'
+    | 'tag.renamed'
+    | 'tag.merged'
+    | 'tag.deleted'
+    | 'settings.updated';
 
 /** The user or category an entry is about (null once deleted). */
 export interface ActivityUser {
-    type: 'user' | 'category' | 'brand' | 'attribute' | 'option';
+    type: 'user' | 'category' | 'brand' | 'attribute' | 'option' | 'product' | 'tag';
     id: number;
     name: string;
     is_anonymised: boolean;

@@ -31,6 +31,14 @@ final class CategoryException extends Exception implements ShouldntReport
     }
 
     /**
+     * Products (including deleted ones, which orders refer to) are still in the category.
+     */
+    public static function hasProducts(): self
+    {
+        return new self('category_has_products');
+    }
+
+    /**
      * The new parent is the category itself or one of its descendants.
      */
     public static function invalidParent(): self
