@@ -129,6 +129,25 @@ final class CategoryTree
     }
 
     /**
+     * Ids of every category shown on the storefront (active, with only active ancestors).
+     *
+     * @return list<int>
+     */
+    public function visibleIds(): array
+    {
+        $visible = [];
+        $pending = array_filter($this->children(null), fn (CategoryNode $node): bool => $node->isActive);
+
+        while ($pending !== []) {
+            $node = array_shift($pending);
+            $visible[] = $node->id;
+            array_push($pending, ...array_filter($this->children($node->id), fn (CategoryNode $child): bool => $child->isActive));
+        }
+
+        return $visible;
+    }
+
+    /**
      * Shown on the storefront: the category and all its ancestors are active.
      */
     public function isVisible(int $id): bool

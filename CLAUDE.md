@@ -76,7 +76,7 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Store content is not translated.** Categories, products, pages etc. have one name/description/SEO text, stored and returned exactly as the admin typed it. No translations package.
 - Admin panel: Farsi/English with **RTL** layout switching, **Dark** and **Light** mode.
 
-### Products (built in 4 phases, each reviewed and committed: 1 attributes & options ✅, 2 products core backend ✅, 3 admin UI ✅, 4 storefront catalog API)
+### Products (built in 4 phases, each reviewed and committed: 1 attributes & options ✅, 2 products core backend ✅, 3 admin UI ✅, 4 storefront catalog API ✅)
 - **Variants** are generated from **options** (e.g. Size × Color) into a grid; unwanted combinations can be disabled. Each variant (SKU) has its own price, sale price and stock. A simple product has one default variant.
 - **Specifications** use global **attributes** assigned to categories (inherited by sub-categories). A product in several categories gets the combined attributes of all its categories and their ancestors. Filterable attributes become storefront filters.
 - **Categories:** several per product, one primary (breadcrumbs, URLs). **Brand:** one, optional. **Tags:** typed freely with suggestions, plus a Tags page (rename, merge, delete); tags have slugs for storefront filtering.
@@ -114,6 +114,14 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Tags page** (`/admin/tags`): rename, merge, delete; "N products" opens the filtered product list.
 - **Settings page** (`/admin/settings`): visible to all staff, editable by the super admin (`settings.manage`).
 - Sale and publish dates use the browser's `datetime-local` picker (Gregorian); a Jalali date picker would need an extra package.
+
+#### Storefront catalog API (phase 4, public)
+- **Visible product** (`StorefrontProductQuery::visible()`): published, `published_at` passed, not deleted, ≥1 enabled variant, and ≥1 category that is visible (active with all ancestors active, `CategoryTree::visibleIds()`). Anything else is 404 on the detail endpoint.
+- `GET /api/v1/products`: `q` (every normalized word in `search_text`), `category` (slug, includes visible sub-categories), `brand` (slug, active only), `tag` (slug), `filter[attribute-slug]` (`a,b` select values · `13..16`, `13..` or `..16` number range · `1`/`0` boolean), `option[option-slug]=red,blue` (**one enabled variant must match every chosen option**), `min_price` / `max_price` (Rials, on the current price), `in_stock`, `on_sale`, `sort` (`newest` default, `price_asc`, `price_desc`, `name`), `page`, `per_page` (≤48, default 24). An unknown or non-filterable slug matches nothing (never silently ignored).
+- `GET /api/v1/products/filters` (same scope parameters): `total`, `price {min,max}`, brands, filterable attributes (on a category: that category's own and inherited ones; values products have, with product counts; number min/max; boolean yes/no counts) and option values used by enabled variants. Counts ignore the refining filters (`filter`, `option`, price, stock, sale).
+- `GET /api/v1/products/{slug}`: description (sanitized HTML), brand, visible categories with `is_primary`, breadcrumb (from the primary category), tags, images, options (only values enabled variants use), variants (`option_value_ids`, `price`, `regular_price`, `discount_percent`, `sale_ends_at`, `in_stock`, `low_stock`, `image_id`), specifications (display text), shipping, SEO fields.
+- **Prices** are Rials and sale-aware (`price` = current, `regular_price`); every response has `meta.currency {display: IRT|IRR, rials_per_unit}` for display.
+- **Stock numbers are never exposed:** only `in_stock` (untracked stock or backorders count as in stock) and `low_stock`. Inactive brands are left off (`brand: null`); admin-only fields (focus keyphrase, scores) are never included.
 
 ### Attributes & Options (products phase 1)
 - **Attributes** (`attributes`, `attribute_values`): name, Latin slug (unique; used in storefront filter URLs), `type` (`text`, `number` + optional `unit`, `boolean`, `select` with ordered values), `is_filterable`, manual `position`. Only `select` attributes have values; values have a Latin slug unique within the attribute. Saving an attribute syncs its values (update by id, create new, delete missing, order = array order).

@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
 use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
+use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -71,6 +72,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
+    Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
+    Route::get('products/filters', [StorefrontProductController::class, 'filters'])->name('products.filters');
+    Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
 
     /*
     |--------------------------------------------------------------------------

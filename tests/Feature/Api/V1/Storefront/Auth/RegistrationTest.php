@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 
 use function Pest\Laravel\assertDatabaseCount;
+use function Pest\Laravel\freezeTime;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\travel;
 use function Pest\Laravel\withHeader;
@@ -124,6 +125,8 @@ describe('register', function () {
     });
 
     it('returns 429 when registering again before the resend cooldown ends', function () {
+        freezeTime();
+
         postJson(route('api.v1.auth.register'), registrationPayload())->assertAccepted();
 
         withHeader('Accept-Language', 'en')

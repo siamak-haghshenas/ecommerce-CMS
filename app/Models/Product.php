@@ -126,6 +126,22 @@ class Product extends Model implements HasMedia, SeoSubject
         return $this->low_stock_threshold ?? app(Settings::class)->lowStockThreshold();
     }
 
+    /**
+     * Can shoppers buy this variant now? Untracked stock and backorders are always available.
+     */
+    public function isAvailable(ProductVariant $variant): bool
+    {
+        return $variant->is_enabled && (! $this->track_stock || $this->allow_backorders || $variant->stock_quantity > 0);
+    }
+
+    /**
+     * Available, but at or below the low-stock threshold ("only a few left").
+     */
+    public function isLowStock(ProductVariant $variant): bool
+    {
+        return $this->track_stock && $variant->stock_quantity > 0 && $variant->stock_quantity <= $this->lowStockThreshold();
+    }
+
     public function seoImageCollection(): string
     {
         return self::GALLERY_COLLECTION;
