@@ -11,6 +11,12 @@ export const Permission = {
     ViewStaff: 'staff.view',
     ManageStaff: 'staff.manage',
     ViewActivityLog: 'activity-log.view',
+    ViewCategories: 'categories.view',
+    ManageCategories: 'categories.manage',
+    ViewBrands: 'brands.view',
+    ManageBrands: 'brands.manage',
+    ViewAttributes: 'attributes.view',
+    ManageAttributes: 'attributes.manage',
 } as const;
 
 export type PermissionName = (typeof Permission)[keyof typeof Permission];

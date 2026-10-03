@@ -25,6 +25,7 @@ final class AddStaffMemberAction
     {
         $member = User::query()->firstWhere('phone_number', $data->phoneNumber);
 
+        // if memeber exists
         if ($member?->isStaff()) {
             throw AccountActionException::alreadyStaff();
         }

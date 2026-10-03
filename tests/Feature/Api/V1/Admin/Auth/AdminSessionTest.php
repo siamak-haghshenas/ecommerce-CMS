@@ -38,6 +38,12 @@ it('returns the current staff member with roles and permissions', function () {
             'customers.update',
             'customers.deactivate',
             'staff.view',
+            'categories.view',
+            'categories.manage',
+            'brands.view',
+            'brands.manage',
+            'attributes.view',
+            'attributes.manage',
         ]);
 });
 

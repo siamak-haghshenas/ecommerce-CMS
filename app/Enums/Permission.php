@@ -21,4 +21,14 @@ enum Permission: string
     case ManageStaff = 'staff.manage';
 
     case ViewActivityLog = 'activity-log.view';
+
+    case ViewCategories = 'categories.view';
+    case ManageCategories = 'categories.manage';
+
+    case ViewBrands = 'brands.view';
+    case ManageBrands = 'brands.manage';
+
+    /** Attributes and options (variant dimensions). */
+    case ViewAttributes = 'attributes.view';
+    case ManageAttributes = 'attributes.manage';
 }

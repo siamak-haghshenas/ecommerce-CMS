@@ -1,0 +1,675 @@
+{
+    "_comment": "Shared by the PHP (AppSupportSeoSeoAnalyzer) and TypeScript (seo/analysis.ts) analyzers. Change a rule in both and add a case here.",
+    "seo": [
+        {
+            "name": "everything empty",
+            "input": {
+                "name": "",
+                "slug": "",
+                "description": "",
+                "metaTitle": "",
+                "metaDescription": "",
+                "focusKeyphrase": "",
+                "hasImage": false,
+                "keyphraseUsedBy": []
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "ok",
+                        "code": "empty",
+                        "params": {}
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "bad",
+                        "code": "empty",
+                        "params": {}
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "bad",
+                        "code": "empty",
+                        "params": {}
+                    },
+                    {
+                        "id": "image",
+                        "rating": "ok",
+                        "code": "missing",
+                        "params": {}
+                    }
+                ],
+                "score": 20
+            }
+        },
+        {
+            "name": "well optimised persian category",
+            "input": {
+                "name": "پیراهن مردانه",
+                "slug": "pirahn-mrdane",
+                "description": "پیراهن مردانه یکی از اصلی‌ترین بخش‌های کمد لباس هر آقایی است. در این دسته مدل‌های رسمی، اسپرت و روزمره را پیدا می‌کنید. همه محصولات از پارچه‌های نخی و لینن با کیفیت بالا تهیه شده‌اند. همچنین راهنمای سایز کنار هر محصول قرار دارد تا انتخاب ساده‌تر شود. ارسال سریع به سراسر کشور و امکان مرجوعی هفت روزه نیز فراهم است.",
+                "metaTitle": "پیراهن مردانه | خرید انواع پیراهن رسمی و اسپرت",
+                "metaDescription": "خرید پیراهن مردانه رسمی، اسپرت و روزمره از پارچه‌های نخی و لینن با کیفیت. راهنمای سایز، ارسال سریع به سراسر کشور و مرجوعی هفت روزه برای همه سفارش‌ها.",
+                "focusKeyphrase": "پیراهن مردانه",
+                "hasImage": true,
+                "keyphraseUsedBy": []
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_title",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_meta_description",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_slug",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_description",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "count": 1
+                        }
+                    },
+                    {
+                        "id": "keyphrase_unique",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "length": 46
+                        }
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "length": 149
+                        }
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "words": 66
+                        }
+                    },
+                    {
+                        "id": "image",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    }
+                ],
+                "score": 100
+            }
+        },
+        {
+            "name": "arabic keyboard letters, persian digits and half-space still match",
+            "input": {
+                "name": "كفش ورزشي",
+                "slug": "kfsh-vrzshi-1403",
+                "description": "",
+                "metaTitle": "کفش‌ ورزشی ۱۴۰۳ با تخفیف ویژه",
+                "metaDescription": "",
+                "focusKeyphrase": "كفش ورزشي",
+                "hasImage": false,
+                "keyphraseUsedBy": []
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_title",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_meta_description",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_slug",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_description",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_unique",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "length": 29
+                        }
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "bad",
+                        "code": "empty",
+                        "params": {}
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "bad",
+                        "code": "empty",
+                        "params": {}
+                    },
+                    {
+                        "id": "image",
+                        "rating": "ok",
+                        "code": "missing",
+                        "params": {}
+                    }
+                ],
+                "score": 50
+            }
+        },
+        {
+            "name": "keyphrase late in title, partly in slug, used by another category",
+            "input": {
+                "name": "Shoes",
+                "slug": "shoes",
+                "description": "Light running shoes for daily training.",
+                "metaTitle": "Shop our latest collection of running shoes",
+                "metaDescription": "Running shoes for every distance.",
+                "focusKeyphrase": "running shoes",
+                "hasImage": true,
+                "keyphraseUsedBy": [
+                    "Sneakers",
+                    "Sport"
+                ]
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_title",
+                        "rating": "ok",
+                        "code": "late",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_meta_description",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_slug",
+                        "rating": "ok",
+                        "code": "partial",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_description",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "count": 1
+                        }
+                    },
+                    {
+                        "id": "keyphrase_unique",
+                        "rating": "bad",
+                        "code": "used",
+                        "params": {
+                            "names": "Sneakers، Sport"
+                        }
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "length": 43
+                        }
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "length": 33
+                        }
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "words": 6
+                        }
+                    },
+                    {
+                        "id": "image",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    }
+                ],
+                "score": 70
+            }
+        },
+        {
+            "name": "keyphrase stuffed into a long description, long title and meta description",
+            "input": {
+                "name": "Coffee beans",
+                "slug": "coffee-beans",
+                "description": "Coffee beans are roasted every week. Coffee beans from Brazil taste sweet. Coffee beans from Ethiopia taste fruity. We grind coffee beans on request for every order. Store coffee beans in a cool and dark place. Coffee beans keep their flavour for about a month after roasting. Buy coffee beans in bags of two hundred and fifty grams or one kilogram today.",
+                "metaTitle": "Coffee beans: freshly roasted single origin coffee beans delivered to your door",
+                "metaDescription": "Coffee beans roasted every week from Brazil, Ethiopia and Colombia. Ground on request, packed in valve bags, delivered fast across the whole country, with free shipping on orders over fifty dollars.",
+                "focusKeyphrase": "coffee beans",
+                "hasImage": false,
+                "keyphraseUsedBy": []
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_title",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_meta_description",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_slug",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_description",
+                        "rating": "ok",
+                        "code": "too_often",
+                        "params": {
+                            "count": 7,
+                            "density": 22.6
+                        }
+                    },
+                    {
+                        "id": "keyphrase_unique",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "bad",
+                        "code": "long",
+                        "params": {
+                            "length": 79
+                        }
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "ok",
+                        "code": "long",
+                        "params": {
+                            "length": 198
+                        }
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "words": 62
+                        }
+                    },
+                    {
+                        "id": "image",
+                        "rating": "ok",
+                        "code": "missing",
+                        "params": {}
+                    }
+                ],
+                "score": 75
+            }
+        },
+        {
+            "name": "short seo title and meta description, no keyphrase anywhere",
+            "input": {
+                "name": "Tea",
+                "slug": "tea",
+                "description": "All kinds of tea.",
+                "metaTitle": "Tea shop",
+                "metaDescription": "Buy tea online.",
+                "focusKeyphrase": "green tea",
+                "hasImage": false,
+                "keyphraseUsedBy": []
+            },
+            "expected": {
+                "checks": [
+                    {
+                        "id": "keyphrase_set",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_title",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_meta_description",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_slug",
+                        "rating": "ok",
+                        "code": "partial",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_in_description",
+                        "rating": "bad",
+                        "code": "missing",
+                        "params": {}
+                    },
+                    {
+                        "id": "keyphrase_unique",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "title_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "length": 8
+                        }
+                    },
+                    {
+                        "id": "meta_description_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "length": 15
+                        }
+                    },
+                    {
+                        "id": "description_length",
+                        "rating": "ok",
+                        "code": "short",
+                        "params": {
+                            "words": 4
+                        }
+                    },
+                    {
+                        "id": "image",
+                        "rating": "ok",
+                        "code": "missing",
+                        "params": {}
+                    }
+                ],
+                "score": 45
+            }
+        }
+    ],
+    "readability": [
+        {
+            "name": "too short to judge",
+            "text": "A short description with only a few words.",
+            "expected": {
+                "checks": [],
+                "score": null
+            }
+        },
+        {
+            "name": "easy to read english text",
+            "text": "Our tea comes from small farms. However, every farm grows a different kind of leaf. Green tea is light and fresh. Black tea is strong and rich. Therefore, we label each pack with its taste. You can also order a sample box first. Finally, every order ships within two days. Store the tea in a dry place so it stays fresh.",
+            "expected": {
+                "checks": [
+                    {
+                        "id": "sentence_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "paragraph_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "transition_words",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "percent": 63
+                        }
+                    },
+                    {
+                        "id": "consecutive_sentences",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    }
+                ],
+                "score": 100
+            }
+        },
+        {
+            "name": "long sentences, no transitions, repeated starts",
+            "text": "We sell many different kinds of coffee beans that come from farms in Brazil, Ethiopia, Colombia and several other countries around the world every single season. We roast every batch of these beans by hand in our own small roastery in the city and the flavour stays fresh and rich for a long time. We pack the roasted beans in special valve bags that keep the air out and the aroma in until the moment you open the bag at home.",
+            "expected": {
+                "checks": [
+                    {
+                        "id": "sentence_length",
+                        "rating": "bad",
+                        "code": "long",
+                        "params": {
+                            "percent": 100
+                        }
+                    },
+                    {
+                        "id": "paragraph_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "transition_words",
+                        "rating": "bad",
+                        "code": "few",
+                        "params": {
+                            "percent": 0
+                        }
+                    },
+                    {
+                        "id": "consecutive_sentences",
+                        "rating": "bad",
+                        "code": "repeated",
+                        "params": {
+                            "count": 3
+                        }
+                    }
+                ],
+                "score": 25
+            }
+        },
+        {
+            "name": "persian text with transitions",
+            "text": "چای ما از باغ‌های شمال کشور تهیه می‌شود. اما هر باغ نوع متفاوتی از برگ را پرورش می‌دهد. چای سبز سبک و تازه است. چای سیاه پررنگ و خوش‌عطر است. بنابراین طعم هر بسته را روی آن می‌نویسیم. همچنین می‌توانید ابتدا یک جعبه نمونه سفارش دهید. در نهایت همه سفارش‌ها ظرف دو روز ارسال می‌شوند. چای را در جای خشک نگه دارید تا تازه بماند. برای مثال یک ظرف دربسته فلزی بهترین انتخاب است. در ضمن از قرار دادن آن نزدیک ادویه‌ها خودداری کنید.",
+            "expected": {
+                "checks": [
+                    {
+                        "id": "sentence_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "paragraph_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "transition_words",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "percent": 60
+                        }
+                    },
+                    {
+                        "id": "consecutive_sentences",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    }
+                ],
+                "score": 100
+            }
+        },
+        {
+            "name": "one paragraph over 150 words",
+            "text": "Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly. Our tea is fresh. However, it is also light. Every leaf is picked by hand. Therefore, the taste stays clean. Farmers dry the leaves slowly.",
+            "expected": {
+                "checks": [
+                    {
+                        "id": "sentence_length",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    },
+                    {
+                        "id": "paragraph_length",
+                        "rating": "bad",
+                        "code": "long",
+                        "params": {
+                            "words": 200
+                        }
+                    },
+                    {
+                        "id": "transition_words",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {
+                            "percent": 40
+                        }
+                    },
+                    {
+                        "id": "consecutive_sentences",
+                        "rating": "good",
+                        "code": "good",
+                        "params": {}
+                    }
+                ],
+                "score": 75
+            }
+        }
+    ],
+    "slugify": [
+        [
+            "پیراهن مردانه",
+            "pirahn-mrdane"
+        ],
+        [
+            "ایران ۱۴۰۳",
+            "iran-1403"
+        ],
+        [
+            "دسته‌بندی",
+            "dstebndi"
+        ],
+        [
+            "آیینه",
+            "ayine"
+        ],
+        [
+            "گوشی موبایل",
+            "gushi-mubayl"
+        ],
+        [
+            "Café Crème",
+            "cafe-creme"
+        ],
+        [
+            "Men's Shirts & Ties",
+            "men-s-shirts-ties"
+        ],
+        [
+            "كفش ورزشي",
+            "kfsh-vrzshi"
+        ],
+        [
+            "   ",
+            ""
+        ]
+    ]
+}

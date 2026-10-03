@@ -22,12 +22,45 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'staff.activated': { icon: 'check', tone: 'primary' },
     'staff.deactivated': { icon: 'ban', tone: 'danger' },
     'staff.removed': { icon: 'userX', tone: 'danger' },
+    'category.created': { icon: 'plus', tone: 'primary' },
+    'category.updated': { icon: 'pen', tone: 'neutral' },
+    'category.moved': { icon: 'folderMove', tone: 'neutral' },
+    'category.reordered': { icon: 'swap', tone: 'neutral' },
+    'category.deleted': { icon: 'trash', tone: 'danger' },
+    'brand.created': { icon: 'plus', tone: 'primary' },
+    'brand.updated': { icon: 'pen', tone: 'neutral' },
+    'brand.reordered': { icon: 'swap', tone: 'neutral' },
+    'brand.deleted': { icon: 'trash', tone: 'danger' },
+    'attribute.created': { icon: 'plus', tone: 'primary' },
+    'attribute.updated': { icon: 'pen', tone: 'neutral' },
+    'attribute.reordered': { icon: 'swap', tone: 'neutral' },
+    'attribute.deleted': { icon: 'trash', tone: 'danger' },
+    'option.created': { icon: 'plus', tone: 'primary' },
+    'option.updated': { icon: 'pen', tone: 'neutral' },
+    'option.reordered': { icon: 'swap', tone: 'neutral' },
+    'option.deleted': { icon: 'trash', tone: 'danger' },
+    'category.attributes_changed': { icon: 'sliders', tone: 'neutral' },
 };
 
 /** 'staff.role_changed' → 'staffRoleChanged' (the i18n key). */
 const eventKey = computed(() => props.activity.event.replace(/[._](\w)/g, (_, letter: string) => letter.toUpperCase()));
 const look = computed(() => ICONS[props.activity.event] ?? { icon: 'history' as const, tone: 'neutral' as const });
 const isCustomerEvent = computed(() => props.activity.event.startsWith('customer.'));
+
+/** Shown when there is no subject: a deleted category keeps its name, a top-level reorder has no parent. */
+const missingSubject = computed(() => {
+    const { event, properties } = props.activity;
+
+    if (event === 'category.reordered') {
+        return t('admin.activity.topLevel');
+    }
+
+    if (/^(category|brand|attribute|option)\./.test(event) && typeof properties.name === 'string') {
+        return properties.name;
+    }
+
+    return t('admin.activity.someone');
+});
 
 const roleName = (role: unknown): string =>
     typeof role === 'string' && role in ROLE_KEYS
@@ -38,7 +71,7 @@ const roleName = (role: unknown): string =>
 const detail = computed<string | null>(() => {
     const properties = props.activity.properties;
 
-    if (props.activity.event === 'customer.updated' && Array.isArray(properties.fields)) {
+    if (props.activity.event.endsWith('.updated') && Array.isArray(properties.fields)) {
         const fields = properties.fields.map((field) => t(`admin.activity.fieldNames.${String(field)}`)).join('، ');
 
         return t('admin.activity.fields', { fields });
@@ -91,7 +124,7 @@ const detail = computed<string | null>(() => {
                     >
                         {{ activity.subject.name }}
                     </RouterLink>
-                    <b v-else>{{ activity.subject?.name ?? t('admin.activity.someone') }}</b>
+                    <b v-else>{{ activity.subject?.name ?? missingSubject }}</b>
                 </template>
             </Translation>
             <span v-if="detail"

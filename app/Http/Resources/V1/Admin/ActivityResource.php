@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\V1\Admin;
 
+use App\Models\Attribute;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Option;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -27,25 +31,42 @@ class ActivityResource extends JsonResource
             'id' => $this->id,
             'event' => $this->event,
             'properties' => $this->properties,
-            'causer' => $this->userSummary($this->causer),
-            'subject' => $this->userSummary($this->subject),
+            'causer' => $this->summary($this->causer),
+            'subject' => $this->summary($this->subject),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 
     /**
-     * @return array{id: int, name: string, is_anonymised: bool}|null
+     * A user or category, or null when there is none (or it has been deleted).
+     *
+     * @return array{type: 'user'|'category'|'brand'|'attribute'|'option', id: int, name: string, is_anonymised: bool}|null
      */
-    private function userSummary(mixed $user): ?array
+    private function summary(mixed $model): ?array
     {
-        if (! $user instanceof User) {
+        if ($model instanceof Category) {
+            return ['type' => 'category', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof Brand) {
+            return ['type' => 'brand', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof Attribute || $model instanceof Option) {
+            $type = $model instanceof Attribute ? 'attribute' : 'option';
+
+            return ['type' => $type, 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if (! $model instanceof User) {
             return null;
         }
 
         return [
-            'id' => $user->id,
-            'name' => $user->isAnonymised() ? (string) __('admin.anonymised_name') : $user->name,
-            'is_anonymised' => $user->isAnonymised(),
+            'type' => 'user',
+            'id' => $model->id,
+            'name' => $model->isAnonymised() ? (string) __('admin.anonymised_name') : $model->name,
+            'is_anonymised' => $model->isAnonymised(),
         ];
     }
 }

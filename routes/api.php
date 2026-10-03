@@ -5,14 +5,26 @@ declare(strict_types=1);
 use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\Auth as AdminAuth;
+use App\Http\Controllers\Api\V1\Admin\Brands\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\V1\Admin\Brands\BrandLogoController;
+use App\Http\Controllers\Api\V1\Admin\Brands\BrandOrderController;
+use App\Http\Controllers\Api\V1\Admin\Catalog\AttributeController;
+use App\Http\Controllers\Api\V1\Admin\Catalog\OptionController;
+use App\Http\Controllers\Api\V1\Admin\Categories\CategoryAttributeController;
+use App\Http\Controllers\Api\V1\Admin\Categories\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Admin\Categories\CategoryImageController;
+use App\Http\Controllers\Api\V1\Admin\Categories\CategoryOrderController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerStatusController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffRoleController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
 use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
+use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
+use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -47,6 +59,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('logout', [StorefrontAuth\SessionController::class, 'destroy'])->name('logout');
         });
     });
+
+    // Catalog: public and read-only. Hidden categories (or ones under a hidden parent) are never returned.
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+    Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
+    Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -108,6 +126,68 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::delete('{staffMember}', [StaffController::class, 'destroy'])->name('destroy');
                 });
             });
+
+            // Categories: any depth; the tree rules live in the category actions and CategoryTree.
+            Route::prefix('categories')->name('categories.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewCategories))->group(function () {
+                    Route::get('/', [AdminCategoryController::class, 'index'])->name('index');
+                    Route::get('{category}', [AdminCategoryController::class, 'show'])->whereNumber('category')->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageCategories))->group(function () {
+                    Route::post('/', [AdminCategoryController::class, 'store'])->name('store');
+                    Route::put('order', CategoryOrderController::class)->name('order');
+                    Route::put('{category}', [AdminCategoryController::class, 'update'])->whereNumber('category')->name('update');
+                    Route::delete('{category}', [AdminCategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+                    Route::post('{category}/image', [CategoryImageController::class, 'store'])->whereNumber('category')->name('image.store');
+                    Route::delete('{category}/image', [CategoryImageController::class, 'destroy'])->whereNumber('category')->name('image.destroy');
+                    Route::put('{category}/attributes', [CategoryAttributeController::class, 'update'])->whereNumber('category')->name('attributes.update');
+                });
+
+                Route::get('{category}/attributes', [CategoryAttributeController::class, 'show'])
+                    ->whereNumber('category')
+                    ->middleware(PermissionMiddleware::using(Permission::ViewCategories))
+                    ->name('attributes.show');
+            });
+
+            // Attributes (specifications) and options (variant dimensions): flat lists in manual order.
+            foreach (['attributes' => [AttributeController::class, 'attribute'], 'options' => [OptionController::class, 'option']] as $prefix => [$controller, $parameter]) {
+                Route::prefix($prefix)->name("{$prefix}.")->group(function () use ($controller, $parameter) {
+                    Route::get('/', [$controller, 'index'])
+                        ->middleware(PermissionMiddleware::using(Permission::ViewAttributes))
+                        ->name('index');
+
+                    Route::middleware(PermissionMiddleware::using(Permission::ManageAttributes))->group(function () use ($controller, $parameter) {
+                        Route::post('/', [$controller, 'store'])->name('store');
+                        Route::put('order', [$controller, 'reorder'])->name('order');
+                        Route::put("{{$parameter}}", [$controller, 'update'])->whereNumber($parameter)->name('update');
+                        Route::delete("{{$parameter}}", [$controller, 'destroy'])->whereNumber($parameter)->name('destroy');
+                    });
+                });
+            }
+
+            // Brands: a flat list in manual order; the list is never paginated.
+            Route::prefix('brands')->name('brands.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewBrands))->group(function () {
+                    Route::get('/', [AdminBrandController::class, 'index'])->name('index');
+                    Route::get('{brand}', [AdminBrandController::class, 'show'])->whereNumber('brand')->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageBrands))->group(function () {
+                    Route::post('/', [AdminBrandController::class, 'store'])->name('store');
+                    Route::put('order', BrandOrderController::class)->name('order');
+                    Route::put('{brand}', [AdminBrandController::class, 'update'])->whereNumber('brand')->name('update');
+                    Route::delete('{brand}', [AdminBrandController::class, 'destroy'])->whereNumber('brand')->name('destroy');
+                    Route::post('{brand}/logo', [BrandLogoController::class, 'store'])->whereNumber('brand')->name('logo.store');
+                    Route::delete('{brand}/logo', [BrandLogoController::class, 'destroy'])->whereNumber('brand')->name('logo.destroy');
+                });
+            });
+
+            // Shared by every content type with SEO fields. Paid AI calls: limited per user and
+            // store-wide (rate limiter "ai"); the request checks the content type's manage permission.
+            Route::post('seo-suggestions', SeoSuggestionController::class)
+                ->middleware('throttle:ai')
+                ->name('seo-suggestions');
 
             Route::get('activity-log', ActivityLogController::class)
                 ->middleware(PermissionMiddleware::using(Permission::ViewActivityLog))

@@ -162,6 +162,51 @@ const ICONS = {
     trendUp: [{ tag: 'path', attrs: { d: 'm22 7-8.5 8.5-5-5L2 17M16 7h6v6' } }],
     trendDown: [{ tag: 'path', attrs: { d: 'm22 17-8.5-8.5-5 5L2 7M16 17h6v-6' } }],
     refresh: [{ tag: 'path', attrs: { d: 'M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5' } }],
+    plus: [{ tag: 'path', attrs: { d: 'M12 5v14M5 12h14' } }],
+    trash: [
+        {
+            tag: 'path',
+            attrs: {
+                d: 'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6',
+            },
+        },
+    ],
+    grip: [
+        { tag: 'circle', attrs: { cx: 9, cy: 6, r: 1 } },
+        { tag: 'circle', attrs: { cx: 15, cy: 6, r: 1 } },
+        { tag: 'circle', attrs: { cx: 9, cy: 12, r: 1 } },
+        { tag: 'circle', attrs: { cx: 15, cy: 12, r: 1 } },
+        { tag: 'circle', attrs: { cx: 9, cy: 18, r: 1 } },
+        { tag: 'circle', attrs: { cx: 15, cy: 18, r: 1 } },
+    ],
+    arrowUp: [{ tag: 'path', attrs: { d: 'M12 19V5M5 12l7-7 7 7' } }],
+    arrowDown: [{ tag: 'path', attrs: { d: 'M12 5v14M19 12l-7 7-7-7' } }],
+    folderMove: [
+        {
+            tag: 'path',
+            attrs: {
+                d: 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z',
+            },
+        },
+        { tag: 'path', attrs: { d: 'm12 10 3 3-3 3M9 13h6' } },
+    ],
+    subItem: [{ tag: 'path', attrs: { d: 'M6 4v8a4 4 0 0 0 4 4h8M14 12l4 4-4 4' } }],
+    upload: [{ tag: 'path', attrs: { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' } }],
+    sliders: [{ tag: 'path', attrs: { d: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6' } }],
+    award: [
+        { tag: 'circle', attrs: { cx: 12, cy: 8, r: 6 } },
+        { tag: 'path', attrs: { d: 'M15.5 13.2 17 22l-5-3-5 3 1.5-8.8' } },
+    ],
+    externalLink: [
+        { tag: 'path', attrs: { d: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' } },
+    ],
+    sparkles: [
+        {
+            tag: 'path',
+            attrs: { d: 'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z' },
+        },
+        { tag: 'path', attrs: { d: 'M19 15v4M17 17h4M5 3v3M3.5 4.5h3' } },
+    ],
 } as const satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;

@@ -27,8 +27,8 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Font:** Vazirmatn (self-hosted via the `vazirmatn` npm package, no CDN).
 
 ### Approved Packages
-- **PHP:** `laravel/sanctum`, `spatie/laravel-permission`, `spatie/laravel-activitylog` (audit log; do not build a custom one), `larastan/larastan` (dev).
-- **JS:** `vue`, `@vitejs/plugin-vue`, `vue-router`, `pinia`, `axios`, `vue-i18n`, `vazirmatn`.
+- **PHP:** `laravel/sanctum`, `spatie/laravel-permission`, `spatie/laravel-activitylog` (audit log; do not build a custom one), `spatie/laravel-medialibrary` (all uploaded images), `larastan/larastan` (dev).
+- **JS:** `vue`, `@vitejs/plugin-vue`, `vue-router`, `pinia`, `axios`, `vue-i18n`, `vazirmatn`, `vue-draggable-plus` (drag-and-drop sorting).
 - **JS dev:** `typescript`, `vue-tsc`, `eslint`, `eslint-plugin-vue`, `typescript-eslint`, `prettier`, `eslint-config-prettier`, `prettier-plugin-tailwindcss`.
 - Any other package requires the user's approval first.
 
@@ -72,12 +72,67 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Audit log** (`spatie/laravel-activitylog`, log name `admin`, viewable by super admin): every customer/staff change is logged with causer, subject and event (`customer.updated|activated|deactivated|anonymised`, `staff.added|role_changed|activated|deactivated|removed`). **Properties never contain personal data** — only changed field names and roles — so anonymisation leaves no personal data in the log.
 
 ### Localization & Theming
-- Two languages: **Farsi (fa)** and **English (en)**. The API localizes messages from the `Accept-Language` header; translatable content (e.g. category/product names) will be returned per locale.
+- Farsi (fa) / English (en) translations are **only for the CMS interface itself**: the admin panel UI and API messages (errors, validation), chosen by the `Accept-Language` header.
+- **Store content is not translated.** Categories, products, pages etc. have one name/description/SEO text, stored and returned exactly as the admin typed it. No translations package.
 - Admin panel: Farsi/English with **RTL** layout switching, **Dark** and **Light** mode.
 
-### Products
-- Products support **variants** (e.g. size/color), each with its own SKU, price, and stock.
-- Filterable **attributes**, **categories**, and **tags**.
+### Products (built in 4 phases, each reviewed and committed: 1 attributes & options ✅, 2 products core, 3 admin UI, 4 storefront catalog API)
+- **Variants** are generated from **options** (e.g. Size × Color) into a grid; unwanted combinations can be disabled. Each variant (SKU) has its own price, sale price and stock. A simple product has one default variant.
+- **Specifications** use global **attributes** assigned to categories (inherited by sub-categories). A product in several categories gets the combined attributes of all its categories and their ancestors. Filterable attributes become storefront filters.
+- **Categories:** several per product, one primary (breadcrumbs, URLs). **Brand:** one, optional. **Tags:** typed freely with suggestions, plus a Tags page (rename, merge, delete); tags have slugs for storefront filtering.
+- **Money:** whole **Rials** everywhere (`unsigned bigint`). A store setting chooses Toman or Rial display; the API also returns raw Rials.
+- **Sale price** per SKU with optional start/end dates; storefronts get current price, regular price and discount %. Coupons and tax come later with checkout.
+- **Stock:** quantity per SKU; per product "allow backorders" or "don't track stock"; low-stock threshold (store default, overridable per product); every change logged in `stock_movements` (who, reason, before → after).
+- **Description:** Tiptap (`@tiptap/vue-3`) in the admin; the server cleans the HTML with `symfony/html-sanitizer` (both approved, install in phase 2/3).
+- **Search:** a normalized `search_text` column (name, brand names, SKUs, tags, categories) using the SEO text normalization, so Arabic/Persian letters, half-spaces and digits match.
+- **Status:** draft / published / archived (+ scheduled `published_at`). Products and variants are **soft-deleted** (orders will point at them). Deleting a category or brand with products is refused.
+- **Who manages:** Super Admin and Admin (`products.view`, `products.manage`).
+- **Planned tables (phase 2):** `products`, `category_product` (is_primary), `product_options`, `product_variants`, `option_value_product_variant`, `product_attribute_values` (value_text / value_number / value_boolean / attribute_value_id), `tags`, `product_tag`, `stock_movements`, `settings` (key-value: price display currency, low-stock default). The gallery uses medialibrary.
+
+### Attributes & Options (products phase 1)
+- **Attributes** (`attributes`, `attribute_values`): name, Latin slug (unique; used in storefront filter URLs), `type` (`text`, `number` + optional `unit`, `boolean`, `select` with ordered values), `is_filterable`, manual `position`. Only `select` attributes have values; values have a Latin slug unique within the attribute. Saving an attribute syncs its values (update by id, create new, delete missing, order = array order).
+- **Options** (`options`, `option_values`): variant dimensions with `display_type` `text` (buttons) or `color` (swatches; each value then needs `color_hex`), manual `position`, values synced the same way.
+- **Category attributes** (`attribute_category`, ordered): `PUT admin/categories/{category}/attributes` sets a category's own attributes; `GET` returns own + inherited (from ancestors, with the category they come from). Products (phase 2) get the union over all their categories.
+- **Who manages:** Super Admin and Admin (`attributes.view`, `attributes.manage`; assigning attributes to a category needs `categories.manage`).
+- Reordering (`PUT attributes/order`, `PUT options/order`) takes every id of the list (409 `catalog_list_changed` otherwise), like brands.
+- Deleting an attribute, option or value is free for now; phase 2 adds "refused while products use it".
+- **Audit log:** `attribute.created|updated|deleted|reordered`, `option.created|updated|deleted|reordered`, `category.attributes_changed`.
+- Admin UI: Catalog › Attributes (tabs Attributes / Options, drag-and-drop order, form dialog with a values editor) and an "Attributes" section in the category form.
+
+### Categories
+- Fields: `parent_id`, `name`, `slug`, `description`, `meta_title`, `meta_description`, `position` (order among siblings), `is_active`, plus one image (medialibrary collection `image`).
+- **Unlimited depth.** Stored as `parent_id` only; `App\Support\CategoryTree` loads all categories in one query, caches the tree as plain arrays (cleared on every category save/delete) and answers ancestors, descendants, visibility and "can move" questions. No tree package.
+- **Slug:** Latin only (`a-z`, `0-9`, single hyphens), unique. While creating, the admin UI suggests one from the name (Persian is transliterated to Finglish by `suggestSlug()` in `admin/modules/categories/tree.ts`, e.g. «ایران ۱۴۰۳» → `iran-1403`); the admin can edit it, and editing stops the suggestion.
+- **Image:** `spatie/laravel-medialibrary`, one image per category (jpg/png/webp), conversions `thumb` and `medium` (webp) generated immediately (not queued). The API returns `{ original, thumb, medium }` URLs.
+- **Moving:** a category can never move under itself or one of its descendants (`category_invalid_parent`).
+- **Delete** is refused while the category has sub-categories (`category_has_children`) or products (`category_has_products`, added with the products module). Nothing is moved or unlinked automatically; the admin moves them first.
+- **Hiding:** `is_active = false` hides the category **and its whole branch** from the Storefront API. Each sub-category keeps its own flag, so showing the parent restores the branch as it was; the admin tree shows them as "hidden by parent" (`is_visible = false`).
+- **Who manages:** Super Admin and Admin (`categories.view`, `categories.manage`). Author has no access.
+- **Admin UI:** an expandable tree. Drag and drop (`vue-draggable-plus`) on desktop, plus "move up / move down / move to…" actions on every row for phones and keyboards.
+- **Audit log:** `category.created`, `category.updated` (changed field names, incl. `image`), `category.moved` (from/to parent ids), `category.reordered`, `category.deleted` (name and slug kept in properties, as category data is not personal).
+
+### Brands
+- **Flat list** with a **manual order** (`position`): drag and drop (`vue-draggable-plus`) plus "move up / move down" on every row. New brands go last. `PUT admin/brands/order` takes the complete list of ids (409 `brand_list_changed` when it doesn't match the current brands).
+- Fields: `name` (unique; as the brand writes it, e.g. Adidas), `persian_name` (optional, unique when set, e.g. آدیداس; searchable in the admin, returned by the Storefront API, given to the AI as `alternate_name`), `slug` (Latin, unique, suggested via Finglish like categories), `description`, `website` (optional http/https URL), `is_active`, `position`, the shared SEO fields, and one **logo** (medialibrary collection `logo`): **JPG, PNG or WebP only** (no SVG: it can carry scripts); conversions `thumb` (240px, fitted without cropping) and `medium` (600px), webp. The form suggests a PNG with a transparent background.
+- **Products:** one brand per product (`brand_id`, added with products). Delete is refused while a brand has products (`brand_has_products`, added with the products module); hiding is the alternative.
+- **Who manages:** Super Admin and Admin (`brands.view`, `brands.manage`). Author has no access.
+- The admin list returns **all** brands (no pagination, as the order is managed by hand); search and filters run in the browser.
+- **Storefront API:** `GET /api/v1/brands` (visible brands in position order), `GET /api/v1/brands/{slug}` (logo, description, website, SEO fields). Hidden or unknown → 404.
+- **Audit log:** `brand.created`, `brand.updated` (changed field names, incl. `logo`), `brand.reordered`, `brand.deleted` (name kept).
+
+### SEO Analysis & AI Suggestions (shared: categories and brands)
+- **One shared SEO module** for every content type with a public page (now categories and brands; later products, pages, blog). A content type plugs in with: the SEO columns (`meta_title`, `meta_description`, `focus_keyphrase`, `seo_score`, `readability_score`), the `App\Models\Concerns\HasSeo` trait (+ `seoImageCollection()`), a case in `App\Enums\SeoContentType`, and the shared `SeoPanel` (`admin/modules/seo`) in its admin form.
+- **Focus keyphrase:** stored `focus_keyphrase` per item (admin-only, never in the Storefront API). Duplicate keyphrases are flagged by the `keyphrase_unique` check, compared among items of the same content type.
+- **Analysis** (colored indicators like WordPress SEO plugins): every check is rated `good` 🟢 / `ok` 🟠 / `bad` 🔴; score = average of good 1, ok 0.5, bad 0 (×100). Overall color: ≥70 good, ≥40 ok, else bad; null = not analysed (grey).
+  - **SEO checks:** `keyphrase_set`, `keyphrase_in_title`, `keyphrase_in_meta_description`, `keyphrase_in_slug` (Finglish-slugified keyphrase words in the slug), `keyphrase_in_description` (density over 3% = stuffing), `keyphrase_unique`, `title_length` (30–60 chars), `meta_description_length` (120–160), `description_length` (≥50 words), `image`. Keyphrase checks are skipped while no keyphrase is set.
+  - **Readability checks** (only once the description has ≥50 words; otherwise no readability score): `sentence_length` (≤25% of sentences over 20 words), `paragraph_length` (≤100 words), `transition_words` (≥30% of sentences, Persian + English lists), `consecutive_sentences` (no 3+ sentences starting with the same word). No English reading-ease formulas: they don't apply to Persian.
+  - Text is normalized before matching: Arabic ي/ك → ی/ک, Persian/Arabic digits → Latin, diacritics and tatweel removed, half-space (ZWNJ) → space, lowercase.
+- **Runs twice from the same rules:** live in the browser (`admin/modules/seo/analysis.ts`, self-contained, no imports) and on the server on every save (`ScoreSeoAction` with `App\Support\Seo\SeoAnalyzer`), which stores `seo_score` and `readability_score` (shown as a dot in the admin lists, with a "Needs SEO work" filter = score < 70). Both implementations run the shared cases in `tests/Fixtures/seo-analysis.json` (Pest + `npm test`, Node's built-in test runner); **change a rule in both and add a fixture case**. Re-score everything with `php artisan seo:score` (`--type=category|brand`).
+- **AI suggestions:** `POST /api/v1/admin/seo-suggestions` with `type` (`category` needs `categories.manage`, `brand` needs `brands.manage`), the current, possibly unsaved, name/description/keyphrase (+ `parent_id` for categories) and an optional `subject_id`; returns **3 keyphrases, 3 SEO titles and 3 meta descriptions** in the content's language (Persian if the name or the optional `alternate_name`, e.g. a brand's Persian name, contains Persian letters). Nothing is saved; the admin picks or edits.
+  - Provider behind `App\Contracts\AiTextGenerator` (`AiManager`, drivers chosen by `AI_DRIVER`): `claude` (Anthropic Messages API via Laravel's HTTP client, forced tool use for structured JSON, model `AI_MODEL`, default `claude-sonnet-5`, key `ANTHROPIC_API_KEY`) and `fake` (tests). The key never reaches the browser. Anthropic does not serve Iranian IPs: the server must be hosted outside Iran.
+  - Limits (rate limiter `ai`): `AI_LIMIT_PER_USER_PER_HOUR` (20) per user and `AI_LIMIT_PER_DAY` (200) store-wide → 429 `too_many_requests` with `retry_after`.
+  - Every call is recorded in `ai_requests` (user, feature `{type}_seo`, subject, model, tokens, status, error code); never the prompt text.
+  - Errors use `AiException` codes: `ai_not_configured` (503), `ai_unavailable` (503), `ai_invalid_response` (502). The rest of the SEO section keeps working.
 
 ### Pricing & Currency
 - **One store currency**, selected by the admin in settings. All prices are stored and displayed in that currency.
@@ -154,6 +209,21 @@ app/
 | `POST staff` (`phone_number`, `role`, `name` for new accounts) | `staff.manage` (super admin) |
 | `PUT staff/{staffMember}/role` · `PUT staff/{staffMember}/status` · `DELETE staff/{staffMember}` | `staff.manage` (super admin) |
 | `GET activity-log` (`subject_id`, `causer_id`, `event`) | `activity-log.view` (super admin) |
+| `GET categories` (whole tree, nested) · `GET categories/{category}` | `categories.view` |
+| `POST categories` · `PUT categories/{category}` · `DELETE categories/{category}` | `categories.manage` |
+| `PUT categories/order` (`parent_id`, `ids`: the full new child order of that parent) | `categories.manage` |
+| `POST categories/{category}/image` (multipart `image`) · `DELETE categories/{category}/image` | `categories.manage` |
+| `GET brands` (all, in order, not paginated) · `GET brands/{brand}` | `brands.view` |
+| `POST brands` · `PUT brands/{brand}` · `DELETE brands/{brand}` · `PUT brands/order` (`ids`: every brand, new order) | `brands.manage` |
+| `POST brands/{brand}/logo` (multipart `logo`) · `DELETE brands/{brand}/logo` | `brands.manage` |
+| `POST seo-suggestions` (`type`, `name`, …; rate limiter `ai`) | the type's manage permission |
+| `GET attributes` · `GET options` (all, in order, with values) | `attributes.view` |
+| `POST`/`PUT`/`DELETE attributes[/{attribute}]` · `PUT attributes/order` · the same for `options` | `attributes.manage` |
+| `GET categories/{category}/attributes` (own + inherited) | `categories.view` |
+| `PUT categories/{category}/attributes` (`ids`, ordered) | `categories.manage` |
+
+- Category rule violations return `CategoryException` codes: `category_has_children`, `category_invalid_parent`, `category_tree_changed` (409: the `ids` sent don't include every current child, reload and retry).
+- **Storefront catalog API** (public): `GET /api/v1/categories` (nested tree of visible categories) and `GET /api/v1/categories/{slug}` (detail with description, SEO fields, image, breadcrumb and visible children; hidden or unknown → 404).
 
 - `{customer}` / `{staffMember}` route bindings (AppServiceProvider) only resolve users of that kind — anything else is 404.
 - Rule violations return `AccountActionException` codes: `cannot_change_own_account`, `last_super_admin`, `customer_anonymised` (409), `already_staff`, `name_required` (422).
@@ -190,7 +260,7 @@ resources/js/
 - **Digits:** v-models hold Latin digits; show Persian digits in Farsi with `useLocale().localizeDigits()` (inputs: `PhoneField`, `OtpInput`).
 - **API calls:** go through `@/shared/http/client` (`http`), which handles the CSRF cookie, `Accept-Language` and turns every failure into `ApiError`. Forms use `useApiForm([...fields])` for loading state and inline/general errors.
 - **Text:** every UI string lives in `resources/js/shared/i18n/{fa,en}.ts` (`en` is typed against `fa`, so a missing key fails typecheck).
-- **Shared UI kit** (`resources/js/shared/ui`): `AppButton` (variants primary/secondary/danger/danger-outline, sizes lg/md), `TextField`, `PhoneField`, `OtpInput`, `SegmentedControl`, `SelectField` (native select), `SearchInput` (debounced), `AppDialog` (focus trap, Esc, bottom sheet on phones), `ActionMenu` (row "⋯" menu, keyboard navigable), `AppPagination`, `AppBadge`, `AppAvatar`, `EmptyState`, `FormAlert`, `ToastHost` + `useToast()`, `PreferenceSwitches`, `BrandMark`, `AppIcon`, `AppSpinner`. Reuse these before creating new ones.
+- **Shared UI kit** (`resources/js/shared/ui`): `AppButton` (variants primary/secondary/danger/danger-outline, sizes lg/md), `TextField`, `TextAreaField` (optional character counter), `PhoneField`, `OtpInput`, `SegmentedControl`, `SelectField` (native select), `SearchInput` (debounced), `AppDialog` (focus trap, Esc, bottom sheet on phones), `ActionMenu` (row "⋯" menu, keyboard navigable), `AppPagination`, `AppBadge`, `AppAvatar`, `EmptyState`, `FormAlert`, `ToastHost` + `useToast()`, `PreferenceSwitches`, `BrandMark`, `AppIcon`, `AppSpinner`. Reuse these before creating new ones.
 - **Formatting:** `useLocale()` gives `formatNumber`, `formatDate` (Solar Hijri in Farsi), `formatDateTime`, `formatRelativeTime`, `localizeDigits`.
 - **Admin app:** `AdminLayout`: on desktop (`lg`+) the sidebar is open by default and the menu button collapses it to an icon rail (choice remembered in `localStorage`, content widens); below `lg` it is a drawer over the page. Menu items live in `admin/navigation.ts` with the permission they need; pages declare `meta.permission` and the router redirects users who lack it. Show actions only when `useAdminAuthStore().can(...)` allows them. Lists keep their filters in the URL query (customers). Destructive actions go through a confirmation dialog; irreversible ones (anonymise) require typing the customer's phone number.
 - Language and theme preferences are stored in `localStorage` and applied before first paint by `resources/views/partials/spa-head.blade.php`.
@@ -209,7 +279,8 @@ resources/js/
 - PHP: `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --memory-limit=1G`, `php artisan test --compact`.
 - JS: `npm run typecheck`, `npm run lint`, `npm run format`, `npm run build` (or `npm run dev`).
 - Local DB: MariaDB via WAMP, database `ecommerce-cms`; tests use `ecommerce_cms_test` (set in `phpunit.xml`).
-- Env: `CORS_ALLOWED_ORIGINS` (storefront domains), `SANCTUM_TOKEN_EXPIRATION` (customer token lifetime in minutes).
+- Env: `CORS_ALLOWED_ORIGINS` (storefront domains), `SANCTUM_TOKEN_EXPIRATION` (customer token lifetime in minutes), `AI_DRIVER`, `ANTHROPIC_API_KEY`, `AI_MODEL`, `AI_LIMIT_PER_USER_PER_HOUR`, `AI_LIMIT_PER_DAY`.
+- JS tests: `npm test` (Node's built-in runner, `tests/js`; no test framework installed).
 
 ### Git
 - A single `main` branch; commit directly to `main`.
@@ -221,10 +292,9 @@ Ask the user before implementing anything related to these:
 - Discounts / coupons / sale prices and tax (VAT).
 - CMS scope: pages, blog, menus, media library, SEO fields.
 - API documentation for storefront developers (e.g. OpenAPI).
-- Categories: translations package, image handling, slug language, max depth, which roles manage them.
 - Order lifecycle: statuses, refunds, returns, invoices, notifications.
 - Extras: search, reviews, wishlists, reports/dashboards, import/export.
-- Further packages beyond the approved list (e.g. media library, translatable content).
+- Further packages beyond the approved list.
 - Deployment target (Laravel Cloud, VPS, shared hosting).
 - Testing expectations (coverage level).
 - Build order / first milestone.

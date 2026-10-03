@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Services\Ai\AiManager;
+use App\Services\Ai\Drivers\FakeAiDriver;
 use App\Services\Sms\Drivers\ArraySmsDriver;
 use App\Services\Sms\SmsManager;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -25,6 +27,18 @@ pest()->extend(TestCase::class)
 | Functions
 |--------------------------------------------------------------------------
 */
+
+/**
+ * The fake AI driver used by the test environment (AI_DRIVER=fake).
+ */
+function ai(): FakeAiDriver
+{
+    $driver = app(AiManager::class)->driver('fake');
+
+    assert($driver instanceof FakeAiDriver);
+
+    return $driver;
+}
 
 /**
  * The in-memory SMS driver used by the test environment (SMS_DRIVER=array).

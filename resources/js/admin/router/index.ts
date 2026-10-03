@@ -42,6 +42,24 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.customer', permission: Permission.ViewCustomers },
             },
             {
+                path: 'categories',
+                name: 'categories',
+                component: () => import('../modules/categories/pages/CategoriesPage.vue'),
+                meta: { title: 'pageTitles.categories', permission: Permission.ViewCategories },
+            },
+            {
+                path: 'brands',
+                name: 'brands',
+                component: () => import('../modules/brands/pages/BrandsPage.vue'),
+                meta: { title: 'pageTitles.brands', permission: Permission.ViewBrands },
+            },
+            {
+                path: 'attributes',
+                name: 'attributes',
+                component: () => import('../modules/attributes/pages/AttributesPage.vue'),
+                meta: { title: 'pageTitles.attributes', permission: Permission.ViewAttributes },
+            },
+            {
                 path: 'staff',
                 name: 'staff',
                 component: () => import('../modules/staff/pages/StaffPage.vue'),

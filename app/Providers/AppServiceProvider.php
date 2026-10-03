@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\AiTextGenerator;
 use App\Contracts\SmsSender;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\Ai\AiManager;
 use App\Services\Sms\SmsManager;
 use App\Support\PhoneNumber;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SmsManager::class);
         $this->app->bind(SmsSender::class, fn ($app) => $app->make(SmsManager::class)->driver());
+
+        $this->app->singleton(AiManager::class);
+        $this->app->bind(AiTextGenerator::class, fn ($app) => $app->make(AiManager::class)->driver());
     }
 
     /**
@@ -65,5 +70,11 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-login', fn (Request $request) => Limit::perMinute(5)
             ->by($phoneNumber($request).'|'.$request->ip()));
+
+        // Each AI request is a paid API call: capped per staff member and for the whole store.
+        RateLimiter::for('ai', fn (Request $request) => [
+            Limit::perHour((int) config('ai.limits.per_user_per_hour'))->by('ai-user:'.$request->user()?->getAuthIdentifier()),
+            Limit::perDay((int) config('ai.limits.per_day'))->by('ai-store'),
+        ]);
     }
 }

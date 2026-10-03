@@ -2,7 +2,13 @@ import { reactive, ref } from 'vue';
 import { ApiError, toApiError } from '../http/errors';
 
 /** Error codes shown under a field rather than in the alert above the form. */
-const INLINE_ERROR_CODES = new Set(['validation_failed', 'otp_invalid', 'otp_expired', 'otp_too_many_attempts']);
+const INLINE_ERROR_CODES = new Set([
+    'validation_failed',
+    'otp_invalid',
+    'otp_expired',
+    'otp_too_many_attempts',
+    'category_invalid_parent',
+]);
 
 /**
  * Tracks submission state and maps API errors onto a form:

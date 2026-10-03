@@ -190,6 +190,18 @@ return [
         'email' => [
             'unique' => 'An account with this email already exists.',
         ],
+        'slug' => [
+            'regex' => 'Use only lowercase English letters, digits and hyphens, such as mens-shirts.',
+            'unique' => 'This slug is already in use. Choose another one.',
+        ],
+        'values.*.slug' => [
+            'regex' => 'Use only lowercase English letters, digits and hyphens, such as extra-large.',
+            'distinct' => 'Two values have the same slug.',
+        ],
+        'values.*.color_hex' => [
+            'required_if' => 'Choose a color for every value.',
+            'regex' => 'Choose a valid color.',
+        ],
     ],
 
     /*
@@ -209,6 +221,26 @@ return [
         'email' => 'email',
         'password' => 'password',
         'code' => 'verification code',
+        'slug' => 'slug',
+        'parent_id' => 'parent category',
+        'description' => 'description',
+        'meta_title' => 'SEO title',
+        'meta_description' => 'SEO description',
+        'is_active' => 'visibility',
+        'image' => 'image',
+        'ids' => 'order',
+        'website' => 'website',
+        'persian_name' => 'Persian name',
+        'type' => 'type',
+        'unit' => 'unit',
+        'is_filterable' => 'filterable',
+        'display_type' => 'display',
+        'values' => 'values',
+        'values.*.value' => 'value',
+        'values.*.slug' => 'value slug',
+        'values.*.color_hex' => 'color',
+        'logo' => 'logo',
+        'focus_keyphrase' => 'focus keyphrase',
     ],
 
 ];

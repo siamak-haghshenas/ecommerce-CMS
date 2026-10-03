@@ -9,7 +9,8 @@
         "lint": "eslint resources/js",
         "lint:fix": "eslint resources/js --fix",
         "format": "prettier --write resources/js resources/css",
-        "format:check": "prettier --check resources/js resources/css"
+        "format:check": "prettier --check resources/js resources/css",
+        "test": "node --test \"tests/js/**/*.test.mjs\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
@@ -35,6 +36,7 @@
         "pinia": "^4.0.3",
         "vazirmatn": "^33.0.3",
         "vue": "^3.5.43",
+        "vue-draggable-plus": "^0.6.1",
         "vue-i18n": "^11.4.12",
         "vue-router": "^5.3.1"
     }

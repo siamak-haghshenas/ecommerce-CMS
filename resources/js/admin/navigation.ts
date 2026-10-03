@@ -39,7 +39,24 @@ export const navigation: NavGroup[] = [
         label: 'admin.nav.groupCatalog',
         items: [
             { label: 'admin.nav.products', icon: 'package' },
-            { label: 'admin.nav.categories', icon: 'tag' },
+            {
+                label: 'admin.nav.categories',
+                icon: 'tag',
+                to: { name: 'categories' },
+                permission: Permission.ViewCategories,
+            },
+            {
+                label: 'admin.nav.brands',
+                icon: 'award',
+                to: { name: 'brands' },
+                permission: Permission.ViewBrands,
+            },
+            {
+                label: 'admin.nav.attributes',
+                icon: 'sliders',
+                to: { name: 'attributes' },
+                permission: Permission.ViewAttributes,
+            },
         ],
     },
     {

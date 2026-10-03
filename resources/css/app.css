@@ -31,6 +31,8 @@
     --app-on-danger: #ffffff;
     --app-warning: #8a5a00;
     --app-warning-soft: #fef6e7;
+    --app-success: #15803d;
+    --app-success-soft: #e8f6ec;
     --app-disabled: #eceae4;
     --app-on-disabled: #8a867e;
 }
@@ -56,6 +58,8 @@
     --app-on-danger: #2a1714;
     --app-warning: #f5c46b;
     --app-warning-soft: #2b2210;
+    --app-success: #6fd58f;
+    --app-success-soft: #13261a;
     --app-disabled: #1f2624;
     --app-on-disabled: #7d8784;
 }
@@ -80,6 +84,8 @@
     --color-on-danger: var(--app-on-danger);
     --color-warning: var(--app-warning);
     --color-warning-soft: var(--app-warning-soft);
+    --color-success: var(--app-success);
+    --color-success-soft: var(--app-success-soft);
     --color-disabled: var(--app-disabled);
     --color-on-disabled: var(--app-on-disabled);
 }

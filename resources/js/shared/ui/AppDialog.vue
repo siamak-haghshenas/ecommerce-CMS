@@ -11,8 +11,10 @@ const props = withDefaults(
         tone?: 'primary' | 'danger';
         /** Blocks closing while a request runs. */
         busy?: boolean;
+        /** lg: for long forms, e.g. a form with an SEO analysis panel. */
+        size?: 'md' | 'lg';
     }>(),
-    { tone: 'primary', busy: false },
+    { tone: 'primary', busy: false, size: 'md' },
 );
 
 const emit = defineEmits<{ close: [] }>();
@@ -100,7 +102,10 @@ onBeforeUnmount(() => {
                     role="dialog"
                     aria-modal="true"
                     :aria-labelledby="titleId"
-                    class="flex max-h-[92dvh] w-full flex-col rounded-t-[20px] bg-surface shadow-2xl sm:max-w-[520px] sm:rounded-[20px]"
+                    :class="[
+                        'flex max-h-[92dvh] w-full flex-col rounded-t-[20px] bg-surface shadow-2xl sm:rounded-[20px]',
+                        size === 'lg' ? 'sm:max-w-[760px]' : 'sm:max-w-[520px]',
+                    ]"
                     @keydown="onKeydown"
                 >
                     <div class="flex items-start justify-between gap-3 px-6 pt-6">
