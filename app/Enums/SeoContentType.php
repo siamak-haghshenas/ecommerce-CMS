@@ -7,6 +7,7 @@ namespace App\Enums;
 use App\Contracts\SeoSubject;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Page;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,7 @@ enum SeoContentType: string
     case Category = 'category';
     case Brand = 'brand';
     case Product = 'product';
+    case Page = 'page';
 
     /**
      * @return class-string<Model&SeoSubject>
@@ -29,6 +31,7 @@ enum SeoContentType: string
             self::Category => Category::class,
             self::Brand => Brand::class,
             self::Product => Product::class,
+            self::Page => Page::class,
         };
     }
 
@@ -41,6 +44,7 @@ enum SeoContentType: string
             self::Category => Permission::ManageCategories,
             self::Brand => Permission::ManageBrands,
             self::Product => Permission::ManageProducts,
+            self::Page => Permission::ManagePages,
         };
     }
 
@@ -53,6 +57,7 @@ enum SeoContentType: string
             self::Category => 'a product category page',
             self::Brand => 'a brand page listing the products of one brand',
             self::Product => 'a product page',
+            self::Page => 'an informational page of the store (e.g. about us, terms, shipping and returns)',
         };
     }
 }

@@ -8,7 +8,7 @@ use App\Data\Seo\SeoInput;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Implements SeoSubject for a model with `name`, `slug`, `description` and the shared SEO columns
+ * Implements SeoSubject for a model with `name`, `slug`, `description` (or overrides of seoName() / seoDescription()) and the shared SEO columns
  * (the model provides hasSeoImage()).
  *
  * @mixin Model
@@ -21,7 +21,7 @@ trait HasSeo
     public function seoInput(array $keyphraseUsedBy): SeoInput
     {
         return new SeoInput(
-            name: (string) $this->getAttribute('name'),
+            name: $this->seoName(),
             slug: (string) $this->getAttribute('slug'),
             description: $this->seoDescription(),
             metaTitle: (string) $this->getAttribute('meta_title'),
@@ -30,6 +30,14 @@ trait HasSeo
             hasImage: $this->hasSeoImage(),
             keyphraseUsedBy: $keyphraseUsedBy,
         );
+    }
+
+    /**
+     * The name; models with another column (a page's title) override this.
+     */
+    public function seoName(): string
+    {
+        return (string) $this->getAttribute('name');
     }
 
     /**

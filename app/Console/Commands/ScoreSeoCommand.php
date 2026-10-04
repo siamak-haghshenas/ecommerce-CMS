@@ -10,7 +10,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('seo:score {--type= : Only this content type (category, brand)}')]
+#[Signature('seo:score {--type= : Only this content type (category, brand, product, page)}')]
 #[Description('Recalculate the stored SEO and readability scores (e.g. after changing the rules)')]
 class ScoreSeoCommand extends Command
 {

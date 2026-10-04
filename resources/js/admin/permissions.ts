@@ -22,6 +22,8 @@ export const Permission = {
     ViewMedia: 'media.view',
     UploadMedia: 'media.upload',
     ManageMedia: 'media.manage',
+    ViewPages: 'pages.view',
+    ManagePages: 'pages.manage',
     ManageSettings: 'settings.manage',
 } as const;
 

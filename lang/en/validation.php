@@ -264,6 +264,10 @@ return [
         'specifications.*.attribute_id' => 'specification',
         'logo' => 'logo',
         'focus_keyphrase' => 'focus keyphrase',
+        'title' => 'title',
+        'excerpt' => 'excerpt',
+        'content' => 'content',
+        'image_id' => 'image',
     ],
 
 ];

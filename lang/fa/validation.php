@@ -249,6 +249,10 @@ return [
         'specifications.*.attribute_id' => 'مشخصه',
         'logo' => 'لوگو',
         'focus_keyphrase' => 'عبارت کلیدی اصلی',
+        'title' => 'عنوان',
+        'excerpt' => 'خلاصه',
+        'content' => 'محتوا',
+        'image_id' => 'تصویر',
     ],
 
 ];

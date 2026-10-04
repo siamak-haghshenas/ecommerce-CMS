@@ -39,7 +39,7 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Every user has exactly one role.** Fixed roles, **no role editor** (don't build one until asked):
   - **`super-admin`**: everything (a `Gate::before` rule grants all permissions). Only role that can anonymise customers, manage staff and view the audit log.
   - **`admin`**: view, edit and deactivate customers; view staff.
-  - **`author`**: admin-panel access, plus viewing the media library and uploading / editing alt text and titles; content permissions are added with the content (pages/blog) module.
+  - **`author`**: admin-panel access, viewing the media library and uploading / editing alt text and titles, and managing pages (`pages.view`, `pages.manage`).
   - **`customer`**: assigned on registration; no admin access.
 - Permissions live in `App\Enums\Permission`; each role's permissions in `UserRole::permissions()`; `RolesAndPermissionsSeeder` syncs them. Adding a permission = add the enum case + list it on the roles that get it + re-run the seeder.
 - **Phone number is the identifier**: required and unique for every user (only an anonymised customer has none); email is optional.
@@ -199,6 +199,18 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
   - Every call is recorded in `ai_requests` (user, feature `{type}_seo`, subject, model, tokens, status, error code); never the prompt text.
   - Errors use `AiException` codes: `ai_not_configured` (503), `ai_unavailable` (503), `ai_invalid_response` (502). The rest of the SEO section keeps working.
 
+### Pages (built in 2 phases, each reviewed and committed: 1 backend & API ✅, 2 admin UI)
+- **Standalone content pages** (About us, Terms, Privacy, Shipping & returns, FAQ, ...). **Flat list** (no parent pages); storefronts build their own URLs from the slug. No pages are created by default.
+- **Fields** (`pages`): `title`, `slug` (Latin, unique, suggested from the title via Finglish like categories; stays taken while the page is in the trash), `content` (rich text, full profile of `App\Support\RichText`: the same TinyMCE editor, library images/videos and Aparat/YouTube players as product descriptions; library files recorded as `media_usages` role `content`), `excerpt` (optional plain text for cards and meta tags), one **featured image** (media library image, role `image`), `status` draft / published + `published_at` (scheduling), the shared SEO fields (`meta_title`, `meta_description`, `focus_keyphrase`, `seo_score`, `readability_score`; `SeoContentType::Page`, live analysis, AI suggestions), `created_by` / `updated_by`.
+- **Delete = trash:** soft delete, a Trash filter in the list with restore; removed for good (with its revisions, freeing its library files) by `model:prune` after 30 days.
+- **Revisions** (`page_revisions`): every save that changes the page keeps a snapshot of the saved version (title, slug, excerpt, content, featured image, SEO fields) with who saved it and when; the **last 20 per page** are kept. The editor's **History** panel lists them; choosing one shows a **preview** (no diff) and **Restore**, which loads it into the editor as unsaved changes; saving it creates a new revision, so a restore can be undone. Library files referenced only by old revisions are not counted as in use.
+- **Who manages:** Super Admin, Admin and **Author** (`pages.view`, `pages.manage`), publishing and deleting included.
+- **Admin UI** (`/admin/pages`): list with search, status filter (draft / published / scheduled), SEO dot + "Needs SEO work", last updated (and by whom), Trash; editor page like the product editor (title + slug, content, excerpt, featured image, SEO panel, History, sticky save bar with status / publish date / Save, unsaved-changes guard).
+- **Storefront API** (public): `GET /api/v1/pages` (published pages: slug, title, excerpt, `updated_at`; for footer links and sitemaps) and `GET /api/v1/pages/{slug}` (content, excerpt, featured image, SEO fields, `published_at`, `updated_at`). Drafts, scheduled, trashed or unknown → 404. Admin-only fields (focus keyphrase, scores, authors, revisions) never included.
+- **Audit log:** `page.created|updated|deleted|restored` (changed field names only; restoring a revision is a normal save).
+- **Backend:** `Page` (`state()`: draft / scheduled / published; `visible()` and `matching()` scopes; `seoName()` = title, since `SeoSubject::seoName()` lets content types name their title column), `PageRevision`, `SavePageAction` (one action for create and update: sanitizes via the request, syncs the image and `content` usages, scores SEO, keeps a revision unless the saved fields equal the newest one, e.g. a status-only change), `DeletePageAction` (trash/restore), `SearchPagesAction`. Admin list: `q` (title, slug), `status` (`draft`/`published`/`scheduled`), `needs_seo`, `trashed`, `sort` (`updated` default, `newest`, `title`).
+- Not included: nested pages, page-builder blocks, diffs between revisions, menus and the blog (separate modules).
+
 ### Pricing & Currency
 - **One store currency**, selected by the admin in settings. All prices are stored and displayed in that currency.
 
@@ -291,6 +303,8 @@ app/
 | `GET media` (`q`, `type`, `folder` id or `none`, `used`, `trashed`, `sort` newest/oldest/name/size, `per_page`) · `GET media/{id}` (with usages; trash too) · `GET media/folders` | `media.view` |
 | `POST media/uploads` · `POST media/uploads/{id}/chunks` · `POST media/uploads/{id}/complete` · `DELETE media/uploads/{id}` · `PUT media/{id}` (`title`, `alt`, `cover_id`) | `media.upload` |
 | `POST media/move` · `DELETE media/{id}` · `POST media/{id}/restore` · `POST`/`PUT`/`DELETE media/folders[/{id}]` | `media.manage` |
+| `GET pages` (`q`, `status`, `needs_seo`, `trashed`, `sort`, `per_page`) · `GET pages/{page}` · `GET pages/{page}/revisions` · `GET pages/{page}/revisions/{revision}` (trash included) | `pages.view` |
+| `POST pages` · `PUT pages/{page}` · `DELETE pages/{page}` · `POST pages/{page}/restore` | `pages.manage` |
 | `GET settings` | any staff |
 | `PUT settings` | `settings.manage` (super admin) |
 
@@ -363,7 +377,7 @@ resources/js/
 Ask the user before implementing anything related to these:
 
 - Discounts / coupons / sale prices and tax (VAT).
-- CMS scope: pages, blog, menus, SEO fields.
+- CMS scope beyond pages: blog, menus.
 - API documentation for storefront developers (e.g. OpenAPI).
 - Order lifecycle: statuses, refunds, returns, invoices, notifications.
 - Extras: search, reviews, wishlists, reports/dashboards, import/export.

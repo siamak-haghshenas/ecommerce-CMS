@@ -43,12 +43,11 @@ final readonly class ScoreSeoAction
 
     public function score(Model&SeoSubject $item): void
     {
-
         $keyphrase = (string) $item->getAttribute('focus_keyphrase');
         $usedBy = $keyphrase === ''
             ? []
             : $this->usingKeyphrase($item, $keyphrase, (int) $item->getKey())
-                ->map(fn (Model $other): string => (string) $other->getAttribute('name'))
+                ->map(fn (Model&SeoSubject $other): string => $other->seoName())
                 ->values()
                 ->all();
 

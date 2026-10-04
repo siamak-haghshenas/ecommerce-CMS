@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaAssetController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaFolderController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaUploadController;
+use App\Http\Controllers\Api\V1\Admin\Pages\PageController;
+use App\Http\Controllers\Api\V1\Admin\Pages\PageRevisionController;
 use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
@@ -33,6 +35,7 @@ use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
+use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -76,6 +79,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
     Route::get('products/filters', [StorefrontProductController::class, 'filters'])->name('products.filters');
     Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+
+    // Content: published pages only.
+    Route::get('pages', [StorefrontPageController::class, 'index'])->name('pages.index');
+    Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -206,6 +213,24 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('{product}', [ProductController::class, 'update'])->whereNumber('product')->name('update');
                     Route::delete('{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
                     Route::post('{product}/restore', [ProductController::class, 'restore'])->whereNumber('product')->withTrashed()->name('restore');
+                });
+            });
+
+            // Pages. {page} also resolves pages in the trash, so they can be viewed and restored.
+            Route::prefix('pages')->name('pages.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewPages))->group(function () {
+                    Route::get('/', [PageController::class, 'index'])->name('index');
+                    Route::get('{page}', [PageController::class, 'show'])->whereNumber('page')->withTrashed()->name('show');
+                    Route::get('{page}/revisions', [PageRevisionController::class, 'index'])->whereNumber('page')->withTrashed()->name('revisions.index');
+                    Route::get('{page}/revisions/{revision}', [PageRevisionController::class, 'show'])
+                        ->whereNumber(['page', 'revision'])->withTrashed()->scopeBindings()->name('revisions.show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManagePages))->group(function () {
+                    Route::post('/', [PageController::class, 'store'])->name('store');
+                    Route::put('{page}', [PageController::class, 'update'])->whereNumber('page')->name('update');
+                    Route::delete('{page}', [PageController::class, 'destroy'])->whereNumber('page')->name('destroy');
+                    Route::post('{page}/restore', [PageController::class, 'restore'])->whereNumber('page')->withTrashed()->name('restore');
                 });
             });
 

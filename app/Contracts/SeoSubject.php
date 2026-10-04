@@ -20,6 +20,11 @@ interface SeoSubject
     public function seoInput(array $keyphraseUsedBy): SeoInput;
 
     /**
+     * The item's name (a page's title), e.g. to list the other items using a keyphrase.
+     */
+    public function seoName(): string;
+
+    /**
      * Whether the item has a picture (the `image` check): a product's gallery, a category's image, a brand's logo.
      */
     public function hasSeoImage(): bool;

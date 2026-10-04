@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\MediaAsset;
 use App\Models\MediaUsage;
+use App\Models\Page;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -64,10 +65,11 @@ class MediaAssetResource extends JsonResource
             $item instanceof Product => 'product',
             $item instanceof Category => 'category',
             $item instanceof Brand => 'brand',
+            $item instanceof Page => 'page',
             default => null,
         };
 
-        return $type === null ? null : ['type' => $type, 'id' => (int) $item->getKey(), 'name' => (string) $item->getAttribute('name'), 'role' => $usage->role->value];
+        return $type === null ? null : ['type' => $type, 'id' => (int) $item->getKey(), 'name' => $item instanceof Page ? $item->title : (string) $item->getAttribute('name'), 'role' => $usage->role->value];
     }
 
     /**
