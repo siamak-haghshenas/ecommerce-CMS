@@ -5,7 +5,6 @@ import { useApiForm } from '@/shared/composables/useApiForm';
 import AppButton from '@/shared/ui/AppButton.vue';
 import AppDialog from '@/shared/ui/AppDialog.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
-import ImageField from '@/shared/ui/ImageField.vue';
 import SegmentedControl from '@/shared/ui/SegmentedControl.vue';
 import TextAreaField from '@/shared/ui/TextAreaField.vue';
 import TextField from '@/shared/ui/TextField.vue';
@@ -13,10 +12,12 @@ import { sameKeyphrase, slugify } from '../../seo/analysis';
 import SeoPanel from '../../seo/components/SeoPanel.vue';
 import { brandsApi } from '../api';
 import type { Brand, SaveBrandPayload } from '../types';
+import MediaImageField from '../../media/components/MediaImageField.vue';
+import type { MediaPicture } from '../../media/types';
 
 /**
- * Creates (brand null) or edits a brand. The logo is uploaded or removed after the brand itself
- * is saved; if that step fails, the dialog stays open in edit mode to retry.
+ * Creates (brand null) or edits a brand. The logo is chosen from the media library and saved with
+ * the brand.
  */
 const props = defineProps<{ open: boolean; brand: Brand | null; brands: Brand[] }>();
 const emit = defineEmits<{ close: []; saved: [brand: Brand, created: boolean] }>();
@@ -32,7 +33,7 @@ const form = useApiForm([
     'meta_description',
     'focus_keyphrase',
     'is_active',
-    'logo',
+    'logo_id',
 ] as const);
 
 const fields = reactive({
@@ -46,7 +47,8 @@ const fields = reactive({
     focusKeyphrase: '',
     visibility: 'visible' as 'visible' | 'hidden',
 });
-const logo = reactive({ file: null as File | null, removed: false });
+/** Chosen from the media library; saved with the form. */
+const logo = ref<MediaPicture | null>(null);
 
 /** The saved brand: on create, set after the first successful save. */
 const saved = ref<Brand | null>(null);
@@ -71,7 +73,7 @@ const keyphraseUsedBy = computed(() =>
               .map((brand) => brand.name),
 );
 
-const hasLogo = computed(() => logo.file !== null || (Boolean(saved.value?.logo) && !logo.removed));
+const hasLogo = computed(() => logo.value !== null);
 
 watch(
     () => props.open,
@@ -93,8 +95,7 @@ watch(
         fields.metaDescription = brand?.meta_description ?? '';
         fields.focusKeyphrase = brand?.focus_keyphrase ?? '';
         fields.visibility = brand && !brand.is_active ? 'hidden' : 'visible';
-        logo.file = null;
-        logo.removed = false;
+        logo.value = brand?.logo ?? null;
         slugEdited.value = brand !== null;
     },
 );
@@ -128,22 +129,18 @@ async function save(): Promise<void> {
         meta_description: optional(fields.metaDescription),
         focus_keyphrase: optional(fields.focusKeyphrase),
         is_active: fields.visibility === 'visible',
+        logo_id: logo.value?.id ?? null,
     };
 
     const result = await form.submit(async () => {
         const existing = saved.value;
-        let brand = existing === null ? await brandsApi.create(payload) : await brandsApi.update(existing.id, payload);
+        const brand =
+            existing === null ? await brandsApi.create(payload) : await brandsApi.update(existing.id, payload);
 
         if (existing === null) {
             createdInThisDialog = true;
         }
         saved.value = brand;
-
-        if (logo.file) {
-            brand = await brandsApi.uploadLogo(brand.id, logo.file);
-        } else if (logo.removed && brand.logo) {
-            brand = await brandsApi.removeLogo(brand.id);
-        }
 
         return brand;
     });
@@ -193,14 +190,11 @@ async function save(): Promise<void> {
                 @update:model-value="onSlugInput"
             />
 
-            <ImageField
-                v-model:file="logo.file"
-                v-model:removed="logo.removed"
+            <MediaImageField
+                v-model="logo"
                 :label="t('admin.brands.logo')"
-                :current-url="saved?.logo?.thumb ?? null"
                 :hint="t('admin.brands.logoHint')"
-                fit="contain"
-                :error="form.errors.logo"
+                :error="form.errors.logo_id"
             />
 
             <TextAreaField

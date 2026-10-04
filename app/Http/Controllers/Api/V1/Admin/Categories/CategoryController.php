@@ -29,7 +29,7 @@ class CategoryController extends Controller
 
     public function show(Category $category): CategoryResource
     {
-        return new CategoryResource($category->load('media'));
+        return new CategoryResource($category->load('imageAssets.media'));
     }
 
     public function store(SaveCategoryRequest $request, CreateCategoryAction $create, #[CurrentUser] User $actor): CategoryResource
@@ -43,7 +43,7 @@ class CategoryController extends Controller
         UpdateCategoryAction $update,
         #[CurrentUser] User $actor,
     ): CategoryResource {
-        return new CategoryResource($update->handle($actor, $category, $request->toData())->load('media'));
+        return new CategoryResource($update->handle($actor, $category, $request->toData())->load('imageAssets.media'));
     }
 
     public function destroy(Category $category, DeleteCategoryAction $delete, #[CurrentUser] User $actor): Response

@@ -509,7 +509,7 @@ const cellInput =
                                     </td>
                                     <td class="px-2 py-2">
                                         <select
-                                            :value="row.imageMediaId === null ? '' : String(row.imageMediaId)"
+                                            :value="row.imageId === null ? '' : String(row.imageId)"
                                             :aria-label="
                                                 t('admin.products.variants.imageOf', {
                                                     name: rowLabel(row, chosenOptions),
@@ -518,7 +518,7 @@ const cellInput =
                                             :disabled="images.length === 0"
                                             :class="[cellInput, 'cursor-pointer']"
                                             @change="
-                                                row.imageMediaId =
+                                                row.imageId =
                                                     ($event.target as HTMLSelectElement).value === ''
                                                         ? null
                                                         : Number(($event.target as HTMLSelectElement).value)

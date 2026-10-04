@@ -7,6 +7,8 @@ namespace App\Http\Resources\V1\Admin;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\MediaAsset;
+use App\Models\MediaFolder;
 use App\Models\Option;
 use App\Models\Product;
 use App\Models\Tag;
@@ -42,7 +44,7 @@ class ActivityResource extends JsonResource
     /**
      * A user or category, or null when there is none (or it has been deleted).
      *
-     * @return array{type: 'user'|'category'|'brand'|'attribute'|'option'|'product'|'tag', id: int, name: string, is_anonymised: bool}|null
+     * @return array{type: 'user'|'category'|'brand'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
      */
     private function summary(mixed $model): ?array
     {
@@ -54,11 +56,14 @@ class ActivityResource extends JsonResource
             return ['type' => 'brand', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
         }
 
-        if ($model instanceof Attribute || $model instanceof Option || $model instanceof Product || $model instanceof Tag) {
+        if ($model instanceof Attribute || $model instanceof Option || $model instanceof Product || $model instanceof Tag
+            || $model instanceof MediaAsset || $model instanceof MediaFolder) {
             $type = match (true) {
                 $model instanceof Attribute => 'attribute',
                 $model instanceof Option => 'option',
                 $model instanceof Product => 'product',
+                $model instanceof MediaAsset => 'media',
+                $model instanceof MediaFolder => 'media_folder',
                 default => 'tag',
             };
 

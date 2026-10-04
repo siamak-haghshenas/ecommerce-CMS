@@ -1,9 +1,7 @@
-/** Logo URLs; conversions are webp. */
-export interface BrandLogo {
-    original: string;
-    thumb: string;
-    medium: string;
-}
+import type { MediaPicture } from '../media/types';
+
+/** A brand's logo: a file of the media library. */
+export type BrandLogo = MediaPicture;
 
 export interface Brand {
     id: number;
@@ -37,4 +35,6 @@ export interface SaveBrandPayload {
     meta_description: string | null;
     focus_keyphrase: string | null;
     is_active: boolean;
+    /** A media library image, or null. */
+    logo_id: number | null;
 }

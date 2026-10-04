@@ -36,6 +36,11 @@ enum Permission: string
     case ViewProducts = 'products.view';
     case ManageProducts = 'products.manage';
 
+    /** The media library: browse; upload and edit alt text/title; move, delete, restore and manage folders. */
+    case ViewMedia = 'media.view';
+    case UploadMedia = 'media.upload';
+    case ManageMedia = 'media.manage';
+
     /** Store settings (price display currency, low-stock default). No role lists it: super admin only. */
     case ManageSettings = 'settings.manage';
 }

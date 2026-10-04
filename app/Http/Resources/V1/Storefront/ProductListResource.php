@@ -27,14 +27,14 @@ class ProductListResource extends JsonResource
         $variants = $this->variants->where('is_enabled', true);
         $current = $variants->map(fn (ProductVariant $variant): int => $variant->currentPrice());
         $regular = $variants->map(fn (ProductVariant $variant): int => $variant->price);
-        $image = $this->getFirstMedia(Product::GALLERY_COLLECTION);
+        $image = $this->galleryAssets->first()?->picture();
 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
             'short_description' => $this->short_description,
-            'image' => $image === null ? null : ['thumb' => $image->getAvailableUrl(['thumb']), 'medium' => $image->getAvailableUrl(['medium'])],
+            'image' => $image === null ? null : ['thumb' => $image['thumb'], 'medium' => $image['medium'], 'alt' => $image['alt']],
             'brand' => $this->brand?->is_active ? ['name' => $this->brand->name, 'persian_name' => $this->brand->persian_name, 'slug' => $this->brand->slug] : null,
             'price' => ['min' => $current->min(), 'max' => $current->max()],
             'regular_price' => ['min' => $regular->min(), 'max' => $regular->max()],

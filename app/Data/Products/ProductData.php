@@ -16,6 +16,7 @@ final readonly class ProductData
      * @param  list<int>  $optionIds  in order; empty for a simple product
      * @param  list<VariantData>  $variants  in order; exactly one for a simple product
      * @param  list<SpecificationData>  $specifications
+     * @param  list<int>  $imageIds  the gallery (media library images) in order
      */
     public function __construct(
         public ProductType $type,
@@ -42,5 +43,7 @@ final readonly class ProductData
         public array $optionIds,
         public array $variants,
         public array $specifications,
+        /** The gallery: media library images in order; the first is the main image. */
+        public array $imageIds = [],
     ) {}
 }

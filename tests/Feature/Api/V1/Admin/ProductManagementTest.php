@@ -8,13 +8,13 @@ use App\Enums\UserRole;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Option;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 
@@ -172,7 +172,7 @@ describe('create', function () {
         'sale ends before it starts' => [['variants' => [[
             'sku' => 'A', 'price' => 100, 'sale_price' => 50, 'sale_starts_at' => '2026-10-10', 'sale_ends_at' => '2026-10-09', 'is_enabled' => true,
         ]]], 'variants.0.sale_ends_at'],
-        'image of another product' => [['variants' => [['sku' => 'A', 'price' => 1, 'image_media_id' => 99, 'is_enabled' => true]]], 'variants.0.image_media_id'],
+        'image not in the gallery' => [['variants' => [['sku' => 'A', 'price' => 1, 'image_id' => 99, 'is_enabled' => true]]], 'variants.0.image_id'],
         'primary category not among the categories' => [['category_ids' => [], 'primary_category_id' => 5], 'primary_category_id'],
     ]);
 });
@@ -376,45 +376,56 @@ describe('specifications', function () {
 describe('images', function () {
     beforeEach(fn () => Storage::fake('public'));
 
-    it('uploads, orders and deletes gallery images; a deleted image is cleared from variants', function () {
+    it('uses library images as the gallery, in order; variant pictures come from the gallery', function () {
         $admin = productManager();
-        $product = actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload())->json('data');
+        $front = libraryImage('front.jpg', ['alt' => 'Front']);
+        $back = libraryImage('back.png');
+        $product = actingAs($admin)
+            ->postJson(route('api.v1.admin.products.store'), productPayload(['image_ids' => [$front->id, $back->id]]))
+            ->assertCreated()
+            ->assertJsonPath('data.images.*.id', [$front->id, $back->id])
+            ->assertJsonPath('data.images.0.alt', 'Front')
+            ->json('data');
 
-        foreach (['front.jpg', 'back.png'] as $file) {
-            actingAs($admin)
-                ->postJson(route('api.v1.admin.products.images.store', ['product' => $product['id']]), ['image' => UploadedFile::fake()->image($file)])
-                ->assertOk();
-        }
-
-        $images = Product::query()->findOrFail($product['id'])->images();
-        [$front, $back] = array_column($images, 'id');
-
-        actingAs($admin)
-            ->putJson(route('api.v1.admin.products.images.order', ['product' => $product['id']]), ['ids' => [$back, $front]])
+        actingAs($admin)->putJson(route('api.v1.admin.products.update', ['product' => $product['id']]), productPayload([
+            'image_ids' => [$back->id, $front->id],
+            'variants' => [['id' => $product['variants'][0]['id'], 'sku' => 'SH-001', 'price' => 1, 'is_enabled' => true, 'image_id' => $back->id]],
+        ]))
             ->assertOk()
-            ->assertJsonPath('data.*.id', [$back, $front]);
+            ->assertJsonPath('data.images.*.id', [$back->id, $front->id])
+            ->assertJsonPath('data.variants.0.image_id', $back->id);
 
-        actingAs($admin)->putJson(route('api.v1.admin.products.update', ['product' => $product['id']]), productPayload(['variants' => [[
-            'id' => $product['variants'][0]['id'], 'sku' => 'SH-001', 'price' => 1, 'is_enabled' => true, 'image_media_id' => $back,
-        ]]]))->assertOk()->assertJsonPath('data.variants.0.image_media_id', $back);
+        // A variant can't keep a picture that leaves the gallery.
+        actingAs($admin)->putJson(route('api.v1.admin.products.update', ['product' => $product['id']]), productPayload([
+            'image_ids' => [$front->id],
+            'variants' => [['id' => $product['variants'][0]['id'], 'sku' => 'SH-001', 'price' => 1, 'is_enabled' => true, 'image_id' => $back->id]],
+        ]))->assertUnprocessable()->assertJsonValidationErrors(['variants.0.image_id']);
 
-        actingAs($admin)
-            ->deleteJson(route('api.v1.admin.products.images.destroy', ['product' => $product['id'], 'media' => $back]))
-            ->assertOk()
-            ->assertJsonPath('data.*.id', [$front]);
-
-        expect(ProductVariant::query()->findOrFail($product['variants'][0]['id'])->image_media_id)->toBeNull();
+        expect(Activity::query()->where('event', 'product.updated')->sole()->properties['fields'])->toContain('images')
+            ->and($front->isInUse())->toBeTrue();
     });
 
-    it('returns 404 for an image of another product', function () {
-        $admin = productManager();
-        $first = Product::factory()->create();
-        $second = Product::factory()->create();
-        $media = $second->addMedia(UploadedFile::fake()->image('x.jpg'))->toMediaCollection(Product::GALLERY_COLLECTION);
+    it('only accepts up to 30 library images that are not in the trash', function (string $case) {
+        $ids = match ($case) {
+            'pdf' => [MediaAsset::factory()->document()->create()->id],
+            'trashed image' => [tap(MediaAsset::factory()->create())->delete()->id],
+            'too many' => MediaAsset::factory()->count(31)->create()->modelKeys(),
+        };
 
-        actingAs($admin)
-            ->deleteJson(route('api.v1.admin.products.images.destroy', ['product' => $first, 'media' => $media->id]))
-            ->assertNotFound();
+        actingAs(productManager())
+            ->postJson(route('api.v1.admin.products.store'), productPayload(['image_ids' => $ids]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([$case === 'too many' ? 'image_ids' : 'image_ids.0']);
+    })->with(['pdf', 'trashed image', 'too many']);
+
+    it('keeps the gallery of a deleted product in use, as it can be restored', function () {
+        $image = libraryImage();
+        $admin = productManager();
+        $product = actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload(['image_ids' => [$image->id]]))->json('data');
+
+        actingAs($admin)->deleteJson(route('api.v1.admin.products.destroy', ['product' => $product['id']]))->assertNoContent();
+
+        expect($image->isInUse())->toBeTrue();
     });
 });
 

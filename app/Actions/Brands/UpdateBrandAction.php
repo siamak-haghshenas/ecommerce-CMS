@@ -7,6 +7,7 @@ namespace App\Actions\Brands;
 use App\Actions\Products\RefreshProductSearchTextAction;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Brands\BrandData;
+use App\Enums\MediaUsageRole;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\User;
@@ -35,12 +36,15 @@ final readonly class UpdateBrandAction
         ]);
 
         $changedFields = array_keys($brand->getDirty());
+        $brand->save();
+
+        if ($brand->syncMediaAssets(MediaUsageRole::Logo, $data->logoId === null ? [] : [$data->logoId])) {
+            $changedFields[] = 'logo';
+        }
 
         if ($changedFields === []) {
             return $brand;
         }
-
-        $brand->save();
 
         // Product search includes brand names.
         if (array_intersect($changedFields, ['name', 'persian_name']) !== []) {

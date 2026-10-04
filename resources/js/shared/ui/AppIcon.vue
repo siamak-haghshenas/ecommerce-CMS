@@ -191,6 +191,33 @@ const ICONS = {
         { tag: 'path', attrs: { d: 'm12 10 3 3-3 3M9 13h6' } },
     ],
     subItem: [{ tag: 'path', attrs: { d: 'M6 4v8a4 4 0 0 0 4 4h8M14 12l4 4-4 4' } }],
+    folder: [
+        {
+            tag: 'path',
+            attrs: {
+                d: 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z',
+            },
+        },
+    ],
+    folderPlus: [
+        {
+            tag: 'path',
+            attrs: {
+                d: 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z',
+            },
+        },
+        { tag: 'path', attrs: { d: 'M12 10v6M9 13h6' } },
+    ],
+    video: [
+        { tag: 'rect', attrs: { x: 2, y: 5, width: 14, height: 14, rx: 2 } },
+        { tag: 'path', attrs: { d: 'm22 8-6 4 6 4z' } },
+    ],
+    play: [{ tag: 'path', attrs: { d: 'M7 4v16l13-8z' } }],
+    download: [{ tag: 'path', attrs: { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3' } }],
+    copy: [
+        { tag: 'rect', attrs: { x: 9, y: 9, width: 13, height: 13, rx: 2 } },
+        { tag: 'path', attrs: { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' } },
+    ],
     upload: [{ tag: 'path', attrs: { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' } }],
     sliders: [{ tag: 'path', attrs: { d: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6' } }],
     award: [

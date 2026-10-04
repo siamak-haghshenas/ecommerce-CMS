@@ -7,12 +7,14 @@ namespace App\Providers;
 use App\Contracts\AiTextGenerator;
 use App\Contracts\SmsSender;
 use App\Enums\UserRole;
+use App\Models\MediaUpload;
 use App\Models\User;
 use App\Services\Ai\AiManager;
 use App\Services\Sms\SmsManager;
 use App\Support\PhoneNumber;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +56,13 @@ class AppServiceProvider extends ServiceProvider
     {
         Route::bind('customer', fn (string $id): User => User::query()->customers()->findOrFail($id));
         Route::bind('staffMember', fn (string $id): User => User::query()->staff()->findOrFail($id));
+
+        // An upload is only reachable by the staff member who started it, until it expires.
+        Route::bind('mediaUpload', fn (string $id): MediaUpload => MediaUpload::query()
+            ->whereKey($id)
+            ->where('user_id', Auth::id())
+            ->where('expires_at', '>', now())
+            ->firstOrFail());
     }
 
     private function configureRateLimiting(): void

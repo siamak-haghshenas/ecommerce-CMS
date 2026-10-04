@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\SeoSubject;
+use App\Enums\MediaUsageRole;
 use App\Models\Concerns\HasSeo;
+use App\Models\Concerns\UsesMediaLibrary;
 use App\Support\CategoryTree;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,25 +16,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 /**
  * A catalog category. The tree has unlimited depth and is stored as `parent_id` only;
- * tree questions (ancestors, descendants, visibility) are answered by CategoryTree.
+ * tree questions (ancestors, descendants, visibility) are answered by CategoryTree. Its image is a
+ * file of the media library (role `image`).
  */
 #[Fillable(['parent_id', 'name', 'slug', 'description', 'meta_title', 'meta_description', 'focus_keyphrase', 'position', 'is_active'])]
-class Category extends Model implements HasMedia, SeoSubject
+class Category extends Model implements SeoSubject
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, HasSeo, InteractsWithMedia;
-
-    public const string IMAGE_COLLECTION = 'image';
-
-    /** Image conversions, smallest first; the API returns a URL for each plus the original. */
-    public const array IMAGE_CONVERSIONS = ['thumb', 'medium'];
+    use HasFactory, HasSeo, UsesMediaLibrary;
 
     protected static function booted(): void
     {
@@ -93,49 +88,23 @@ class Category extends Model implements HasMedia, SeoSubject
         return $this->belongsToMany(Attribute::class)->withPivot('position')->orderByPivot('position');
     }
 
-    public function seoImageCollection(): string
-    {
-        return self::IMAGE_COLLECTION;
-    }
-
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection(self::IMAGE_COLLECTION)
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
-    }
-
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        // Generated during the upload request (not queued) so the URLs are ready immediately.
-        $this->addMediaConversion('thumb')
-            ->nonQueued()
-            ->format('webp')
-            ->fit(Fit::Crop, 240, 240);
-
-        $this->addMediaConversion('medium')
-            ->nonQueued()
-            ->format('webp')
-            ->fit(Fit::Max, 960, 960);
-    }
-
     /**
-     * URLs of the category image, or null when it has none.
+     * The category image (at most one).
      *
-     * @return array{original: string, thumb: string, medium: string}|null
+     * @return MorphToMany<MediaAsset, $this>
      */
-    public function imageUrls(): ?array
+    public function imageAssets(): MorphToMany
     {
-        $media = $this->getFirstMedia(self::IMAGE_COLLECTION);
+        return $this->mediaAssetsFor(MediaUsageRole::Image);
+    }
 
-        if ($media === null) {
-            return null;
-        }
+    public function imageAsset(): ?MediaAsset
+    {
+        return $this->imageAssets->first();
+    }
 
-        return [
-            'original' => $media->getUrl(),
-            'thumb' => $media->getAvailableUrl(['thumb']),
-            'medium' => $media->getAvailableUrl(['medium']),
-        ];
+    public function hasSeoImage(): bool
+    {
+        return $this->imageAssets()->exists();
     }
 }

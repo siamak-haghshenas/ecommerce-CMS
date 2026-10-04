@@ -16,11 +16,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A sellable SKU. Prices are whole Rials. Stock only changes through AdjustStockAction,
- * which records every change in stock_movements.
+ * which records every change in stock_movements. Its picture (`image_asset_id`) is one of the
+ * product's gallery files.
  */
 #[Fillable([
     'product_id', 'sku', 'price', 'sale_price', 'sale_starts_at', 'sale_ends_at', 'is_enabled',
-    'image_media_id', 'position',
+    'image_asset_id', 'position',
 ])]
 class ProductVariant extends Model
 {
@@ -42,7 +43,7 @@ class ProductVariant extends Model
             'sale_ends_at' => 'datetime',
             'stock_quantity' => 'integer',
             'is_enabled' => 'boolean',
-            'image_media_id' => 'integer',
+            'image_asset_id' => 'integer',
             'position' => 'integer',
         ];
     }

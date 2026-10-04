@@ -49,6 +49,14 @@ const EVENTS: ActivityEvent[] = [
     'tag.merged',
     'tag.deleted',
     'settings.updated',
+    'media.uploaded',
+    'media.updated',
+    'media.moved',
+    'media.deleted',
+    'media.restored',
+    'media_folder.created',
+    'media_folder.renamed',
+    'media_folder.deleted',
 ];
 
 const { t } = useI18n();

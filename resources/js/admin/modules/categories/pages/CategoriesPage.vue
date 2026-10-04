@@ -132,6 +132,7 @@ async function toggleVisibility(node: CategoryNode): Promise<void> {
             meta_description: category.meta_description,
             focus_keyphrase: category.focus_keyphrase,
             is_active: !category.is_active,
+            image_id: category.image?.id ?? null,
         });
         toast.show(
             t(category.is_active ? 'admin.categories.hiddenToast' : 'admin.categories.shownToast', { name: node.name }),

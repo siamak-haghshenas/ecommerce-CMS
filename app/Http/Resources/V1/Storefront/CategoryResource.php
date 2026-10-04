@@ -35,7 +35,7 @@ class CategoryResource extends JsonResource
             'description' => $this->description,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
-            'image' => $this->imageUrls(),
+            'image' => $this->imageAsset()?->picture(),
             'breadcrumb' => array_map($summary, $tree->ancestors($this->id)),
             'children' => array_values(array_map(
                 fn (CategoryNode $node): array => [...$summary($node), 'image' => $node->image],

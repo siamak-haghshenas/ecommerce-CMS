@@ -8,6 +8,7 @@ use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Products\ProductData;
 use App\Data\Products\SpecificationData;
 use App\Data\Products\VariantData;
+use App\Enums\MediaUsageRole;
 use App\Enums\ProductStatus;
 use App\Enums\StockMovementReason;
 use App\Exceptions\ProductException;
@@ -80,6 +81,10 @@ final readonly class SaveProductAction
                 $changed[] = 'options';
             }
 
+            if ($product->syncMediaAssets(MediaUsageRole::Gallery, $data->imageIds)) {
+                $changed[] = 'images';
+            }
+
             if ($this->syncVariants($actor, $product, $data->variants)) {
                 $changed[] = 'variants';
             }
@@ -89,7 +94,7 @@ final readonly class SaveProductAction
             }
 
             $this->refreshSearchText->handle($product);
-            $this->scoreSeo->handle($product->load('media'), $previousKeyphrase);
+            $this->scoreSeo->handle($product, $previousKeyphrase);
 
             if ($isNew || $changed !== []) {
                 $event = $isNew ? 'product.created' : 'product.updated';
@@ -143,7 +148,7 @@ final readonly class SaveProductAction
                 'sale_starts_at' => $data->saleStartsAt,
                 'sale_ends_at' => $data->saleEndsAt,
                 'is_enabled' => $data->isEnabled,
-                'image_media_id' => $data->imageMediaId,
+                'image_asset_id' => $data->imageId,
                 'position' => $position,
             ]);
 

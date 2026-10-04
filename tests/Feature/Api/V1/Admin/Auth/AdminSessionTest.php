@@ -46,6 +46,9 @@ it('returns the current staff member with roles and permissions', function () {
             'attributes.manage',
             'products.view',
             'products.manage',
+            'media.view',
+            'media.upload',
+            'media.manage',
         ]);
 });
 
@@ -57,11 +60,11 @@ it('lists every permission for a super admin, who holds none directly', function
         ->assertJsonPath('data.permissions', array_map(fn (Permission $permission) => $permission->value, Permission::cases()));
 });
 
-it('gives an author panel access only', function () {
+it('gives an author panel access and media view/upload only', function () {
     actingAs(User::factory()->withRole(UserRole::Author)->create())
         ->getJson(route('api.v1.admin.auth.me'))
         ->assertOk()
-        ->assertJsonPath('data.permissions', ['access-admin-panel']);
+        ->assertJsonPath('data.permissions', ['access-admin-panel', 'media.view', 'media.upload']);
 });
 
 it('logs out a staff member who was deactivated while logged in', function () {

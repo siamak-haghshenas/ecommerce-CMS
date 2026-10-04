@@ -6,6 +6,7 @@ import AppIcon from '@/shared/ui/AppIcon.vue';
 import PreferenceSwitches from '@/shared/ui/PreferenceSwitches.vue';
 import ToastHost from '@/shared/ui/ToastHost.vue';
 import { readStorage, writeStorage } from '@/shared/utils/storage';
+import MediaUploadQueue from '../modules/media/components/MediaUploadQueue.vue';
 import AdminSidebar from './AdminSidebar.vue';
 
 const COLLAPSED_STORAGE_KEY = 'admin.sidebarCollapsed';
@@ -133,5 +134,7 @@ watch(() => route.fullPath, closeDrawer);
         </div>
 
         <ToastHost />
+        <!-- Uploads keep going while staff move around the panel. -->
+        <MediaUploadQueue />
     </div>
 </template>

@@ -16,5 +16,7 @@ final readonly class BrandData
         public ?string $metaDescription,
         public ?string $focusKeyphrase,
         public bool $isActive,
+        /** The logo: a media library image, or null. */
+        public ?int $logoId = null,
     ) {}
 }

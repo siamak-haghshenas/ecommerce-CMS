@@ -25,7 +25,7 @@ final class SearchStorefrontProductsAction
 
         $query->with([
             'brand',
-            'media',
+            'galleryAssets.media',
             'variants' => fn ($variants) => $variants->where('is_enabled', true),
         ]);
 

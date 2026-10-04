@@ -16,7 +16,7 @@ class BrandController extends Controller
      */
     public function index(): AnonymousResourceCollection
     {
-        return BrandResource::collection(Brand::query()->with('media')->where('is_active', true)->ordered()->get());
+        return BrandResource::collection(Brand::query()->with('logoAssets.media')->where('is_active', true)->ordered()->get());
     }
 
     /**
@@ -25,7 +25,7 @@ class BrandController extends Controller
     public function show(string $slug): BrandResource
     {
         return new BrandResource(
-            Brand::query()->with('media')->where('is_active', true)->where('slug', $slug)->firstOrFail(),
+            Brand::query()->with('logoAssets.media')->where('is_active', true)->where('slug', $slug)->firstOrFail(),
         );
     }
 }

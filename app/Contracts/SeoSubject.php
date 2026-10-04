@@ -20,7 +20,7 @@ interface SeoSubject
     public function seoInput(array $keyphraseUsedBy): SeoInput;
 
     /**
-     * The media collection whose image counts for the `image` check.
+     * Whether the item has a picture (the `image` check): a product's gallery, a category's image, a brand's logo.
      */
-    public function seoImageCollection(): string;
+    public function hasSeoImage(): bool;
 }

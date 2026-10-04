@@ -106,7 +106,7 @@ const menuItems = computed<ActionMenuItem[]>(() => {
         >
             <img
                 v-if="node.image"
-                :src="node.image.thumb"
+                :src="node.image.thumb ?? node.image.original"
                 alt=""
                 class="size-full object-cover"
                 loading="lazy"

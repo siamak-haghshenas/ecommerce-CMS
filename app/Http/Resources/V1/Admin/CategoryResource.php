@@ -38,7 +38,7 @@ class CategoryResource extends JsonResource
             'position' => $this->position,
             'is_active' => $this->is_active,
             'is_visible' => $tree->isVisible($this->id),
-            'image' => $this->imageUrls(),
+            'image' => $this->imageAsset()?->picture(),
             'ancestors' => array_map(fn (CategoryNode $node): array => [
                 'id' => $node->id,
                 'name' => $node->name,

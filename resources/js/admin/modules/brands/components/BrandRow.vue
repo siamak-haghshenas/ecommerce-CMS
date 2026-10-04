@@ -73,7 +73,7 @@ const menuItems = computed<ActionMenuItem[]>(() => {
         >
             <img
                 v-if="brand.logo"
-                :src="brand.logo.thumb"
+                :src="brand.logo.thumb ?? brand.logo.original"
                 alt=""
                 class="size-full object-contain p-1"
                 loading="lazy"

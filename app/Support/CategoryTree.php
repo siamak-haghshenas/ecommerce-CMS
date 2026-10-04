@@ -43,7 +43,7 @@ final class CategoryTree
     public static function current(): self
     {
         $rows = Cache::rememberForever(self::CACHE_KEY, fn (): array => Category::query()
-            ->with('media')
+            ->with('imageAssets.media')
             ->get()
             ->map(fn (Category $category): array => (new CategoryNode(
                 id: $category->id,
@@ -52,7 +52,7 @@ final class CategoryTree
                 slug: $category->slug,
                 position: $category->position,
                 isActive: $category->is_active,
-                image: $category->imageUrls(),
+                image: $category->imageAsset()?->picture(),
                 focusKeyphrase: $category->focus_keyphrase,
                 seoScore: $category->seo_score,
                 readabilityScore: $category->readability_score,

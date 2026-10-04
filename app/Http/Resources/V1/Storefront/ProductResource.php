@@ -47,7 +47,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'brand' => $this->brand?->is_active ? [
                 'name' => $this->brand->name, 'persian_name' => $this->brand->persian_name,
-                'slug' => $this->brand->slug, 'logo' => $this->brand->logoUrls(),
+                'slug' => $this->brand->slug, 'logo' => $this->brand->logoAsset()?->picture(),
             ] : null,
             'categories' => $categories->map(fn (Category $category): array => [...$summary($category), 'is_primary' => $category->is($primary)])->all(),
             // Ancestors and the primary category itself, top first.
@@ -78,7 +78,7 @@ class ProductResource extends JsonResource
                 'sale_ends_at' => $variant->isOnSale() ? $variant->sale_ends_at?->toIso8601String() : null,
                 'in_stock' => $this->resource->isAvailable($variant),
                 'low_stock' => $this->resource->isLowStock($variant),
-                'image_id' => $variant->image_media_id,
+                'image_id' => $variant->image_asset_id,
             ])->all(),
             'specifications' => $this->specifications(),
             'shipping' => [
@@ -128,7 +128,7 @@ class ProductResource extends JsonResource
     public static function relations(): array
     {
         return [
-            'brand.media', 'categories', 'tags', 'media', 'options.values',
+            'brand.logoAssets.media', 'categories', 'tags', 'galleryAssets.media', 'options.values',
             'variants.optionValues', 'attributeValues.attribute', 'attributeValues.attributeValue',
         ];
     }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Enums\UserRole;
 use App\Models\AiRequest;
 use App\Models\Brand;
+use App\Models\MediaAsset;
 use App\Models\User;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 
@@ -229,50 +229,58 @@ describe('order', function () {
 describe('logo', function () {
     beforeEach(fn () => Storage::fake('public'));
 
-    it('uploads a logo with fitted conversions, counts it in the score and replaces the previous one', function () {
+    it('uses a library image as the logo, counts it in the score and replaces the previous one', function () {
         $admin = brandManager();
         $brand = actingAs($admin)->postJson(route('api.v1.admin.brands.store'), brandPayload())->json('data');
+        $old = libraryImage('old.png');
+        $new = libraryImage('adidas.png', ['alt' => 'Adidas logo']);
 
         actingAs($admin)
-            ->postJson(route('api.v1.admin.brands.logo.store', ['brand' => $brand['id']]), ['logo' => UploadedFile::fake()->image('old.png', 300, 100)])
+            ->putJson(route('api.v1.admin.brands.update', ['brand' => $brand['id']]), brandPayload(['logo_id' => $old->id]))
             ->assertOk();
 
         $response = actingAs($admin)
-            ->postJson(route('api.v1.admin.brands.logo.store', ['brand' => $brand['id']]), ['logo' => UploadedFile::fake()->image('adidas.png', 800, 300)])
+            ->putJson(route('api.v1.admin.brands.update', ['brand' => $brand['id']]), brandPayload(['logo_id' => $new->id]))
             ->assertOk()
             // Without a keyphrase there are 5 checks, so the logo (ok → good) adds 10 points.
-            ->assertJsonPath('data.seo_score', $brand['seo_score'] + 10);
+            ->assertJsonPath('data.seo_score', $brand['seo_score'] + 10)
+            ->assertJsonPath('data.logo.id', $new->id)
+            ->assertJsonPath('data.logo.alt', 'Adidas logo');
 
-        $media = Brand::query()->findOrFail($brand['id'])->getMedia(Brand::LOGO_COLLECTION);
-
-        expect($media)->toHaveCount(1)
-            ->and($media->first()?->hasGeneratedConversion('thumb'))->toBeTrue()
-            ->and($response->json('data.logo.thumb'))->toEndWith('adidas-thumb.webp')
+        expect($response->json('data.logo.thumb'))->toContain('conversions')
+            ->and($old->isInUse())->toBeFalse()
+            ->and($new->isInUse())->toBeTrue()
             ->and(Activity::query()->where('event', 'brand.updated')->get()->map(fn (Activity $entry): array => $entry->properties->all())->all())
             ->toBe([['fields' => ['logo']], ['fields' => ['logo']]]);
     });
 
-    it('rejects SVG and other files', function (UploadedFile $file) {
+    it('only accepts images of the library that are not in the trash', function (string $case) {
+        $asset = match ($case) {
+            'pdf' => MediaAsset::factory()->document()->create(),
+            'trashed image' => tap(MediaAsset::factory()->create())->delete(),
+        };
+
         actingAs(brandManager())
-            ->postJson(route('api.v1.admin.brands.logo.store', ['brand' => Brand::factory()->create()]), ['logo' => $file])
+            ->postJson(route('api.v1.admin.brands.store'), brandPayload(['logo_id' => $asset->id]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['logo']);
-    })->with([
-        'svg' => fn () => UploadedFile::fake()->createWithContent('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
-        'pdf' => fn () => UploadedFile::fake()->create('logo.pdf', 100, 'application/pdf'),
-        'too large' => fn () => UploadedFile::fake()->image('logo.png')->size(6000),
-    ]);
+            ->assertJsonValidationErrors(['logo_id']);
+    })->with(['pdf', 'trashed image']);
 
-    it('removes the logo', function () {
-        $brand = Brand::factory()->create();
-        $brand->addMedia(UploadedFile::fake()->image('logo.png'))->toMediaCollection(Brand::LOGO_COLLECTION);
+    it('removes the logo, and deleting the brand frees its file', function () {
+        $logo = libraryImage('logo.png');
+        $admin = brandManager();
+        $brand = actingAs($admin)->postJson(route('api.v1.admin.brands.store'), brandPayload(['logo_id' => $logo->id]))->json('data');
 
-        actingAs(brandManager())
-            ->deleteJson(route('api.v1.admin.brands.logo.destroy', ['brand' => $brand]))
+        actingAs($admin)
+            ->putJson(route('api.v1.admin.brands.update', ['brand' => $brand['id']]), brandPayload(['logo_id' => null]))
             ->assertOk()
             ->assertJsonPath('data.logo', null);
+        expect($logo->isInUse())->toBeFalse();
 
-        expect($brand->refresh()->getMedia(Brand::LOGO_COLLECTION))->toHaveCount(0);
+        actingAs($admin)->putJson(route('api.v1.admin.brands.update', ['brand' => $brand['id']]), brandPayload(['logo_id' => $logo->id]));
+        actingAs($admin)->deleteJson(route('api.v1.admin.brands.destroy', ['brand' => $brand['id']]))->assertNoContent();
+
+        expect($logo->isInUse())->toBeFalse();
     });
 });
 

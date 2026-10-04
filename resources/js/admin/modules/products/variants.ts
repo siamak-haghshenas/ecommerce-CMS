@@ -11,7 +11,7 @@ export interface VariantRow {
     saleStartsAt: string;
     saleEndsAt: string;
     isEnabled: boolean;
-    imageMediaId: number | null;
+    imageId: number | null;
     stock: number | null;
     /** The stock the admin was shown (existing variants), sent back to detect concurrent changes. */
     stockWas: number | null;
@@ -53,7 +53,7 @@ export function rowFromVariant(variant: ProductVariant): VariantRow {
         saleStartsAt: toLocalInput(variant.sale_starts_at),
         saleEndsAt: toLocalInput(variant.sale_ends_at),
         isEnabled: variant.is_enabled,
-        imageMediaId: variant.image_media_id,
+        imageId: variant.image_id,
         stock: variant.stock_quantity,
         stockWas: variant.stock_quantity,
         skuEdited: true,
@@ -71,7 +71,7 @@ export function newRow(optionValueIds: number[] = [], template?: VariantRow): Va
         saleStartsAt: '',
         saleEndsAt: '',
         isEnabled: true,
-        imageMediaId: null,
+        imageId: null,
         stock: template && template.id === null ? template.stock : null,
         stockWas: null,
         skuEdited: false,
@@ -125,7 +125,7 @@ export function toPayload(row: VariantRow, trackStock: boolean): VariantPayload 
         sale_starts_at: row.salePrice === null ? null : fromLocalInput(row.saleStartsAt),
         sale_ends_at: row.salePrice === null ? null : fromLocalInput(row.saleEndsAt),
         is_enabled: row.isEnabled,
-        image_media_id: row.imageMediaId,
+        image_id: row.imageId,
         option_value_ids: row.optionValueIds,
         stock_quantity: sendStock ? row.stock : null,
         stock_quantity_was: sendStock && row.id !== null ? row.stockWas : null,

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Enums\UserRole;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\User;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 
@@ -342,60 +342,60 @@ describe('order', function () {
 describe('image', function () {
     beforeEach(fn () => Storage::fake('public'));
 
-    it('uploads an image, generates the conversions and replaces the previous image', function () {
+    it('uses a library image, replaces the previous one and shows it in the tree', function () {
         $category = Category::factory()->create();
         $admin = categoryManager();
+        $old = libraryImage('old.jpg');
+        $new = libraryImage('shirts.png', ['alt' => 'Shirts']);
 
         actingAs($admin)
-            ->postJson(route('api.v1.admin.categories.image.store', ['category' => $category]), [
-                'image' => UploadedFile::fake()->image('old.jpg', 600, 400),
-            ])
+            ->putJson(route('api.v1.admin.categories.update', ['category' => $category]), categoryPayload(['slug' => $category->slug, 'image_id' => $old->id]))
             ->assertOk();
 
         $response = actingAs($admin)
-            ->postJson(route('api.v1.admin.categories.image.store', ['category' => $category]), [
-                'image' => UploadedFile::fake()->image('shirts.png', 1200, 800),
-            ])
-            ->assertOk();
+            ->putJson(route('api.v1.admin.categories.update', ['category' => $category]), categoryPayload(['slug' => $category->slug, 'image_id' => $new->id]))
+            ->assertOk()
+            ->assertJsonPath('data.image.id', $new->id)
+            ->assertJsonPath('data.image.alt', 'Shirts');
 
-        $media = $category->refresh()->getMedia(Category::IMAGE_COLLECTION);
-
-        expect($media)->toHaveCount(1)
-            ->and($media->first()?->file_name)->toBe('shirts.png')
-            ->and($media->first()?->hasGeneratedConversion('thumb'))->toBeTrue()
-            ->and($media->first()?->hasGeneratedConversion('medium'))->toBeTrue()
-            ->and($response->json('data.image.thumb'))->toEndWith('shirts-thumb.webp')
-            ->and($response->json('data.image.medium'))->toEndWith('shirts-medium.webp')
-            ->and($response->json('data.image.original'))->toEndWith('shirts.png')
+        expect($response->json('data.image.thumb'))->toContain('conversions')
+            ->and($old->isInUse())->toBeFalse()
             ->and(Activity::query()->where('event', 'category.updated')->pluck('properties')->map->all()->all())
-            ->toBe([['fields' => ['image']], ['fields' => ['image']]]);
+            ->toContain(['fields' => ['image']]);
 
         actingAs($admin)
             ->getJson(route('api.v1.admin.categories.index'))
             ->assertJsonPath('data.0.image.thumb', $response->json('data.image.thumb'));
     });
 
-    it('rejects files that are not jpg, png or webp images', function (UploadedFile $file) {
+    it('only accepts images of the library that are not in the trash', function (string $case) {
+        $asset = match ($case) {
+            'pdf' => MediaAsset::factory()->document()->create(),
+            'trashed image' => tap(MediaAsset::factory()->create())->delete(),
+        };
+
         actingAs(categoryManager())
-            ->postJson(route('api.v1.admin.categories.image.store', ['category' => Category::factory()->create()]), ['image' => $file])
+            ->postJson(route('api.v1.admin.categories.store'), categoryPayload(['image_id' => $asset->id]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['image']);
-    })->with([
-        'pdf' => fn () => UploadedFile::fake()->create('menu.pdf', 100, 'application/pdf'),
-        'gif' => fn () => UploadedFile::fake()->image('anim.gif'),
-        'too large' => fn () => UploadedFile::fake()->image('huge.jpg')->size(6000),
-    ]);
+            ->assertJsonValidationErrors(['image_id']);
+    })->with(['pdf', 'trashed image']);
 
-    it('removes the image', function () {
-        $category = Category::factory()->create();
-        $category->addMedia(UploadedFile::fake()->image('shirts.jpg'))->toMediaCollection(Category::IMAGE_COLLECTION);
+    it('removes the image, and deleting the category frees its file', function () {
+        $image = libraryImage('shirts.jpg');
+        $admin = categoryManager();
+        $category = actingAs($admin)->postJson(route('api.v1.admin.categories.store'), categoryPayload(['image_id' => $image->id]))->json('data');
 
-        actingAs(categoryManager())
-            ->deleteJson(route('api.v1.admin.categories.image.destroy', ['category' => $category]))
+        actingAs($admin)
+            ->putJson(route('api.v1.admin.categories.update', ['category' => $category['id']]), categoryPayload(['slug' => $category['slug'], 'image_id' => null]))
             ->assertOk()
             ->assertJsonPath('data.image', null);
 
-        expect($category->refresh()->getMedia(Category::IMAGE_COLLECTION))->toHaveCount(0)
+        expect($image->isInUse())->toBeFalse()
             ->and(categoryEvent('category.updated')->properties->all())->toBe(['fields' => ['image']]);
+
+        actingAs($admin)->putJson(route('api.v1.admin.categories.update', ['category' => $category['id']]), categoryPayload(['slug' => $category['slug'], 'image_id' => $image->id]));
+        actingAs($admin)->deleteJson(route('api.v1.admin.categories.destroy', ['category' => $category['id']]))->assertNoContent();
+
+        expect($image->isInUse())->toBeFalse();
     });
 });

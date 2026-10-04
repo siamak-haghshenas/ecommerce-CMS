@@ -10,6 +10,7 @@ use App\Data\Products\VariantData;
 use App\Enums\AttributeType;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
+use App\Http\Requests\Concerns\HasMediaFields;
 use App\Http\Requests\Concerns\HasSlugField;
 use App\Models\Attribute;
 use App\Models\OptionValue;
@@ -30,9 +31,11 @@ use Illuminate\Validation\Validator;
  */
 class SaveProductRequest extends FormRequest
 {
-    use HasSlugField;
+    use HasMediaFields, HasSlugField;
 
     private const int MAX_AMOUNT = 1_000_000_000_000_000;
+
+    private const int MAX_IMAGES = 30;
 
     protected function prepareForValidation(): void
     {
@@ -83,12 +86,16 @@ class SaveProductRequest extends FormRequest
             'variants.*.sale_starts_at' => ['nullable', 'date'],
             'variants.*.sale_ends_at' => ['nullable', 'date'],
             'variants.*.is_enabled' => ['required', 'boolean'],
-            'variants.*.image_media_id' => ['nullable', 'integer'],
+            // A variant's picture: one of the gallery's images.
+            'variants.*.image_id' => ['nullable', 'integer'],
             'variants.*.option_value_ids' => ['array'],
             // Not "distinct": variants share values. checkVariants() needs one value per option.
             'variants.*.option_value_ids.*' => ['integer'],
             'variants.*.stock_quantity' => ['nullable', 'integer', 'min:-1000000', 'max:10000000'],
             'variants.*.stock_quantity_was' => ['nullable', 'integer'],
+            // The gallery: media library images in order; the first is the main image.
+            'image_ids' => ['array', 'max:'.self::MAX_IMAGES],
+            'image_ids.*' => ['integer', 'distinct', $this->libraryImageRule()],
             'specifications' => ['array', 'max:200'],
             'specifications.*.attribute_id' => ['required', 'integer', 'distinct', Rule::exists('attributes', 'id')],
             'specifications.*.value_ids' => ['array'],
@@ -166,12 +173,13 @@ class SaveProductRequest extends FormRequest
                 saleStartsAt: empty($variant['sale_starts_at']) ? null : CarbonImmutable::parse($variant['sale_starts_at']),
                 saleEndsAt: empty($variant['sale_ends_at']) ? null : CarbonImmutable::parse($variant['sale_ends_at']),
                 isEnabled: (bool) $variant['is_enabled'],
-                imageMediaId: isset($variant['image_media_id']) ? (int) $variant['image_media_id'] : null,
+                imageId: isset($variant['image_id']) ? (int) $variant['image_id'] : null,
                 optionValueIds: $type === ProductType::Variable ? array_values(array_map(intval(...), $variant['option_value_ids'] ?? [])) : [],
                 stockQuantity: isset($variant['stock_quantity']) ? (int) $variant['stock_quantity'] : null,
                 stockQuantityWas: isset($variant['stock_quantity_was']) ? (int) $variant['stock_quantity_was'] : null,
             ), array_values((array) $this->input('variants'))),
             specifications: $this->specificationData(),
+            imageIds: $this->ints('image_ids'),
         );
     }
 
@@ -179,7 +187,6 @@ class SaveProductRequest extends FormRequest
     {
         $type = ProductType::from($this->string('type')->toString());
         $variants = array_values((array) $this->input('variants'));
-        $product = $this->product();
 
         if ($type === ProductType::Simple && count($variants) !== 1) {
             $validator->errors()->add('variants', __('admin.products.errors.simple_one_variant'));
@@ -200,7 +207,7 @@ class SaveProductRequest extends FormRequest
         $valueOptions = OptionValue::query()
             ->whereIn('id', Arr::flatten(array_map(fn (array $variant): array => $variant['option_value_ids'] ?? [], $variants)))
             ->pluck('option_id', 'id');
-        $galleryIds = $product?->getMedia(Product::GALLERY_COLLECTION)->pluck('id')->map(fn ($id): int => (int) $id)->all() ?? [];
+        $galleryIds = $this->ints('image_ids');
         $combinations = [];
         $hasEnabled = false;
 
@@ -218,8 +225,8 @@ class SaveProductRequest extends FormRequest
                 $validator->errors()->add("variants.{$index}.sale_ends_at", __('admin.products.errors.sale_end_before_start'));
             }
 
-            if (isset($variant['image_media_id']) && ! in_array((int) $variant['image_media_id'], $galleryIds, true)) {
-                $validator->errors()->add("variants.{$index}.image_media_id", __('admin.products.errors.image_not_in_gallery'));
+            if (isset($variant['image_id']) && ! in_array((int) $variant['image_id'], $galleryIds, true)) {
+                $validator->errors()->add("variants.{$index}.image_id", __('admin.products.errors.image_not_in_gallery'));
             }
 
             if (isset($variant['id'], $variant['stock_quantity']) && ! isset($variant['stock_quantity_was'])) {

@@ -10,7 +10,6 @@ type BulkPage = Paginated<BulkProduct> & {
 import type {
     Product,
     ProductFilters,
-    ProductImage,
     ProductListItem,
     ProductStatus,
     SaveProductPayload,
@@ -60,22 +59,6 @@ export const productsApi = {
     bulkSave: async (variants: BulkVariantPayload[]): Promise<number[]> =>
         (await http.put<Resource<{ variant_ids: number[] }>>('/admin/products/bulk', { variants })).data.data
             .variant_ids,
-
-    /** Permission: products.manage. Returns the gallery in order. */
-    uploadImage: async (id: number, image: File): Promise<ProductImage[]> => {
-        const body = new FormData();
-        body.append('image', image);
-
-        return (await http.post<Resource<ProductImage[]>>(`/admin/products/${id}/images`, body)).data.data;
-    },
-
-    /** Permission: products.manage. `ids`: every image, in the new order (the first is the main image). */
-    reorderImages: async (id: number, ids: number[]): Promise<ProductImage[]> =>
-        (await http.put<Resource<ProductImage[]>>(`/admin/products/${id}/images/order`, { ids })).data.data,
-
-    /** Permission: products.manage */
-    removeImage: async (id: number, mediaId: number): Promise<ProductImage[]> =>
-        (await http.delete<Resource<ProductImage[]>>(`/admin/products/${id}/images/${mediaId}`)).data.data,
 
     /** Permission: products.view */
     stockMovements: async (id: number, page = 1): Promise<Paginated<StockMovement>> =>

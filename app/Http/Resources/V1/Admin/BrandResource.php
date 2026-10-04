@@ -29,7 +29,7 @@ class BrandResource extends JsonResource
             'website' => $this->website,
             'position' => $this->position,
             'is_active' => $this->is_active,
-            'logo' => $this->logoUrls(),
+            'logo' => $this->logoAsset()?->picture(),
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'focus_keyphrase' => $this->focus_keyphrase,

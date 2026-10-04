@@ -48,6 +48,14 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
     'settings.updated': { icon: 'settings', tone: 'neutral' },
+    'media.uploaded': { icon: 'upload', tone: 'primary' },
+    'media.updated': { icon: 'pen', tone: 'neutral' },
+    'media.moved': { icon: 'folderMove', tone: 'neutral' },
+    'media.deleted': { icon: 'trash', tone: 'danger' },
+    'media.restored': { icon: 'refresh', tone: 'primary' },
+    'media_folder.created': { icon: 'folderPlus', tone: 'primary' },
+    'media_folder.renamed': { icon: 'pen', tone: 'neutral' },
+    'media_folder.deleted': { icon: 'trash', tone: 'danger' },
 };
 
 /** 'staff.role_changed' → 'staffRoleChanged' (the i18n key). */
@@ -65,6 +73,10 @@ const subjectLink = computed(() => {
         return { name: 'customer', params: { id: subject.id } };
     }
 
+    if (subject.type === 'media') {
+        return { name: 'media', query: { file: subject.id } };
+    }
+
     return subject.type === 'product' ? { name: 'product', params: { id: subject.id } } : null;
 });
 
@@ -76,7 +88,10 @@ const missingSubject = computed(() => {
         return t('admin.activity.topLevel');
     }
 
-    if (/^(category|brand|attribute|option|product|tag)\./.test(event) && typeof properties.name === 'string') {
+    if (
+        /^(category|brand|attribute|option|product|tag|media|media_folder)\./.test(event) &&
+        typeof properties.name === 'string'
+    ) {
         return properties.name;
     }
 

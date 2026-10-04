@@ -23,22 +23,22 @@ class BrandController extends Controller
      */
     public function index(): AnonymousResourceCollection
     {
-        return BrandResource::collection(Brand::query()->with('media')->ordered()->get());
+        return BrandResource::collection(Brand::query()->with('logoAssets.media')->ordered()->get());
     }
 
     public function show(Brand $brand): BrandResource
     {
-        return new BrandResource($brand->load('media'));
+        return new BrandResource($brand->load('logoAssets.media'));
     }
 
     public function store(SaveBrandRequest $request, CreateBrandAction $create, #[CurrentUser] User $actor): BrandResource
     {
-        return new BrandResource($create->handle($actor, $request->toData())->load('media'));
+        return new BrandResource($create->handle($actor, $request->toData())->load('logoAssets.media'));
     }
 
     public function update(SaveBrandRequest $request, Brand $brand, UpdateBrandAction $update, #[CurrentUser] User $actor): BrandResource
     {
-        return new BrandResource($update->handle($actor, $brand, $request->toData())->load('media'));
+        return new BrandResource($update->handle($actor, $brand, $request->toData())->load('logoAssets.media'));
     }
 
     public function destroy(Brand $brand, DeleteBrandAction $delete, #[CurrentUser] User $actor): Response

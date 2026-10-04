@@ -10,7 +10,7 @@ namespace App\Data\Categories;
 final readonly class CategoryNode
 {
     /**
-     * @param  array{original: string, thumb: string, medium: string}|null  $image
+     * @param  array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null  $image
      */
     public function __construct(
         public int $id,
@@ -26,7 +26,7 @@ final readonly class CategoryNode
     ) {}
 
     /**
-     * @param  array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{original: string, thumb: string, medium: string}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}  $row
+     * @param  array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}  $row
      */
     public static function fromArray(array $row): self
     {
@@ -45,7 +45,7 @@ final readonly class CategoryNode
     }
 
     /**
-     * @return array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{original: string, thumb: string, medium: string}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}
+     * @return array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}
      */
     public function toArray(): array
     {

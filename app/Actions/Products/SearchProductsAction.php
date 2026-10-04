@@ -16,7 +16,7 @@ final class SearchProductsAction
      * @param  list<string>  $with
      * @return LengthAwarePaginator<int, Product>
      */
-    public function handle(ProductFilters $filters, array $with = ['brand', 'categories', 'variants', 'media']): LengthAwarePaginator
+    public function handle(ProductFilters $filters, array $with = ['brand', 'categories', 'variants', 'galleryAssets.media']): LengthAwarePaginator
     {
         $query = Product::query()->with($with)->matching($filters);
 

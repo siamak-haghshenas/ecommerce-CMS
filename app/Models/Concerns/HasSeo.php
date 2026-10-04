@@ -6,13 +6,12 @@ namespace App\Models\Concerns;
 
 use App\Data\Seo\SeoInput;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
- * Implements SeoSubject for a model with `name`, `slug`, `description` and the shared SEO columns.
+ * Implements SeoSubject for a model with `name`, `slug`, `description` and the shared SEO columns
+ * (the model provides hasSeoImage()).
  *
  * @mixin Model
- * @mixin InteractsWithMedia
  */
 trait HasSeo
 {
@@ -28,7 +27,7 @@ trait HasSeo
             metaTitle: (string) $this->getAttribute('meta_title'),
             metaDescription: (string) $this->getAttribute('meta_description'),
             focusKeyphrase: (string) $this->getAttribute('focus_keyphrase'),
-            hasImage: $this->hasMedia($this->seoImageCollection()),
+            hasImage: $this->hasSeoImage(),
             keyphraseUsedBy: $keyphraseUsedBy,
         );
     }

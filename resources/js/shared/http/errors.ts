@@ -10,6 +10,8 @@ export class ApiError extends Error {
         message: string,
         public readonly fieldErrors: Record<string, string[]> = {},
         public readonly retryAfter: number | null = null,
+        /** The whole error body, for codes that carry extra fields (e.g. an upload's `received`). */
+        public readonly body: Record<string, unknown> = {},
     ) {
         super(message);
         this.name = 'ApiError';
@@ -35,6 +37,7 @@ export function toApiError(error: unknown): ApiError {
                 body.message,
                 body.errors ?? {},
                 body.retry_after ?? null,
+                body as unknown as Record<string, unknown>,
             );
         }
 

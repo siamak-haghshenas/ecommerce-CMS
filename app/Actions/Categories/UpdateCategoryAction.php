@@ -7,6 +7,7 @@ namespace App\Actions\Categories;
 use App\Actions\Products\RefreshProductSearchTextAction;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Categories\CategoryData;
+use App\Enums\MediaUsageRole;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
 use App\Models\Product;
@@ -52,11 +53,17 @@ final class UpdateCategoryAction
             $category->position = Category::nextPositionUnder($data->parentId);
         }
 
-        if (! $category->isDirty()) {
-            return $category;
+        $category->save();
+
+        if ($category->syncMediaAssets(MediaUsageRole::Image, $data->imageId === null ? [] : [$data->imageId])) {
+            $changedFields[] = 'image';
+            // The cached tree carries the images.
+            CategoryTree::forget();
         }
 
-        $category->save();
+        if ($changedFields === [] && ! $isMoving) {
+            return $category;
+        }
 
         // Product search includes category names.
         if (in_array('name', $changedFields, true)) {

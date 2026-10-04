@@ -30,16 +30,4 @@ export const categoriesApi = {
      */
     reorder: async (parentId: number | null, ids: number[]): Promise<CategoryNode[]> =>
         (await http.put<Resource<CategoryNode[]>>('/admin/categories/order', { parent_id: parentId, ids })).data.data,
-
-    /** Permission: categories.manage. Replaces the current image. */
-    uploadImage: async (id: number, image: File): Promise<Category> => {
-        const body = new FormData();
-        body.append('image', image);
-
-        return (await http.post<Resource<Category>>(`/admin/categories/${id}/image`, body)).data.data;
-    },
-
-    /** Permission: categories.manage */
-    removeImage: async (id: number): Promise<Category> =>
-        (await http.delete<Resource<Category>>(`/admin/categories/${id}/image`)).data.data,
 };

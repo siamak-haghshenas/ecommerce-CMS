@@ -6,22 +6,22 @@ use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\Auth as AdminAuth;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandController as AdminBrandController;
-use App\Http\Controllers\Api\V1\Admin\Brands\BrandLogoController;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandOrderController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\ApplicableAttributeController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\AttributeController;
 use App\Http\Controllers\Api\V1\Admin\Catalog\OptionController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Api\V1\Admin\Categories\CategoryImageController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryOrderController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerStatusController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\Media\MediaAssetController;
+use App\Http\Controllers\Api\V1\Admin\Media\MediaFolderController;
+use App\Http\Controllers\Api\V1\Admin\Media\MediaUploadController;
 use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
-use App\Http\Controllers\Api\V1\Admin\Products\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
 use App\Http\Controllers\Api\V1\Admin\Products\TagController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
@@ -150,8 +150,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('order', CategoryOrderController::class)->name('order');
                     Route::put('{category}', [AdminCategoryController::class, 'update'])->whereNumber('category')->name('update');
                     Route::delete('{category}', [AdminCategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
-                    Route::post('{category}/image', [CategoryImageController::class, 'store'])->whereNumber('category')->name('image.store');
-                    Route::delete('{category}/image', [CategoryImageController::class, 'destroy'])->whereNumber('category')->name('image.destroy');
                     Route::put('{category}/attributes', [CategoryAttributeController::class, 'update'])->whereNumber('category')->name('attributes.update');
                 });
 
@@ -189,8 +187,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('order', BrandOrderController::class)->name('order');
                     Route::put('{brand}', [AdminBrandController::class, 'update'])->whereNumber('brand')->name('update');
                     Route::delete('{brand}', [AdminBrandController::class, 'destroy'])->whereNumber('brand')->name('destroy');
-                    Route::post('{brand}/logo', [BrandLogoController::class, 'store'])->whereNumber('brand')->name('logo.store');
-                    Route::delete('{brand}/logo', [BrandLogoController::class, 'destroy'])->whereNumber('brand')->name('logo.destroy');
                 });
             });
 
@@ -210,9 +206,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('{product}', [ProductController::class, 'update'])->whereNumber('product')->name('update');
                     Route::delete('{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
                     Route::post('{product}/restore', [ProductController::class, 'restore'])->whereNumber('product')->withTrashed()->name('restore');
-                    Route::post('{product}/images', [ProductImageController::class, 'store'])->whereNumber('product')->name('images.store');
-                    Route::put('{product}/images/order', [ProductImageController::class, 'reorder'])->whereNumber('product')->name('images.order');
-                    Route::delete('{product}/images/{media}', [ProductImageController::class, 'destroy'])->whereNumber(['product', 'media'])->name('images.destroy');
                 });
             });
 
@@ -220,6 +213,32 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('attributes/applicable', ApplicableAttributeController::class)
                 ->middleware(PermissionMiddleware::using(Permission::ViewProducts))
                 ->name('attributes.applicable');
+
+            // Media library. {mediaAsset} resolves files in the trash for show/restore only.
+            Route::prefix('media')->name('media.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewMedia))->group(function () {
+                    Route::get('/', [MediaAssetController::class, 'index'])->name('index');
+                    Route::get('folders', [MediaFolderController::class, 'index'])->name('folders.index');
+                    Route::get('{mediaAsset}', [MediaAssetController::class, 'show'])->whereNumber('mediaAsset')->withTrashed()->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::UploadMedia))->group(function () {
+                    Route::post('uploads', [MediaUploadController::class, 'store'])->name('uploads.store');
+                    Route::post('uploads/{mediaUpload}/chunks', [MediaUploadController::class, 'chunk'])->name('uploads.chunk');
+                    Route::post('uploads/{mediaUpload}/complete', [MediaUploadController::class, 'complete'])->name('uploads.complete');
+                    Route::delete('uploads/{mediaUpload}', [MediaUploadController::class, 'destroy'])->name('uploads.destroy');
+                    Route::put('{mediaAsset}', [MediaAssetController::class, 'update'])->whereNumber('mediaAsset')->name('update');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageMedia))->group(function () {
+                    Route::post('move', [MediaAssetController::class, 'move'])->name('move');
+                    Route::delete('{mediaAsset}', [MediaAssetController::class, 'destroy'])->whereNumber('mediaAsset')->name('destroy');
+                    Route::post('{mediaAsset}/restore', [MediaAssetController::class, 'restore'])->whereNumber('mediaAsset')->withTrashed()->name('restore');
+                    Route::post('folders', [MediaFolderController::class, 'store'])->name('folders.store');
+                    Route::put('folders/{mediaFolder}', [MediaFolderController::class, 'update'])->whereNumber('mediaFolder')->name('folders.update');
+                    Route::delete('folders/{mediaFolder}', [MediaFolderController::class, 'destroy'])->whereNumber('mediaFolder')->name('folders.destroy');
+                });
+            });
 
             Route::prefix('tags')->name('tags.')->group(function () {
                 Route::get('/', [TagController::class, 'index'])

@@ -6,6 +6,7 @@ namespace App\Actions\Brands;
 
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Brands\BrandData;
+use App\Enums\MediaUsageRole;
 use App\Models\Brand;
 use App\Models\User;
 
@@ -30,6 +31,8 @@ final readonly class CreateBrandAction
             'focus_keyphrase' => $data->focusKeyphrase,
             'position' => Brand::nextPosition(),
         ]);
+
+        $brand->syncMediaAssets(MediaUsageRole::Logo, $data->logoId === null ? [] : [$data->logoId]);
 
         $this->scoreSeo->handle($brand);
 

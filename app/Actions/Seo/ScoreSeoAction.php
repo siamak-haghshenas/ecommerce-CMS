@@ -43,7 +43,6 @@ final readonly class ScoreSeoAction
 
     public function score(Model&SeoSubject $item): void
     {
-        $item->loadMissing('media');
 
         $keyphrase = (string) $item->getAttribute('focus_keyphrase');
         $usedBy = $keyphrase === ''

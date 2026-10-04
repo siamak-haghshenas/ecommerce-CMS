@@ -116,6 +116,7 @@ async function toggleVisibility(brand: Brand): Promise<void> {
             meta_description: brand.meta_description,
             focus_keyphrase: brand.focus_keyphrase,
             is_active: !brand.is_active,
+            logo_id: brand.logo?.id ?? null,
         });
         toast.show(t(brand.is_active ? 'admin.brands.hiddenToast' : 'admin.brands.shownToast', { name: brand.name }));
         await load();

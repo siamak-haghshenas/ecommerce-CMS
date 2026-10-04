@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Admin\Brands;
 
 use App\Data\Brands\BrandData;
+use App\Http\Requests\Concerns\HasMediaFields;
 use App\Http\Requests\Concerns\HasSlugField;
 use App\Models\Brand;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -16,7 +17,7 @@ use Illuminate\Validation\Rule;
  */
 class SaveBrandRequest extends FormRequest
 {
-    use HasSlugField;
+    use HasMediaFields, HasSlugField;
 
     protected function prepareForValidation(): void
     {
@@ -43,6 +44,8 @@ class SaveBrandRequest extends FormRequest
             'meta_description' => ['nullable', 'string', 'max:500'],
             'focus_keyphrase' => ['nullable', 'string', 'max:120'],
             'is_active' => ['required', 'boolean'],
+            // The logo: an image of the media library (null: no logo).
+            'logo_id' => ['nullable', 'integer', $this->libraryImageRule()],
         ];
     }
 
@@ -58,6 +61,7 @@ class SaveBrandRequest extends FormRequest
             metaDescription: $this->optionalText('meta_description'),
             focusKeyphrase: $this->optionalText('focus_keyphrase'),
             isActive: $this->boolean('is_active'),
+            logoId: $this->libraryImageId('logo_id'),
         );
     }
 

@@ -1,15 +1,11 @@
 import type { OptionDisplayType } from '../attributes/types';
+import type { MediaPicture } from '../media/types';
 
 export type ProductType = 'simple' | 'variable';
 export type ProductStatus = 'draft' | 'published' | 'archived';
 
-export interface ProductImage {
-    id: number;
-    original: string;
-    thumb: string;
-    medium: string;
-    large: string;
-}
+/** A gallery picture: a file of the media library. */
+export type ProductImage = MediaPicture;
 
 /** A row of the product list. Amounts are Rials. */
 export interface ProductListItem {
@@ -51,7 +47,7 @@ export interface ProductVariant {
     discount_percent: number;
     stock_quantity: number;
     is_enabled: boolean;
-    image_media_id: number | null;
+    image_id: number | null;
     option_value_ids: number[];
 }
 
@@ -107,7 +103,7 @@ export interface VariantPayload {
     sale_starts_at: string | null;
     sale_ends_at: string | null;
     is_enabled: boolean;
-    image_media_id: number | null;
+    image_id: number | null;
     option_value_ids: number[];
     stock_quantity: number | null;
     stock_quantity_was: number | null;
@@ -144,6 +140,8 @@ export interface SaveProductPayload {
         number?: number | null;
         boolean?: boolean | null;
     }[];
+    /** The gallery: media library images in order; the first is the main image. */
+    image_ids: number[];
 }
 
 export interface ProductFilters {

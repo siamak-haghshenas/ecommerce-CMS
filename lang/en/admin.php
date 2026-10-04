@@ -26,6 +26,12 @@ return [
         'ai_not_configured' => 'AI suggestions are not set up yet. Ask the store administrator to add the AI API key.',
         'ai_unavailable' => 'The AI service is not responding right now. Please try again in a few minutes.',
         'ai_invalid_response' => 'The AI service returned an unusable answer. Please try again.',
+        'media_in_use' => 'This file is used in :count place(s). Remove it from them first.',
+        'media_type_not_allowed' => 'This type of file isn’t accepted. Upload an image (JPG, PNG, WebP, AVIF, GIF), a PDF or a video (MP4, WebM).',
+        'media_too_large' => 'This file is too large. The limit for this type is :max MB.',
+        'media_chunk_out_of_order' => 'Part of the upload arrived out of order. The upload continues from where it stopped.',
+        'media_chunk_too_large' => 'The upload is larger than the file announced.',
+        'media_upload_incomplete' => 'The upload isn’t finished yet.',
     ],
 
     'products' => [
@@ -45,6 +51,12 @@ return [
             'stock_not_tracked' => 'This product doesn’t track stock.',
             'stock_changed_to' => 'The stock changed meanwhile (for example, an order was placed); it is now :quantity.',
             'product_deleted' => 'This product has been deleted. Reload the page.',
+        ],
+    ],
+
+    'media' => [
+        'errors' => [
+            'cover_only_for_videos' => 'Only a video can have a cover picture.',
         ],
     ],
 

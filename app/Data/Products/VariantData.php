@@ -24,7 +24,8 @@ final readonly class VariantData
         public ?CarbonImmutable $saleStartsAt,
         public ?CarbonImmutable $saleEndsAt,
         public bool $isEnabled,
-        public ?int $imageMediaId,
+        /** One of the product's gallery images (a media library file). */
+        public ?int $imageId,
         public array $optionValueIds,
         public ?int $stockQuantity,
         public ?int $stockQuantityWas,

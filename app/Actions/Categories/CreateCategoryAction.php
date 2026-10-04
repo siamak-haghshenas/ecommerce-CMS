@@ -6,8 +6,10 @@ namespace App\Actions\Categories;
 
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Categories\CategoryData;
+use App\Enums\MediaUsageRole;
 use App\Models\Category;
 use App\Models\User;
+use App\Support\CategoryTree;
 
 final class CreateCategoryAction
 {
@@ -29,6 +31,11 @@ final class CreateCategoryAction
             'is_active' => $data->isActive,
             'position' => Category::nextPositionUnder($data->parentId),
         ]);
+
+        if ($category->syncMediaAssets(MediaUsageRole::Image, $data->imageId === null ? [] : [$data->imageId])) {
+            // The cached tree carries the images.
+            CategoryTree::forget();
+        }
 
         $this->scoreSeo->handle($category);
 

@@ -15,5 +15,7 @@ final readonly class CategoryData
         public ?string $metaDescription,
         public ?string $focusKeyphrase,
         public bool $isActive,
+        /** The image: a media library image, or null. */
+        public ?int $imageId = null,
     ) {}
 }

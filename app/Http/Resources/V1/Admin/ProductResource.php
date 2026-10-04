@@ -73,7 +73,7 @@ class ProductResource extends JsonResource
                 'discount_percent' => $variant->discountPercent(),
                 'stock_quantity' => $variant->stock_quantity,
                 'is_enabled' => $variant->is_enabled,
-                'image_media_id' => $variant->image_media_id,
+                'image_id' => $variant->image_asset_id,
                 'option_value_ids' => $variant->optionValues->pluck('id')->sort()->values()->all(),
             ])->all(),
             'specifications' => $this->attributeValues
@@ -106,6 +106,6 @@ class ProductResource extends JsonResource
      */
     public static function relations(): array
     {
-        return ['brand', 'categories', 'tags', 'options.values', 'variants.optionValues', 'attributeValues', 'media'];
+        return ['brand', 'categories', 'tags', 'options.values', 'variants.optionValues', 'attributeValues', 'galleryAssets.media'];
     }
 }

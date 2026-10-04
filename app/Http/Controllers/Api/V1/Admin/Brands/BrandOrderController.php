@@ -22,6 +22,6 @@ class BrandOrderController extends Controller
     {
         $reorder->handle($actor, $request->ids());
 
-        return BrandResource::collection(Brand::query()->with('media')->ordered()->get());
+        return BrandResource::collection(Brand::query()->with('logoAssets.media')->ordered()->get());
     }
 }

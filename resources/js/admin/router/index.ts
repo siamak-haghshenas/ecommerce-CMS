@@ -86,6 +86,12 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.product', permission: Permission.ViewProducts },
             },
             {
+                path: 'media',
+                name: 'media',
+                component: () => import('../modules/media/pages/MediaPage.vue'),
+                meta: { title: 'pageTitles.media', permission: Permission.ViewMedia },
+            },
+            {
                 path: 'tags',
                 name: 'tags',
                 component: () => import('../modules/products/pages/TagsPage.vue'),

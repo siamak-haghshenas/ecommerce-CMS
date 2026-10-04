@@ -144,7 +144,11 @@ function applyLink(): void {
 const imageOpen = ref(false);
 
 function insertImage(image: ProductImage): void {
-    editor.value?.chain().focus().setImage({ src: image.medium, alt: '' }).run();
+    editor.value
+        ?.chain()
+        .focus()
+        .setImage({ src: image.medium ?? image.original, alt: image.alt ?? '' })
+        .run();
     imageOpen.value = false;
 }
 </script>
@@ -237,7 +241,11 @@ function insertImage(image: ProductImage): void {
                         class="block aspect-square w-full cursor-pointer overflow-hidden rounded-lg border border-line hover:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                         @click="insertImage(image)"
                     >
-                        <img :src="image.thumb" alt="" class="size-full object-contain" />
+                        <img
+                            :src="image.thumb ?? image.original"
+                            :alt="image.alt ?? ''"
+                            class="size-full object-contain"
+                        />
                     </button>
                 </li>
             </ul>

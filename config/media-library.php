@@ -51,7 +51,8 @@ return [
      * The maximum file size of an item in bytes.
      * Adding a larger file will result in an exception.
      */
-    'max_file_size' => 1024 * 1024 * 10, // 10MB
+    // The media library checks the size per file type (config/media.php); this is only the outer cap.
+    'max_file_size' => 1024 * 1024 * 1024, // 1GB
 
     /*
      * Uploads whose file name contains any of these extensions will be rejected.

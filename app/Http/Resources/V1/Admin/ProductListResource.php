@@ -35,7 +35,7 @@ class ProductListResource extends JsonResource
             'slug' => $this->slug,
             'status' => $this->status->value,
             'published_at' => $this->published_at?->toIso8601String(),
-            'image' => $this->getFirstMediaUrl(Product::GALLERY_COLLECTION, 'thumb') ?: null,
+            'image' => $this->galleryAssets->first()?->urls()['thumb'] ?? null,
             'brand' => $this->brand === null ? null : ['id' => $this->brand->id, 'name' => $this->brand->name],
             'primary_category' => $primary === null ? null : ['id' => $primary->id, 'name' => $primary->name],
             'price' => $prices->isEmpty() ? null : ['min' => $prices->min(), 'max' => $prices->max()],

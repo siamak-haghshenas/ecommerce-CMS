@@ -33,11 +33,19 @@ export type ActivityEvent =
     | 'tag.renamed'
     | 'tag.merged'
     | 'tag.deleted'
-    | 'settings.updated';
+    | 'settings.updated'
+    | 'media.uploaded'
+    | 'media.updated'
+    | 'media.moved'
+    | 'media.deleted'
+    | 'media.restored'
+    | 'media_folder.created'
+    | 'media_folder.renamed'
+    | 'media_folder.deleted';
 
 /** The user or category an entry is about (null once deleted). */
 export interface ActivityUser {
-    type: 'user' | 'category' | 'brand' | 'attribute' | 'option' | 'product' | 'tag';
+    type: 'user' | 'category' | 'brand' | 'attribute' | 'option' | 'product' | 'tag' | 'media' | 'media_folder';
     id: number;
     name: string;
     is_anonymised: boolean;

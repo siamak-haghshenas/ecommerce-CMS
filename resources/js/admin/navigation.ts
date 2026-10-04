@@ -76,7 +76,7 @@ export const navigation: NavGroup[] = [
         items: [
             { label: 'admin.nav.pages', icon: 'file' },
             { label: 'admin.nav.blog', icon: 'pen' },
-            { label: 'admin.nav.media', icon: 'image' },
+            { label: 'admin.nav.media', icon: 'image', to: { name: 'media' }, permission: Permission.ViewMedia },
         ],
     },
     {

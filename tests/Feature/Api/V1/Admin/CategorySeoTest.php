@@ -8,7 +8,6 @@ use App\Models\AiRequest;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
@@ -101,9 +100,7 @@ describe('stored scores', function () {
         $category = actingAs($admin)->postJson(route('api.v1.admin.categories.store'), seoCategoryPayload())->json('data');
 
         actingAs($admin)
-            ->postJson(route('api.v1.admin.categories.image.store', ['category' => $category['id']]), [
-                'image' => UploadedFile::fake()->image('shirts.jpg'),
-            ])
+            ->putJson(route('api.v1.admin.categories.update', ['category' => $category['id']]), seoCategoryPayload(['slug' => $category['slug'], 'image_id' => libraryImage('shirts.jpg')->id]))
             ->assertOk()
             ->assertJsonPath('data.seo_score', $category['seo_score'] + 5);
     });

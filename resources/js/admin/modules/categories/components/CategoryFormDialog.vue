@@ -7,7 +7,6 @@ import AppButton from '@/shared/ui/AppButton.vue';
 import AppDialog from '@/shared/ui/AppDialog.vue';
 import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
-import ImageField from '@/shared/ui/ImageField.vue';
 import SegmentedControl from '@/shared/ui/SegmentedControl.vue';
 import TextAreaField from '@/shared/ui/TextAreaField.vue';
 import TextField from '@/shared/ui/TextField.vue';
@@ -19,10 +18,12 @@ import { branchIds, findNode, flatten, suggestSlug } from '../tree';
 import type { Category, CategoryNode, SaveCategoryPayload } from '../types';
 import CategoryAttributesField from './CategoryAttributesField.vue';
 import CategoryParentSelect from './CategoryParentSelect.vue';
+import MediaImageField from '../../media/components/MediaImageField.vue';
+import type { MediaPicture } from '../../media/types';
 
 /**
- * Creates (categoryId null) or edits a category. The image is uploaded or removed after the
- * category itself is saved; if that step fails, the dialog stays open in edit mode to retry.
+ * Creates (categoryId null) or edits a category. The image is chosen from the media library and
+ * saved with the category; its own attributes are saved right after it.
  */
 const props = defineProps<{
     open: boolean;
@@ -43,7 +44,7 @@ const form = useApiForm([
     'meta_description',
     'focus_keyphrase',
     'is_active',
-    'image',
+    'image_id',
 ] as const);
 
 const fields = reactive({
@@ -56,7 +57,8 @@ const fields = reactive({
     focusKeyphrase: '',
     visibility: 'visible' as 'visible' | 'hidden',
 });
-const image = reactive({ file: null as File | null, removed: false });
+/** Chosen from the media library; saved with the form. */
+const image = ref<MediaPicture | null>(null);
 /** The category's own attributes (inherited ones come from the parent); saved after the category. */
 const attributeIds = ref<number[]>([]);
 let savedAttributeIds: number[] = [];
@@ -105,7 +107,7 @@ const parentName = computed(
     () => flatten(props.tree).find((item) => item.node.id === fields.parentId)?.node.name ?? null,
 );
 
-const hasImage = computed(() => image.file !== null || (Boolean(loaded.value?.image) && !image.removed));
+const hasImage = computed(() => image.value !== null);
 
 function fill(category: Category | null): void {
     fields.name = category?.name ?? '';
@@ -116,8 +118,7 @@ function fill(category: Category | null): void {
     fields.metaDescription = category?.meta_description ?? '';
     fields.focusKeyphrase = category?.focus_keyphrase ?? '';
     fields.visibility = category && !category.is_active ? 'hidden' : 'visible';
-    image.file = null;
-    image.removed = false;
+    image.value = category?.image ?? null;
     slugEdited.value = category !== null;
     attributeIds.value = [];
     savedAttributeIds = [];
@@ -187,10 +188,11 @@ async function save(): Promise<void> {
         meta_description: optional(fields.metaDescription),
         focus_keyphrase: optional(fields.focusKeyphrase),
         is_active: fields.visibility === 'visible',
+        image_id: image.value?.id ?? null,
     };
 
     const saved = await form.submit(async () => {
-        let category =
+        const category =
             savedId.value === null
                 ? await categoriesApi.create(payload)
                 : await categoriesApi.update(savedId.value, payload);
@@ -204,12 +206,6 @@ async function save(): Promise<void> {
         if (attributeIds.value.join() !== savedAttributeIds.join()) {
             await attributesApi.setForCategory(category.id, attributeIds.value);
             savedAttributeIds = [...attributeIds.value];
-        }
-
-        if (image.file) {
-            category = await categoriesApi.uploadImage(category.id, image.file);
-        } else if (image.removed && category.image) {
-            category = await categoriesApi.removeImage(category.id);
         }
 
         return category;
@@ -277,13 +273,7 @@ async function save(): Promise<void> {
                 :error="form.errors.description"
             />
 
-            <ImageField
-                v-model:file="image.file"
-                v-model:removed="image.removed"
-                :label="t('admin.categories.image')"
-                :current-url="loaded?.image?.thumb ?? null"
-                :error="form.errors.image"
-            />
+            <MediaImageField v-model="image" :label="t('admin.categories.image')" :error="form.errors.image_id" />
 
             <div class="flex flex-col gap-2">
                 <span class="text-sm font-semibold">{{ t('admin.categories.visibility') }}</span>

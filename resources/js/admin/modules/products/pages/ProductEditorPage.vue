@@ -39,7 +39,7 @@ import { htmlToText } from '../richText';
 import type { Product, ProductImage, ProductStatus, ProductType, SaveProductPayload } from '../types';
 import { fromLocalInput, newRow, rowFromVariant, toLocalInput, toPayload, type VariantRow } from '../variants';
 
-/** Create (`id` null) or edit a product. Everything except the gallery is saved with one Save. */
+/** Create (`id` null) or edit a product. Everything, the gallery included, is saved with one Save. */
 const props = defineProps<{ id: number | null }>();
 
 const { t } = useI18n();
@@ -130,6 +130,17 @@ const fields = reactive({
 const chosen = ref<ChosenOption[]>([]);
 const rows = ref<VariantRow[]>([newRow()]);
 const images = ref<ProductImage[]>([]);
+
+// A variant's picture must stay in the gallery: removing it from the gallery clears it.
+watch(images, (list) => {
+    const ids = new Set(list.map((image) => image.id));
+
+    for (const row of rows.value) {
+        if (row.imageId !== null && !ids.has(row.imageId)) {
+            row.imageId = null;
+        }
+    }
+});
 const specValues = ref<Record<number, SpecificationInput>>({});
 const slugEdited = ref(false);
 
@@ -309,6 +320,7 @@ function payload(): SaveProductPayload {
         option_ids: fields.type === 'variable' ? chosen.value.map((item) => item.optionId) : [],
         variants: rows.value.map((row) => toPayload(row, fields.trackStock)),
         specifications: specificationsPayload(),
+        image_ids: images.value.map((image) => image.id),
     };
 }
 
@@ -660,7 +672,7 @@ const selectClass =
 
                 <section id="images" :class="cardClass" aria-labelledby="images-title">
                     <h2 id="images-title" class="text-lg font-bold">{{ t('admin.products.sections.images') }}</h2>
-                    <ImagesManager v-model="images" :product-id="product?.id ?? null" />
+                    <ImagesManager v-model="images" />
                 </section>
 
                 <section id="specifications" :class="cardClass" aria-labelledby="specifications-title">

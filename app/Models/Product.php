@@ -6,9 +6,11 @@ namespace App\Models;
 
 use App\Contracts\SeoSubject;
 use App\Data\Products\ProductFilters;
+use App\Enums\MediaUsageRole;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Models\Concerns\HasSeo;
+use App\Models\Concerns\UsesMediaLibrary;
 use App\Support\CategoryTree;
 use App\Support\RichText;
 use App\Support\Seo\SeoText;
@@ -22,12 +24,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * A product. Every product sells through variants (SKUs): a simple product has exactly one.
@@ -38,12 +37,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
     'track_stock', 'allow_backorders', 'low_stock_threshold', 'weight_grams', 'length_mm', 'width_mm',
     'height_mm', 'meta_title', 'meta_description', 'focus_keyphrase',
 ])]
-class Product extends Model implements HasMedia, SeoSubject
+class Product extends Model implements SeoSubject
 {
     /** @use HasFactory<ProductFactory> */
-    use HasFactory, HasSeo, InteractsWithMedia, SoftDeletes;
-
-    public const string GALLERY_COLLECTION = 'gallery';
+    use HasFactory, HasSeo, SoftDeletes, UsesMediaLibrary;
 
     /**
      * Get the attributes that should be cast.
@@ -214,9 +211,9 @@ class Product extends Model implements HasMedia, SeoSubject
             ->whereDoesntHave('variants', fn (Builder $variants) => $variants->where('is_enabled', true)->where('stock_quantity', '>', 0));
     }
 
-    public function seoImageCollection(): string
+    public function hasSeoImage(): bool
     {
-        return self::GALLERY_COLLECTION;
+        return $this->galleryAssets()->exists();
     }
 
     /**
@@ -227,35 +224,27 @@ class Product extends Model implements HasMedia, SeoSubject
         return RichText::toPlainText((string) $this->description);
     }
 
-    public function registerMediaCollections(): void
+    /**
+     * The gallery: library files in order; the first is the main image. Variant images are chosen
+     * from it.
+     *
+     * @return MorphToMany<MediaAsset, $this>
+     */
+    public function galleryAssets(): MorphToMany
     {
-        $this->addMediaCollection(self::GALLERY_COLLECTION)
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
-    }
-
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        // Products are fitted, never cropped, so nothing of the product is cut off.
-        $this->addMediaConversion('thumb')->nonQueued()->format('webp')->fit(Fit::Contain, 320, 320);
-        $this->addMediaConversion('medium')->nonQueued()->format('webp')->fit(Fit::Max, 800, 800);
-        $this->addMediaConversion('large')->nonQueued()->format('webp')->fit(Fit::Max, 1600, 1600);
+        return $this->mediaAssetsFor(MediaUsageRole::Gallery);
     }
 
     /**
-     * The gallery in order; the first image is the main image.
+     * The gallery's pictures in order (each: the file id, URLs and alt text).
      *
-     * @return list<array{id: int, original: string, thumb: string, medium: string, large: string}>
+     * @return list<array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}>
      */
     public function images(): array
     {
-        return $this->getMedia(self::GALLERY_COLLECTION)
-            ->map(fn (Media $media): array => [
-                'id' => (int) $media->id,
-                'original' => $media->getUrl(),
-                'thumb' => $media->getAvailableUrl(['thumb']),
-                'medium' => $media->getAvailableUrl(['medium']),
-                'large' => $media->getAvailableUrl(['large']),
-            ])
+        return $this->galleryAssets
+            ->map(fn (MediaAsset $asset): ?array => $asset->picture())
+            ->filter()
             ->values()
             ->all();
     }

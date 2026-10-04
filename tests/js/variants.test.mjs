@@ -22,7 +22,7 @@ const variant = (overrides = {}) => ({
     discount_percent: 0,
     stock_quantity: 4,
     is_enabled: true,
-    image_media_id: null,
+    image_id: null,
     option_value_ids: [1, 10],
     ...overrides,
 });

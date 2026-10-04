@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Admin\Categories;
 
 use App\Data\Categories\CategoryData;
+use App\Http\Requests\Concerns\HasMediaFields;
 use App\Http\Requests\Concerns\HasSlugField;
 use App\Models\Category;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -16,7 +17,7 @@ use Illuminate\Validation\Rule;
  */
 class SaveCategoryRequest extends FormRequest
 {
-    use HasSlugField;
+    use HasMediaFields, HasSlugField;
 
     protected function prepareForValidation(): void
     {
@@ -42,6 +43,8 @@ class SaveCategoryRequest extends FormRequest
             'meta_description' => ['nullable', 'string', 'max:500'],
             'focus_keyphrase' => ['nullable', 'string', 'max:120'],
             'is_active' => ['required', 'boolean'],
+            // The image: an image of the media library (null: no image).
+            'image_id' => ['nullable', 'integer', $this->libraryImageRule()],
         ];
     }
 
@@ -56,6 +59,7 @@ class SaveCategoryRequest extends FormRequest
             metaDescription: $this->optionalText('meta_description'),
             focusKeyphrase: $this->optionalText('focus_keyphrase'),
             isActive: $this->boolean('is_active'),
+            imageId: $this->libraryImageId('image_id'),
         );
     }
 

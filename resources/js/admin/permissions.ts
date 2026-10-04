@@ -19,6 +19,9 @@ export const Permission = {
     ManageAttributes: 'attributes.manage',
     ViewProducts: 'products.view',
     ManageProducts: 'products.manage',
+    ViewMedia: 'media.view',
+    UploadMedia: 'media.upload',
+    ManageMedia: 'media.manage',
     ManageSettings: 'settings.manage',
 } as const;
 

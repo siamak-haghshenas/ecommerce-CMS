@@ -1,9 +1,7 @@
-/** Image URLs of a category; conversions are webp. */
-export interface CategoryImage {
-    original: string;
-    thumb: string;
-    medium: string;
-}
+import type { MediaPicture } from '../media/types';
+
+/** A category's image: a file of the media library. */
+export type CategoryImage = MediaPicture;
 
 /** One node of the admin tree (GET /admin/categories). */
 export interface CategoryNode {
@@ -54,4 +52,6 @@ export interface SaveCategoryPayload {
     meta_description: string | null;
     focus_keyphrase: string | null;
     is_active: boolean;
+    /** A media library image, or null. */
+    image_id: number | null;
 }

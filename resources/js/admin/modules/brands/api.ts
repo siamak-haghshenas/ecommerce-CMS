@@ -22,16 +22,4 @@ export const brandsApi = {
     /** Permission: brands.manage. `ids` must be every brand, in the new order (409 otherwise). */
     reorder: async (ids: number[]): Promise<Brand[]> =>
         (await http.put<Resource<Brand[]>>('/admin/brands/order', { ids })).data.data,
-
-    /** Permission: brands.manage. Replaces the current logo. */
-    uploadLogo: async (id: number, logo: File): Promise<Brand> => {
-        const body = new FormData();
-        body.append('logo', logo);
-
-        return (await http.post<Resource<Brand>>(`/admin/brands/${id}/logo`, body)).data.data;
-    },
-
-    /** Permission: brands.manage */
-    removeLogo: async (id: number): Promise<Brand> =>
-        (await http.delete<Resource<Brand>>(`/admin/brands/${id}/logo`)).data.data,
 };

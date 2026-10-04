@@ -30,6 +30,6 @@ class CategoryController extends Controller
 
         abort_if($node === null || ! $tree->isVisible($node->id), 404);
 
-        return new CategoryResource(Category::query()->with('media')->findOrFail($node->id));
+        return new CategoryResource(Category::query()->with('imageAssets.media')->findOrFail($node->id));
     }
 }

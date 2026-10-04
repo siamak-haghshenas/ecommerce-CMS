@@ -31,7 +31,7 @@ class ScoreSeoCommand extends Command
         foreach ($types as $type) {
             $count = 0;
 
-            $type->modelClass()::query()->with('media')->lazyById()->each(function ($item) use ($scoreSeo, &$count): void {
+            $type->modelClass()::query()->lazyById()->each(function ($item) use ($scoreSeo, &$count): void {
                 $scoreSeo->score($item);
                 $count++;
             });

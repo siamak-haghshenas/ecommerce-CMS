@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\V1\Admin;
 
+use App\Models\MediaAsset;
 use App\Models\OptionValue;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * A product on the bulk edit page with every variant's editable values. Amounts are Rials.
@@ -25,8 +25,8 @@ class BulkProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $gallery = $this->getMedia(Product::GALLERY_COLLECTION)->keyBy('id');
-        $thumb = fn (?Media $media): ?string => $media?->getAvailableUrl(['thumb']) ?: null;
+        $gallery = $this->galleryAssets->keyBy('id');
+        $thumb = fn (?MediaAsset $asset): ?string => $asset?->urls()['thumb'] ?? null;
         // Variant labels list the values in the product's option order ("M · Red").
         $optionOrder = $this->options->pluck('id')->flip();
 
@@ -45,7 +45,7 @@ class BulkProductResource extends JsonResource
                     ->sortBy(fn (OptionValue $value): int => $optionOrder[$value->option_id] ?? PHP_INT_MAX)
                     ->pluck('value')
                     ->implode(' · '),
-                'image' => $variant->image_media_id === null ? null : $thumb($gallery->get($variant->image_media_id)),
+                'image' => $variant->image_asset_id === null ? null : $thumb($gallery->get($variant->image_asset_id)),
                 'price' => $variant->price,
                 'sale_price' => $variant->sale_price,
                 'sale_ends_at' => $variant->sale_price === null ? null : $variant->sale_ends_at?->toIso8601String(),
@@ -62,6 +62,6 @@ class BulkProductResource extends JsonResource
      */
     public static function relations(): array
     {
-        return ['media', 'options', 'variants.optionValues'];
+        return ['galleryAssets.media', 'options', 'variants.optionValues'];
     }
 }

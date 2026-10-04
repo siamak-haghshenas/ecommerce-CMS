@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\Ai\AiManager;
 use App\Services\Ai\Drivers\FakeAiDriver;
 use App\Services\Sms\Drivers\ArraySmsDriver;
 use App\Services\Sms\SmsManager;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
@@ -92,4 +94,17 @@ function assertIssuedTokenFor(TestResponse $response, User $user): string
 function assertNoTokenIssued(): void
 {
     expect(PersonalAccessToken::query()->count())->toBe(0);
+}
+
+/**
+ * An image of the media library with its file and versions (fake the `public` disk first).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function libraryImage(string $name = 'photo.jpg', array $attributes = []): MediaAsset
+{
+    $asset = MediaAsset::factory()->create(['name' => $name, ...$attributes]);
+    $asset->addMedia(UploadedFile::fake()->image($name, 400, 300))->toMediaCollection(MediaAsset::FILE_COLLECTION);
+
+    return $asset;
 }
