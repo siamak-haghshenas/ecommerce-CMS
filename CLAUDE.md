@@ -115,6 +115,15 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Settings page** (`/admin/settings`): visible to all staff, editable by the super admin (`settings.manage`).
 - Sale and publish dates use the browser's `datetime-local` picker (Gregorian); a Jalali date picker would need an extra package.
 
+#### Bulk edit page (`/admin/products/bulk-edit`, `products.manage`)
+- **Inline editing like a seller panel, one Save for the whole page.** Opened from the menu ("Bulk edit") and the product list header. A card per product (image, name, status, summary: variants, price range, total stock; variable products can be folded) with a row per variant: image (the variant's own, else the product's), label, SKU, and editable **price, sale price, stock, active**. Sale dates are not edited here.
+- Filters live in the URL: search, quick-filter chips with counts (`quick`: all / out of stock / low stock / on sale / inactive variant), and behind "Filters" status, category, brand and products per page (20 / 50 / 100); paginated.
+- Fields read like text until hovered or focused. A changed field turns amber with the old value crossed out under it; the row gets an accent bar, the card a "N changes" pill. Empty sale = "+ Add sale"; a sale shows its discount pill and end date; × removes it. Stock has − / + buttons and a dot (out / low / in stock). Checks while typing: price and stock required, sale below the price; Save is disabled while any field is invalid.
+- **Save = `PUT admin/products/bulk`** with `variants[i]`: `id` + only changed `price`, `sale_price`, `is_enabled`, `stock_quantity` (+ `stock_quantity_was`). **All or nothing**: errors come back as `variants.{i}.{field}` and are shown on the row; stock that changed since the page loaded → the row shows "now X", the page reloads its rows keeping the changes, and the next Save compares against the new number (409 `stock_changed` if it changes between validation and saving). A published product keeps ≥1 enabled variant; variants of deleted products and stock of untracked products are refused.
+- Saving: a sale added here starts now with no end date (old dates are cleared); changing an existing sale price keeps its dates; removing a sale clears them. Stock goes through `AdjustStockAction` with reason `bulk_edit`. Each changed product gets one `product.updated` audit entry (`fields: ['variants']`, `bulk: true`).
+- Unsaved changes: changing a filter or page, or leaving, asks **Save and continue / Discard / Stay**; reloading the tab warns. Enter moves to the same field in the next row. The floating save bar ("N unsaved changes · Undo · Save all") appears only with changes.
+- Below `xl` the variant fields wrap into a grid (2 per row on phones). Logic in `products/bulkEdit.ts` (tested by `tests/js/bulkEdit.test.mjs`); the list's filters are the `Product::matching()` scope, shared with the product list.
+
 #### Storefront catalog API (phase 4, public)
 - **Visible product** (`StorefrontProductQuery::visible()`): published, `published_at` passed, not deleted, ≥1 enabled variant, and ≥1 category that is visible (active with all ancestors active, `CategoryTree::visibleIds()`). Anything else is 404 on the detail endpoint.
 - `GET /api/v1/products`: `q` (every normalized word in `search_text`), `category` (slug, includes visible sub-categories), `brand` (slug, active only), `tag` (slug), `filter[attribute-slug]` (`a,b` select values · `13..16`, `13..` or `..16` number range · `1`/`0` boolean), `option[option-slug]=red,blue` (**one enabled variant must match every chosen option**), `min_price` / `max_price` (Rials, on the current price), `in_stock`, `on_sale`, `sort` (`newest` default, `price_asc`, `price_desc`, `name`), `page`, `per_page` (≤48, default 24). An unknown or non-filterable slug matches nothing (never silently ignored).
@@ -259,6 +268,7 @@ app/
 | `POST products` · `PUT products/{product}` · `DELETE products/{product}` · `POST products/{product}/restore` · `POST products/status` | `products.manage` |
 | `POST products/{product}/images` · `PUT products/{product}/images/order` · `DELETE products/{product}/images/{media}` | `products.manage` |
 | `PUT tags/{tag}` · `POST tags/{tag}/merge` · `DELETE tags/{tag}` | `products.manage` |
+| `GET products/bulk` (the list's filters + `quick`; `meta.quick_counts`) · `PUT products/bulk` (`variants`, all or nothing) | `products.manage` |
 | `GET settings` | any staff |
 | `PUT settings` | `settings.manage` (super admin) |
 

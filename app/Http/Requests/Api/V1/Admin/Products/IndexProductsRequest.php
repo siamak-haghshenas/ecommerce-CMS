@@ -30,6 +30,7 @@ class IndexProductsRequest extends FormRequest
             'trashed' => ['nullable', 'boolean'],
             'sort' => ['nullable', Rule::in(['newest', 'name', 'updated'])],
             'per_page' => ['nullable', 'integer', 'between:5,100'],
+            'quick' => ['nullable', Rule::in(['out', 'low', 'sale', 'inactive'])],
         ];
     }
 
@@ -48,6 +49,7 @@ class IndexProductsRequest extends FormRequest
             trashed: $this->boolean('trashed'),
             sort: $this->string('sort', 'newest')->toString(),
             perPage: $integer('per_page') ?? 20,
+            quick: $this->filled('quick') ? $this->string('quick')->toString() : null,
         );
     }
 }

@@ -73,6 +73,12 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.productCreate', permission: Permission.ManageProducts },
             },
             {
+                path: 'products/bulk-edit',
+                name: 'products-bulk',
+                component: () => import('../modules/products/pages/BulkEditPage.vue'),
+                meta: { title: 'pageTitles.productsBulk', permission: Permission.ManageProducts },
+            },
+            {
                 path: 'products/:id(\\d+)',
                 name: 'product',
                 component: () => import('../modules/products/pages/ProductEditorPage.vue'),

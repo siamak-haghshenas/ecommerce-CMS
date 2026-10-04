@@ -1,6 +1,12 @@
 import { http } from '@/shared/http/client';
 import type { Paginated, Resource } from '@/shared/types/api';
 import type { Attribute } from '../attributes/types';
+import type { BulkProduct, BulkVariantPayload } from './bulkEdit';
+
+/** A bulk edit page: products, pagination and how many products each quick filter matches. */
+type BulkPage = Paginated<BulkProduct> & {
+    meta: { quick_counts: Record<'all' | 'out' | 'low' | 'sale' | 'inactive', number> };
+};
 import type {
     Product,
     ProductFilters,
@@ -42,6 +48,18 @@ export const productsApi = {
     changeStatus: async (ids: number[], status: ProductStatus): Promise<{ updated: number[]; skipped: number[] }> =>
         (await http.post<Resource<{ updated: number[]; skipped: number[] }>>('/admin/products/status', { ids, status }))
             .data.data,
+
+    /** Permission: products.manage. A page of products with every variant, plus counts per quick filter. */
+    bulkList: async (filters: ProductFilters = {}): Promise<BulkPage> =>
+        (await http.get<BulkPage>('/admin/products/bulk', { params: filters })).data,
+
+    /**
+     * Permission: products.manage. All or nothing: 422 with keys like `variants.3.sale_price`,
+     * 409 `stock_changed` when stock moved after validation. Returns the changed variants' ids.
+     */
+    bulkSave: async (variants: BulkVariantPayload[]): Promise<number[]> =>
+        (await http.put<Resource<{ variant_ids: number[] }>>('/admin/products/bulk', { variants })).data.data
+            .variant_ids,
 
     /** Permission: products.manage. Returns the gallery in order. */
     uploadImage: async (id: number, image: File): Promise<ProductImage[]> => {

@@ -10,6 +10,8 @@ enum StockMovementReason: string
     case Initial = 'initial';
     /** Changed by staff in the admin panel. */
     case Adjustment = 'adjustment';
+    /** Changed by staff in the bulk edit page. */
+    case BulkEdit = 'bulk_edit';
     /** Sold (orders module). */
     case Order = 'order';
     /** An order was cancelled and its items returned to stock. */

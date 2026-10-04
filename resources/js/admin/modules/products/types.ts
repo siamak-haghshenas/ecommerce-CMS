@@ -158,13 +158,15 @@ export interface ProductFilters {
     sort?: 'newest' | 'name' | 'updated';
     page?: number;
     per_page?: number;
+    /** The bulk edit page's quick filters. */
+    quick?: 'out' | 'low' | 'sale' | 'inactive';
 }
 
 export interface StockMovement {
     id: number;
     variant: { id: number; sku: string | null };
     user: { id: number; name: string } | null;
-    reason: 'initial' | 'adjustment' | 'order' | 'order_cancelled' | 'return';
+    reason: 'initial' | 'adjustment' | 'bulk_edit' | 'order' | 'order_cancelled' | 'return';
     quantity_change: number;
     quantity_before: number;
     quantity_after: number;

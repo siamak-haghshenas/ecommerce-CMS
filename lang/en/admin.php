@@ -42,6 +42,9 @@ return [
             'attribute_not_applicable' => 'This specification doesn’t belong to the product’s categories.',
             'specification_value' => 'Enter a valid value for this specification.',
             'too_many_images' => 'A product can have at most :max images.',
+            'stock_not_tracked' => 'This product doesn’t track stock.',
+            'stock_changed_to' => 'The stock changed meanwhile (for example, an order was placed); it is now :quantity.',
+            'product_deleted' => 'This product has been deleted. Reload the page.',
         ],
     ],
 

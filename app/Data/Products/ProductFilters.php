@@ -24,5 +24,15 @@ final readonly class ProductFilters
         public bool $trashed = false,
         public string $sort = 'newest',
         public int $perPage = 20,
+        /** The bulk editor's quick filters: "out", "low", "sale" (a running sale) or "inactive" (a disabled variant). */
+        public ?string $quick = null,
     ) {}
+
+    /**
+     * The same filters with another quick filter (the bulk editor counts each one).
+     */
+    public function withQuick(?string $quick): self
+    {
+        return new self(...[...get_object_vars($this), 'quick' => $quick]);
+    }
 }

@@ -30,6 +30,14 @@ final class ProductException extends Exception implements ShouldntReport
         return new self('stock_changed', Response::HTTP_CONFLICT, "variants.{$variantIndex}.stock_quantity");
     }
 
+    /**
+     * The same, for a variant saved by the bulk edit page.
+     */
+    public static function bulkStockChanged(int $index): self
+    {
+        return new self('stock_changed', Response::HTTP_CONFLICT, "variants.{$index}.stock_quantity");
+    }
+
     public function render(): JsonResponse
     {
         $message = __("admin.errors.{$this->errorCode}");

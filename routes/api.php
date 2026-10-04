@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerStatusController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
@@ -204,6 +205,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::middleware(PermissionMiddleware::using(Permission::ManageProducts))->group(function () {
                     Route::post('/', [ProductController::class, 'store'])->name('store');
                     Route::post('status', [ProductController::class, 'changeStatus'])->name('status');
+                    Route::get('bulk', [BulkProductController::class, 'index'])->name('bulk.index');
+                    Route::put('bulk', [BulkProductController::class, 'update'])->name('bulk.update');
                     Route::put('{product}', [ProductController::class, 'update'])->whereNumber('product')->name('update');
                     Route::delete('{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
                     Route::post('{product}/restore', [ProductController::class, 'restore'])->whereNumber('product')->withTrashed()->name('restore');

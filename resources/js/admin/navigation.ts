@@ -62,6 +62,12 @@ export const navigation: NavGroup[] = [
                 to: { name: 'attributes' },
                 permission: Permission.ViewAttributes,
             },
+            {
+                label: 'admin.nav.bulkEdit',
+                icon: 'pen',
+                to: { name: 'products-bulk' },
+                permission: Permission.ManageProducts,
+            },
             { label: 'admin.nav.tags', icon: 'tag', to: { name: 'tags' }, permission: Permission.ViewProducts },
         ],
     },

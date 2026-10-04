@@ -241,10 +241,16 @@ const toggleClass = (on: boolean): string[] => [
                     {{ t('admin.products.count', { n: formatNumber(result?.meta.total ?? 0) }) }}
                 </p>
             </div>
-            <AppButton v-if="canManage" size="md" @click="router.push({ name: 'product-create' })">
-                <AppIcon name="plus" :size="18" />
-                {{ t('admin.products.new') }}
-            </AppButton>
+            <div v-if="canManage" class="flex flex-wrap gap-2">
+                <AppButton variant="secondary" size="md" @click="router.push({ name: 'products-bulk' })">
+                    <AppIcon name="pen" :size="18" />
+                    {{ t('admin.products.bulkEdit') }}
+                </AppButton>
+                <AppButton size="md" @click="router.push({ name: 'product-create' })">
+                    <AppIcon name="plus" :size="18" />
+                    {{ t('admin.products.new') }}
+                </AppButton>
+            </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -330,7 +336,7 @@ const toggleClass = (on: boolean): string[] => [
             />
 
             <template v-else>
-                <table class="hidden w-full lg:table">
+                <table class="hidden w-full xl:table">
                     <thead class="bg-bg text-xs font-semibold text-fg-muted">
                         <tr>
                             <th v-if="canManage && !trashed" scope="col" class="w-12 px-4 py-3">
@@ -342,7 +348,9 @@ const toggleClass = (on: boolean): string[] => [
                                     @change="toggleAll"
                                 />
                             </th>
-                            <th scope="col" class="px-4 py-3 text-start">{{ t('admin.products.colProduct') }}</th>
+                            <th scope="col" class="w-full px-4 py-3 text-start">
+                                {{ t('admin.products.colProduct') }}
+                            </th>
                             <th scope="col" class="px-4 py-3 text-start">{{ t('admin.products.colPrice') }}</th>
                             <th scope="col" class="px-4 py-3 text-start">{{ t('admin.products.colStock') }}</th>
                             <th scope="col" class="px-4 py-3 text-start">{{ t('admin.products.colStatus') }}</th>
@@ -360,7 +368,8 @@ const toggleClass = (on: boolean): string[] => [
                                     @change="toggle(item.id)"
                                 />
                             </td>
-                            <td class="px-4 py-3">
+                            <!-- max-w-0: the product column takes the remaining width, so long names wrap instead of pushing the other columns out. -->
+                            <td class="max-w-0 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <span
                                         class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line bg-surface-muted text-fg-muted"
@@ -380,10 +389,12 @@ const toggleClass = (on: boolean): string[] => [
                                                 :rating="ratingOf(item.seo_score)"
                                                 :label="seoLabel(item.seo_score)"
                                                 size="sm"
+                                                class="shrink-0"
                                             />
                                             <RouterLink
                                                 :to="{ name: 'product', params: { id: item.id } }"
-                                                class="truncate rounded font-semibold text-fg hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                                :title="item.name"
+                                                class="line-clamp-2 rounded font-semibold break-words text-fg hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                                             >
                                                 {{ item.name }}
                                             </RouterLink>
@@ -449,7 +460,7 @@ const toggleClass = (on: boolean): string[] => [
                     </tbody>
                 </table>
 
-                <ul class="divide-y divide-line lg:hidden">
+                <ul class="divide-y divide-line xl:hidden">
                     <li v-for="item in result.data" :key="item.id" class="flex items-center gap-3 px-4 py-3.5">
                         <input
                             v-if="canManage && !trashed"
