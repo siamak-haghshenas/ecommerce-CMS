@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\ProductVariant;
 use App\Support\CategoryTree;
+use App\Support\RichText;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -42,7 +43,9 @@ class ProductResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            // Sanitized HTML (bold, italic, links, lists), and the same as plain text for cards and meta tags.
             'short_description' => $this->short_description,
+            'short_description_text' => $this->short_description === null ? null : RichText::toPlainText($this->short_description),
             // Cleaned on save: safe to render as HTML.
             'description' => $this->description,
             'brand' => $this->brand?->is_active ? [

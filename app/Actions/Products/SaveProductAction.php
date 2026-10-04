@@ -15,6 +15,7 @@ use App\Exceptions\ProductException;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\RichText;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -80,6 +81,9 @@ final readonly class SaveProductAction
             if (array_filter($product->options()->sync($options)) !== []) {
                 $changed[] = 'options';
             }
+
+            // Library images and videos in the description are in use while it shows them.
+            $product->syncMediaAssets(MediaUsageRole::Content, RichText::mediaIds($product->description));
 
             if ($product->syncMediaAssets(MediaUsageRole::Gallery, $data->imageIds)) {
                 $changed[] = 'images';

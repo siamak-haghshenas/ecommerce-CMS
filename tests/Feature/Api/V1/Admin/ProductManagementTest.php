@@ -15,6 +15,7 @@ use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\Tag;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 
@@ -513,5 +514,68 @@ describe('stock history', function () {
             ->assertJsonPath('data.0.quantity_change', 2)
             ->assertJsonPath('data.0.user.id', $admin->id)
             ->assertJsonPath('data.0.variant.sku', 'SH-001');
+    });
+});
+
+describe('descriptions', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('keeps only library images and videos in the description, with addresses from the library', function () {
+        $photo = libraryImage('front.jpg', ['alt' => 'Front']);
+        $cover = libraryImage('cover.jpg');
+        $video = MediaAsset::factory()->video()->create(['cover_id' => $cover->id]);
+        $video->addMedia(UploadedFile::fake()->createWithContent('clip.mp4', 'video'))->toMediaCollection(MediaAsset::FILE_COLLECTION);
+        $admin = productManager();
+
+        $description = actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload(['description' => implode('', [
+            "<p>Look:</p><img data-media-id=\"{$photo->id}\" src=\"https://evil.test/x.png\">",
+            "<video data-media-id=\"{$video->id}\" src=\"https://evil.test/x.mp4\"></video>",
+            '<img src="https://evil.test/tracker.png">',
+            '<img data-media-id="999999" src="/storage/1/a.jpg">',
+            "<video data-media-id=\"{$photo->id}\"></video>",
+        ])]))->assertCreated()->json('data.description');
+
+        expect($description)->not->toContain('evil.test')
+            ->and(substr_count($description, '<img'))->toBe(1)
+            ->and(substr_count($description, '<video'))->toBe(1)
+            ->and($description)->toContain('alt="Front"')
+            ->and($description)->toContain('src="'.$photo->urls()['large'].'"')
+            ->and($description)->toContain('poster="'.$cover->urls()['large'].'"')
+            ->and($photo->isInUse())->toBeTrue()
+            ->and($video->isInUse())->toBeTrue();
+
+        actingAs($admin)->getJson(route('api.v1.admin.media.show', $photo))->assertJsonPath('data.usages.0.role', 'content');
+    });
+
+    it('frees description files once they are removed from it', function () {
+        $photo = libraryImage();
+        $admin = productManager();
+        $product = actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload([
+            'description' => "<p>x</p><img data-media-id=\"{$photo->id}\">",
+        ]))->json('data');
+
+        actingAs($admin)->putJson(route('api.v1.admin.products.update', ['product' => $product['id']]), productPayload([
+            'description' => '<p>x</p>',
+            'variants' => [['id' => $product['variants'][0]['id'], 'sku' => 'SH-001', 'price' => 1, 'is_enabled' => true]],
+        ]))->assertOk();
+
+        expect($photo->isInUse())->toBeFalse();
+    });
+
+    it('limits the short description to 1000 characters of text and gives storefronts plain text too', function () {
+        $admin = productManager();
+        $category = Category::factory()->create();
+
+        actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload(['short_description' => '<p><strong>'.str_repeat('a', 1001).'</strong></p>']))
+            ->assertJsonValidationErrors(['short_description']);
+
+        $product = actingAs($admin)->postJson(route('api.v1.admin.products.store'), productPayload([
+            'status' => 'published',
+            'category_ids' => [$category->id],
+            'short_description' => '<h2>Soft</h2><p><strong>cotton</strong> &amp; linen</p><img src="x">',
+        ]))->assertCreated()->assertJsonPath('data.short_description', '<p>Soft</p><p><strong>cotton</strong> &amp; linen</p>')->json('data');
+
+        getJson(route('api.v1.products.show', ['slug' => $product['slug']]))
+            ->assertJsonPath('data.short_description_text', "Soft\ncotton & linen");
     });
 });

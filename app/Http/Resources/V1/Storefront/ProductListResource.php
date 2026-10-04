@@ -6,6 +6,7 @@ namespace App\Http\Resources\V1\Storefront;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\RichText;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,7 +34,9 @@ class ProductListResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            // Sanitized HTML (bold, italic, links, lists), and the same as plain text for cards and meta tags.
             'short_description' => $this->short_description,
+            'short_description_text' => $this->short_description === null ? null : RichText::toPlainText($this->short_description),
             'image' => $image === null ? null : ['thumb' => $image['thumb'], 'medium' => $image['medium'], 'alt' => $image['alt']],
             'brand' => $this->brand?->is_active ? ['name' => $this->brand->name, 'persian_name' => $this->brand->persian_name, 'slug' => $this->brand->slug] : null,
             'price' => ['min' => $current->min(), 'max' => $current->max()],

@@ -14,7 +14,6 @@ import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
 import NumberField from '@/shared/ui/NumberField.vue';
 import SegmentedControl from '@/shared/ui/SegmentedControl.vue';
-import TextAreaField from '@/shared/ui/TextAreaField.vue';
 import TextField from '@/shared/ui/TextField.vue';
 import { Permission } from '../../../permissions';
 import { optionsApi } from '../../attributes/api';
@@ -30,12 +29,12 @@ import SeoPanel from '../../seo/components/SeoPanel.vue';
 import { productsApi } from '../api';
 import CategoriesField from '../components/CategoriesField.vue';
 import ImagesManager from '../components/ImagesManager.vue';
-import RichTextEditor from '../components/RichTextEditor.vue';
+import RichTextEditor from '../../editor/components/RichTextEditor.vue';
 import SpecificationsEditor, { type SpecificationInput } from '../components/SpecificationsEditor.vue';
 import StockHistoryDialog from '../components/StockHistoryDialog.vue';
 import TagsInput from '../components/TagsInput.vue';
 import VariantsEditor, { type ChosenOption } from '../components/VariantsEditor.vue';
-import { htmlToText } from '../richText';
+import { htmlToText } from '../../editor/richText';
 import type { Product, ProductImage, ProductStatus, ProductType, SaveProductPayload } from '../types';
 import { fromLocalInput, newRow, rowFromVariant, toLocalInput, toPayload, type VariantRow } from '../variants';
 
@@ -325,6 +324,20 @@ function payload(): SaveProductPayload {
 }
 
 const snapshot = ref('');
+/**
+ * The editor tidies the HTML it loads (e.g. its own markup): that is not a change by the admin, so
+ * the saved baseline takes the tidied text of that field.
+ */
+function acceptNormalized(field: 'short_description' | 'description'): void {
+    if (snapshot.value === '') {
+        return;
+    }
+
+    const baseline = JSON.parse(snapshot.value) as SaveProductPayload;
+    baseline[field] = payload()[field];
+    snapshot.value = JSON.stringify(baseline);
+}
+
 const dirty = computed(() => !loading.value && snapshot.value !== '' && JSON.stringify(payload()) !== snapshot.value);
 
 // ---- errors ----
@@ -565,20 +578,22 @@ const selectClass =
                         :error="form.errors.slug"
                         @update:model-value="onSlugInput"
                     />
-                    <TextAreaField
+                    <RichTextEditor
                         v-model="fields.shortDescription"
+                        variant="basic"
                         :label="t('admin.products.shortDescription')"
                         :hint="t('admin.products.shortDescriptionHint')"
                         optional
-                        :rows="2"
-                        :maxlength="1000"
+                        :max-chars="1000"
                         :error="form.errors.short_description"
+                        @normalized="acceptNormalized('short_description')"
                     />
                     <RichTextEditor
                         v-model="fields.description"
                         :label="t('admin.products.description')"
-                        :images="images"
+                        optional
                         :error="form.errors.description"
+                        @normalized="acceptNormalized('description')"
                     />
                 </section>
 

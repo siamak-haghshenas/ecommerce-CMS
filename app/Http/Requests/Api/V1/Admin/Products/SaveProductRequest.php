@@ -55,8 +55,9 @@ class SaveProductRequest extends FormRequest
             'type' => ['required', Rule::enum(ProductType::class)],
             'name' => ['required', 'string', 'max:255'],
             'slug' => $this->slugRules('products', $product?->id),
-            'short_description' => ['nullable', 'string', 'max:1000'],
-            'description' => ['nullable', 'string', 'max:100000'],
+            // Rich text (bold, italic, links, lists); at most 1000 characters of text (checked in after()).
+            'short_description' => ['nullable', 'string', 'max:5000'],
+            'description' => ['nullable', 'string', 'max:200000'],
             'status' => ['required', Rule::enum(ProductStatus::class)],
             'published_at' => ['nullable', 'date'],
             'brand_id' => ['nullable', 'integer', Rule::exists('brands', 'id')],
@@ -121,6 +122,10 @@ class SaveProductRequest extends FormRequest
             $this->checkVariants($validator);
             $this->checkCategories($validator);
             $this->checkSpecifications($validator);
+
+            if (mb_strlen(RichText::toPlainText((string) $this->input('short_description'))) > 1000) {
+                $validator->errors()->add('short_description', __('validation.max.string', ['attribute' => __('validation.attributes.short_description'), 'max' => 1000]));
+            }
         }];
     }
 
@@ -142,7 +147,7 @@ class SaveProductRequest extends FormRequest
             type: $type,
             name: $this->string('name')->trim()->toString(),
             slug: $this->string('slug')->toString(),
-            shortDescription: $text('short_description'),
+            shortDescription: RichText::sanitize($this->input('short_description'), full: false),
             description: RichText::sanitize($this->input('description')),
             status: ProductStatus::from($this->string('status')->toString()),
             publishedAt: $this->filled('published_at') ? CarbonImmutable::parse($this->string('published_at')->toString()) : null,
