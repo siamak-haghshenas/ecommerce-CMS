@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Categories;
 
 use App\Data\Categories\CategoryNode;
+use App\Enums\CategoryType;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
 use App\Models\User;
@@ -14,18 +15,18 @@ use Illuminate\Support\Facades\DB;
 final class ReorderCategoriesAction
 {
     /**
-     * Set the complete child order of one parent (null = top level). The ids may include
+     * Set the complete child order of one parent (null = the type's top level). The ids may include
      * categories moved in from elsewhere, but must include every current child.
      *
      * @param  list<int>  $ids
      *
      * @throws CategoryException
      */
-    public function handle(User $actor, ?int $parentId, array $ids): void
+    public function handle(User $actor, CategoryType $type, ?int $parentId, array $ids): void
     {
         $tree = CategoryTree::current();
 
-        $currentChildIds = array_map(fn (CategoryNode $node): int => $node->id, $tree->children($parentId));
+        $currentChildIds = array_map(fn (CategoryNode $node): int => $node->id, $tree->children($parentId, $type));
 
         if (array_diff($currentChildIds, $ids) !== []) {
             throw CategoryException::treeChanged();

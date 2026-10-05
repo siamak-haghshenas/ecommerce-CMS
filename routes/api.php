@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffRoleController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
 use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
+use App\Http\Controllers\Api\V1\Storefront\Blog\BlogCategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
@@ -79,6 +80,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // Catalog: public and read-only. Hidden categories (or ones under a hidden parent) are never returned.
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+
+    // Blog: public and read-only.
+    Route::prefix('blog')->name('blog.')->group(function () {
+        Route::get('categories', [BlogCategoryController::class, 'index'])->name('categories.index');
+        Route::get('categories/{slug}', [BlogCategoryController::class, 'show'])->name('categories.show');
+    });
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
     Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
@@ -156,19 +163,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             });
 
             // Categories: any depth; the tree rules live in the category actions and CategoryTree.
+            // Product and blog categories need different permissions, checked per type by the
+            // requests and controllers (CategoryType::viewPermission() / managePermission()).
             Route::prefix('categories')->name('categories.')->group(function () {
-                Route::middleware(PermissionMiddleware::using(Permission::ViewCategories))->group(function () {
-                    Route::get('/', [AdminCategoryController::class, 'index'])->name('index');
-                    Route::get('{category}', [AdminCategoryController::class, 'show'])->whereNumber('category')->name('show');
-                });
+                Route::get('/', [AdminCategoryController::class, 'index'])->name('index');
+                Route::get('{category}', [AdminCategoryController::class, 'show'])->whereNumber('category')->name('show');
+                Route::post('/', [AdminCategoryController::class, 'store'])->name('store');
+                Route::put('order', CategoryOrderController::class)->name('order');
+                Route::put('{category}', [AdminCategoryController::class, 'update'])->whereNumber('category')->name('update');
+                Route::delete('{category}', [AdminCategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
 
-                Route::middleware(PermissionMiddleware::using(Permission::ManageCategories))->group(function () {
-                    Route::post('/', [AdminCategoryController::class, 'store'])->name('store');
-                    Route::put('order', CategoryOrderController::class)->name('order');
-                    Route::put('{category}', [AdminCategoryController::class, 'update'])->whereNumber('category')->name('update');
-                    Route::delete('{category}', [AdminCategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
-                    Route::put('{category}/attributes', [CategoryAttributeController::class, 'update'])->whereNumber('category')->name('attributes.update');
-                });
+                // Specifications: product categories only.
+                Route::put('{category}/attributes', [CategoryAttributeController::class, 'update'])
+                    ->whereNumber('category')
+                    ->middleware(PermissionMiddleware::using(Permission::ManageCategories))
+                    ->name('attributes.update');
 
                 Route::get('{category}/attributes', [CategoryAttributeController::class, 'show'])
                     ->whereNumber('category')

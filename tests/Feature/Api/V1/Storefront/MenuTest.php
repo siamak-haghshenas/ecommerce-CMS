@@ -24,7 +24,7 @@ it('returns the visible items in order, with what they link to', function () {
             'type' => 'category',
             'url' => null,
             'page' => null,
-            'category' => ['slug' => 'shoes', 'name' => 'Shoes'],
+            'category' => ['slug' => 'shoes', 'name' => 'Shoes', 'type' => 'product'],
             'open_in_new_tab' => false,
             'children' => [[
                 'label' => 'Sale', 'type' => 'url', 'url' => '/sale', 'page' => null, 'category' => null,

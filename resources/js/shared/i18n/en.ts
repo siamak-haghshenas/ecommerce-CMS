@@ -233,6 +233,9 @@ const en: typeof fa = {
             removed: "{name}'s staff access was removed.",
         },
         categories: {
+            typeLabel: 'Category type',
+            types: { product: 'Product categories', blog: 'Blog categories' },
+            blogTitle: 'Blog categories',
             title: 'Categories',
             count: '{n} categories',
             new: 'New category',
@@ -1068,6 +1071,7 @@ const en: typeof fa = {
             saveAndContinue: 'Save and continue',
             discard: 'Discard changes',
             stay: 'Stay',
+            categoryGroups: { product: 'Product categories', blog: 'Blog categories' },
             types: { page: 'Page', category: 'Category', url: 'Custom link' },
             hidden: {
                 page_draft: 'Not shown: the page is a draft',

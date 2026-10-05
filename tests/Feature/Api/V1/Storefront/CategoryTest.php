@@ -72,3 +72,19 @@ it('returns 404 for hidden categories, categories under a hidden parent and unkn
         ->assertNotFound()
         ->assertJsonPath('code', 'not_found');
 })->with(['hidden', 'under-hidden', 'unknown']);
+
+it('keeps product and blog categories on their own endpoints, even with the same slug', function () {
+    $product = Category::factory()->create(['slug' => 'news', 'name' => 'News (products)']);
+    $blog = Category::factory()->blog()->create(['slug' => 'news', 'name' => 'News']);
+    Category::factory()->blog()->childOf($blog)->create(['slug' => 'local']);
+
+    getJson(route('api.v1.categories.index'))->assertJsonPath('data.*.id', [$product->id]);
+    getJson(route('api.v1.blog.categories.index'))
+        ->assertJsonPath('data.*.id', [$blog->id])
+        ->assertJsonPath('data.0.children.0.slug', 'local');
+
+    getJson(route('api.v1.categories.show', 'news'))->assertJsonPath('data.name', 'News (products)');
+    getJson(route('api.v1.blog.categories.show', 'news'))->assertJsonPath('data.name', 'News');
+    getJson(route('api.v1.blog.categories.show', 'local'))->assertJsonPath('data.breadcrumb.0.slug', 'news');
+    getJson(route('api.v1.categories.show', 'local'))->assertNotFound();
+});

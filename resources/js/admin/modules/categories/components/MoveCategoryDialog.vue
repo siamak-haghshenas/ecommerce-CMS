@@ -45,7 +45,7 @@ async function move(): Promise<void> {
 
     // The category goes last among its new siblings.
     const ids = [...childrenOf(props.tree, parentId.value).map((child) => child.id), node.id];
-    const tree = await form.submit(() => categoriesApi.reorder(parentId.value, ids));
+    const tree = await form.submit(() => categoriesApi.reorder(parentId.value, ids, node.type));
 
     if (tree) {
         emit('moved', tree, node);

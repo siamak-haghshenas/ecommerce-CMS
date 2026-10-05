@@ -50,7 +50,7 @@ final class UpdateCategoryAction
 
         if ($isMoving) {
             $category->parent_id = $data->parentId;
-            $category->position = Category::nextPositionUnder($data->parentId);
+            $category->position = Category::nextPositionUnder($data->parentId, $category->type);
         }
 
         $category->save();

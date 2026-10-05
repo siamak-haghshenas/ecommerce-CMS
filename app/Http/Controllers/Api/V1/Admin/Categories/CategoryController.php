@@ -8,6 +8,7 @@ use App\Actions\Categories\CreateCategoryAction;
 use App\Actions\Categories\DeleteCategoryAction;
 use App\Actions\Categories\UpdateCategoryAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\Categories\IndexCategoriesRequest;
 use App\Http\Requests\Api\V1\Admin\Categories\SaveCategoryRequest;
 use App\Http\Resources\V1\Admin\CategoryResource;
 use App\Http\Resources\V1\Admin\CategoryTreeResource;
@@ -16,19 +17,22 @@ use App\Models\User;
 use App\Support\CategoryTree;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class CategoryController extends Controller
 {
     /**
-     * The whole tree, nested, hidden categories included.
+     * One type's whole tree (`type`: product by default), nested, hidden categories included.
      */
-    public function index(): CategoryTreeResource
+    public function index(IndexCategoriesRequest $request): CategoryTreeResource
     {
-        return new CategoryTreeResource(CategoryTree::current());
+        return new CategoryTreeResource(CategoryTree::current(), $request->type());
     }
 
     public function show(Category $category): CategoryResource
     {
+        Gate::authorize($category->type->viewPermission()->value);
+
         return new CategoryResource($category->load('imageAssets.media'));
     }
 
@@ -48,6 +52,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category, DeleteCategoryAction $delete, #[CurrentUser] User $actor): Response
     {
+        Gate::authorize($category->type->managePermission()->value);
+
         $delete->handle($actor, $category);
 
         return response()->noContent();

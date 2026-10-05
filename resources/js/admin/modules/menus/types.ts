@@ -10,7 +10,7 @@ export interface MenuItem {
     label: string | null;
     display_label: string;
     page: { id: number; title: string; slug: string } | null;
-    category: { id: number; name: string; slug: string } | null;
+    category: { id: number; name: string; slug: string; type: 'product' | 'blog' } | null;
     url: string | null;
     open_in_new_tab: boolean;
     is_visible: boolean;
@@ -33,5 +33,12 @@ export interface SaveMenuItem {
 export interface MenuTargets {
     pages: { id: number; title: string; slug: string; state: 'draft' | 'scheduled' | 'published' }[];
     /** The category tree in order, flattened. */
-    categories: { id: number; name: string; slug: string; depth: number; is_visible: boolean }[];
+    categories: {
+        id: number;
+        type: 'product' | 'blog';
+        name: string;
+        slug: string;
+        depth: number;
+        is_visible: boolean;
+    }[];
 }

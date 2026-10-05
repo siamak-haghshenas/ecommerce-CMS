@@ -13,6 +13,7 @@ export const Permission = {
     ViewActivityLog: 'activity-log.view',
     ViewCategories: 'categories.view',
     ManageCategories: 'categories.manage',
+    ManageBlogCategories: 'blog_categories.manage',
     ViewBrands: 'brands.view',
     ManageBrands: 'brands.manage',
     ViewAttributes: 'attributes.view',

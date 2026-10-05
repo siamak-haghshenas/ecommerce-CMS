@@ -8,6 +8,7 @@ use App\Data\Products\ProductData;
 use App\Data\Products\SpecificationData;
 use App\Data\Products\VariantData;
 use App\Enums\AttributeType;
+use App\Enums\CategoryType;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Http\Requests\Concerns\HasMediaFields;
@@ -63,7 +64,8 @@ class SaveProductRequest extends FormRequest
             'brand_id' => ['nullable', 'integer', Rule::exists('brands', 'id')],
             // A published product must be in at least one category.
             'category_ids' => ['array', 'max:20', 'required_if:status,published'],
-            'category_ids.*' => ['integer', 'distinct', Rule::exists('categories', 'id')],
+            // Product categories only (blog categories share the table).
+            'category_ids.*' => ['integer', 'distinct', Rule::exists('categories', 'id')->where('type', CategoryType::Product->value)],
             'primary_category_id' => ['nullable', 'integer'],
             'tags' => ['array', 'max:30'],
             'tags.*' => ['string', 'max:60'],

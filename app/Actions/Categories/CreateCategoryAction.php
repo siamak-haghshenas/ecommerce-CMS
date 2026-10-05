@@ -21,6 +21,7 @@ final class CreateCategoryAction
     public function handle(User $actor, CategoryData $data): Category
     {
         $category = Category::query()->create([
+            'type' => $data->type,
             'parent_id' => $data->parentId,
             'name' => $data->name,
             'slug' => $data->slug,
@@ -29,7 +30,7 @@ final class CreateCategoryAction
             'meta_description' => $data->metaDescription,
             'focus_keyphrase' => $data->focusKeyphrase,
             'is_active' => $data->isActive,
-            'position' => Category::nextPositionUnder($data->parentId),
+            'position' => Category::nextPositionUnder($data->parentId, $data->type),
         ]);
 
         if ($category->syncMediaAssets(MediaUsageRole::Image, $data->imageId === null ? [] : [$data->imageId])) {

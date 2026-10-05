@@ -15,7 +15,7 @@ import { categoriesApi } from '../api';
 import { sameKeyphrase } from '../../seo/analysis';
 import SeoPanel from '../../seo/components/SeoPanel.vue';
 import { branchIds, findNode, flatten, suggestSlug } from '../tree';
-import type { Category, CategoryNode, SaveCategoryPayload } from '../types';
+import type { Category, CategoryNode, SaveCategoryPayload, CategoryType } from '../types';
 import CategoryAttributesField from './CategoryAttributesField.vue';
 import CategoryParentSelect from './CategoryParentSelect.vue';
 import MediaImageField from '../../media/components/MediaImageField.vue';
@@ -31,7 +31,10 @@ const props = defineProps<{
     /** Preselected parent when creating ("add sub-category"). */
     parentId?: number | null;
     tree: CategoryNode[];
+    /** Product categories have specifications; blog categories don't. */
+    type?: CategoryType;
 }>();
+const categoryType = computed<CategoryType>(() => props.type ?? 'product');
 const emit = defineEmits<{ close: []; saved: [category: Category, created: boolean] }>();
 
 const { t } = useI18n();
@@ -129,7 +132,10 @@ async function load(id: number): Promise<void> {
     loadError.value = null;
 
     try {
-        const [category, attributes] = await Promise.all([categoriesApi.show(id), attributesApi.forCategory(id)]);
+        const [category, attributes] = await Promise.all([
+            categoriesApi.show(id),
+            categoryType.value === 'product' ? attributesApi.forCategory(id) : Promise.resolve({ own: [] }),
+        ]);
         loaded.value = category;
         fill(category);
         savedAttributeIds = attributes.own.map((attribute) => attribute.id);
@@ -180,6 +186,7 @@ function optional(value: string): string | null {
 
 async function save(): Promise<void> {
     const payload: SaveCategoryPayload = {
+        type: categoryType.value,
         name: fields.name,
         slug: fields.slug,
         parent_id: fields.parentId,
@@ -203,7 +210,7 @@ async function save(): Promise<void> {
         savedId.value = category.id;
         loaded.value = category;
 
-        if (attributeIds.value.join() !== savedAttributeIds.join()) {
+        if (categoryType.value === 'product' && attributeIds.value.join() !== savedAttributeIds.join()) {
             await attributesApi.setForCategory(category.id, attributeIds.value);
             savedAttributeIds = [...attributeIds.value];
         }
@@ -285,13 +292,18 @@ async function save(): Promise<void> {
                 <p class="text-[13px] leading-relaxed text-fg-muted">{{ t('admin.categories.visibilityHint') }}</p>
             </div>
 
-            <CategoryAttributesField v-model="attributeIds" :parent-id="fields.parentId" :parent-name="parentName" />
+            <CategoryAttributesField
+                v-if="categoryType === 'product'"
+                v-model="attributeIds"
+                :parent-id="fields.parentId"
+                :parent-name="parentName"
+            />
 
             <SeoPanel
                 v-model:keyphrase="fields.focusKeyphrase"
                 v-model:meta-title="fields.metaTitle"
                 v-model:meta-description="fields.metaDescription"
-                type="category"
+                :type="categoryType === 'blog' ? 'blog_category' : 'category'"
                 :name="fields.name"
                 :slug="fields.slug"
                 :description="fields.description"

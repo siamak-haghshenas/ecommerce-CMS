@@ -230,6 +230,9 @@ export default {
             removed: 'دسترسی {name} به پنل حذف شد.',
         },
         categories: {
+            typeLabel: 'نوع دسته',
+            types: { product: 'دسته‌های محصول', blog: 'دسته‌های بلاگ' },
+            blogTitle: 'دسته‌های بلاگ',
             title: 'دسته‌بندی‌ها',
             count: '{n} دسته',
             new: 'دسته جدید',
@@ -1060,6 +1063,7 @@ export default {
             saveAndContinue: 'ذخیره و ادامه',
             discard: 'کنار گذاشتن تغییرات',
             stay: 'ماندن',
+            categoryGroups: { product: 'دسته‌های محصول', blog: 'دسته‌های بلاگ' },
             types: { page: 'برگه', category: 'دسته', url: 'نشانی دلخواه' },
             hidden: {
                 page_draft: 'نمایش داده نمی‌شود: برگه پیش‌نویس است',

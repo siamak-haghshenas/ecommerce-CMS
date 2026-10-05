@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\SeoSubject;
+use App\Enums\CategoryType;
 use App\Enums\MediaUsageRole;
 use App\Models\Concerns\HasSeo;
 use App\Models\Concerns\UsesMediaLibrary;
@@ -19,11 +20,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 /**
- * A catalog category. The tree has unlimited depth and is stored as `parent_id` only;
+ * A product or blog category (`type`; one table, a tree never mixes the two). The tree has unlimited depth and is stored as `parent_id` only;
  * tree questions (ancestors, descendants, visibility) are answered by CategoryTree. Its image is a
  * file of the media library (role `image`).
  */
-#[Fillable(['parent_id', 'name', 'slug', 'description', 'meta_title', 'meta_description', 'focus_keyphrase', 'position', 'is_active'])]
+#[Fillable(['type', 'parent_id', 'name', 'slug', 'description', 'meta_title', 'meta_description', 'focus_keyphrase', 'position', 'is_active'])]
 class Category extends Model implements SeoSubject
 {
     /** @use HasFactory<CategoryFactory> */
@@ -44,6 +45,7 @@ class Category extends Model implements SeoSubject
     protected function casts(): array
     {
         return [
+            'type' => CategoryType::class,
             'parent_id' => 'integer',
             'position' => 'integer',
             'is_active' => 'boolean',
@@ -53,11 +55,12 @@ class Category extends Model implements SeoSubject
     }
 
     /**
-     * The position that places a category last among the children of the given parent.
+     * The position that places a category last among the children of the given parent (or among
+     * the top-level categories of its type).
      */
-    public static function nextPositionUnder(?int $parentId): int
+    public static function nextPositionUnder(?int $parentId, CategoryType $type): int
     {
-        $lastPosition = self::query()->where('parent_id', $parentId)->max('position');
+        $lastPosition = self::query()->where('type', $type)->where('parent_id', $parentId)->max('position');
 
         return $lastPosition === null ? 0 : (int) $lastPosition + 1;
     }
@@ -101,6 +104,16 @@ class Category extends Model implements SeoSubject
     public function imageAsset(): ?MediaAsset
     {
         return $this->imageAssets->first();
+    }
+
+    /**
+     * Duplicate keyphrases are only compared among categories of the same type.
+     *
+     * @return array<string, string>
+     */
+    public function seoPeerConstraints(): array
+    {
+        return ['type' => $this->type->value];
     }
 
     public function hasSeoImage(): bool

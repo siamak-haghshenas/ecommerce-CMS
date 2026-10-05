@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 enum SeoContentType: string
 {
     case Category = 'category';
+    case BlogCategory = 'blog_category';
     case Brand = 'brand';
     case Product = 'product';
     case Page = 'page';
@@ -28,10 +29,25 @@ enum SeoContentType: string
     public function modelClass(): string
     {
         return match ($this) {
-            self::Category => Category::class,
+            self::Category, self::BlogCategory => Category::class,
             self::Brand => Brand::class,
             self::Product => Product::class,
             self::Page => Page::class,
+        };
+    }
+
+    /**
+     * Column values that pick this type's items out of the model's table (product and blog
+     * categories share one table).
+     *
+     * @return array<string, string>
+     */
+    public function constraints(): array
+    {
+        return match ($this) {
+            self::Category => ['type' => CategoryType::Product->value],
+            self::BlogCategory => ['type' => CategoryType::Blog->value],
+            default => [],
         };
     }
 
@@ -42,6 +58,7 @@ enum SeoContentType: string
     {
         return match ($this) {
             self::Category => Permission::ManageCategories,
+            self::BlogCategory => Permission::ManageBlogCategories,
             self::Brand => Permission::ManageBrands,
             self::Product => Permission::ManageProducts,
             self::Page => Permission::ManagePages,
@@ -55,9 +72,18 @@ enum SeoContentType: string
     {
         return match ($this) {
             self::Category => 'a product category page',
+            self::BlogCategory => 'a blog category page listing the articles of one topic',
             self::Brand => 'a brand page listing the products of one brand',
             self::Product => 'a product page',
             self::Page => 'an informational page of the store (e.g. about us, terms, shipping and returns)',
         };
+    }
+
+    /**
+     * Whether the item's parent is sent to the AI (categories form a tree).
+     */
+    public function hasParent(): bool
+    {
+        return $this === self::Category || $this === self::BlogCategory;
     }
 }

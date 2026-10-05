@@ -35,7 +35,7 @@ const groups = computed(() =>
     navigation
         .map((group) => ({
             ...group,
-            items: group.items.filter((item) => !item.to || !item.permission || auth.can(item.permission)),
+            items: group.items.filter((item) => !item.to || !item.permission || auth.canAny(item.permission)),
         }))
         .filter((group) => group.items.length > 0),
 );

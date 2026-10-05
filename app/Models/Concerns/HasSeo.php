@@ -33,6 +33,16 @@ trait HasSeo
     }
 
     /**
+     * Every row of the table is the same content type; models sharing a table (categories) narrow it.
+     *
+     * @return array<string, string>
+     */
+    public function seoPeerConstraints(): array
+    {
+        return [];
+    }
+
+    /**
      * The name; models with another column (a page's title) override this.
      */
     public function seoName(): string

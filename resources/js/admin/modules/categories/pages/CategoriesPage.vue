@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, provide, reactive, ref } from 'vue';
+import { computed, provide, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { useLocale } from '@/shared/composables/useLocale';
 import { useToast } from '@/shared/composables/useToast';
 import { toApiError } from '@/shared/http/errors';
@@ -9,6 +10,7 @@ import AppIcon from '@/shared/ui/AppIcon.vue';
 import EmptyState from '@/shared/ui/EmptyState.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
 import SearchInput from '@/shared/ui/SearchInput.vue';
+import SegmentedControl from '@/shared/ui/SegmentedControl.vue';
 import { Permission } from '../../../permissions';
 import { useAdminAuthStore } from '../../auth/store';
 import { categoriesApi } from '../api';
@@ -20,14 +22,33 @@ import MoveCategoryDialog from '../components/MoveCategoryDialog.vue';
 import { categoryTreeKey, type CategoryAction } from '../context';
 import { ratingOf } from '../../seo/analysis';
 import { childrenOf, flatten } from '../tree';
-import type { Category, CategoryNode } from '../types';
+import type { Category, CategoryNode, CategoryType } from '../types';
 
 const { t } = useI18n();
 const { formatNumber } = useLocale();
 const toast = useToast();
 const auth = useAdminAuthStore();
+const route = useRoute();
+const router = useRouter();
 
-const canManage = computed(() => auth.can(Permission.ManageCategories));
+/** Product and blog categories, each in its own tab; staff only see the types they may manage. */
+const canSeeProduct = computed(() => auth.can(Permission.ViewCategories));
+const canSeeBlog = computed(() => auth.can(Permission.ManageBlogCategories));
+const type = computed<CategoryType>(() =>
+    (route.query.type === 'blog' && canSeeBlog.value) || !canSeeProduct.value ? 'blog' : 'product',
+);
+const typeOptions = computed(() => [
+    { value: 'product' as const, label: t('admin.categories.types.product') },
+    { value: 'blog' as const, label: t('admin.categories.types.blog') },
+]);
+
+function switchType(next: CategoryType): void {
+    void router.replace({ query: { ...route.query, type: next === 'product' ? undefined : next } });
+}
+
+const canManage = computed(() =>
+    auth.can(type.value === 'blog' ? Permission.ManageBlogCategories : Permission.ManageCategories),
+);
 
 const tree = ref<CategoryNode[] | null>(null);
 const loading = ref(false);
@@ -62,7 +83,7 @@ async function load(): Promise<void> {
     error.value = null;
 
     try {
-        tree.value = await categoriesApi.tree();
+        tree.value = await categoriesApi.tree(type.value);
     } catch (caught) {
         error.value = toApiError(caught).message;
     } finally {
@@ -70,7 +91,16 @@ async function load(): Promise<void> {
     }
 }
 
-void load();
+watch(
+    type,
+    () => {
+        tree.value = null;
+        search.value = '';
+        collapsed.clear();
+        void load();
+    },
+    { immediate: true },
+);
 
 function expandAll(): void {
     collapsed.clear();
@@ -87,7 +117,7 @@ function collapseAll(): void {
 /** Saves a new child order; the server's tree then replaces the local one. */
 async function reorder(parentId: number | null, ids: number[]): Promise<void> {
     try {
-        tree.value = await categoriesApi.reorder(parentId, ids);
+        tree.value = await categoriesApi.reorder(parentId, ids, type.value);
         toast.show(t('admin.categories.orderSaved'));
     } catch (caught) {
         toast.show(toApiError(caught).message, 'danger');
@@ -204,13 +234,24 @@ provide(categoryTreeKey, {
     <div class="mx-auto flex max-w-5xl flex-col gap-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold">{{ t('admin.categories.title') }}</h1>
+                <h1 class="text-2xl font-bold">
+                    {{ canSeeProduct ? t('admin.categories.title') : t('admin.categories.blogTitle') }}
+                </h1>
                 <p class="text-sm text-fg-muted">{{ t('admin.categories.count', { n: formatNumber(total) }) }}</p>
             </div>
             <AppButton v-if="canManage" size="md" @click="openCreate()">
                 <AppIcon name="plus" :size="18" />
                 {{ t('admin.categories.new') }}
             </AppButton>
+        </div>
+
+        <div v-if="canSeeProduct && canSeeBlog" class="sm:w-80">
+            <SegmentedControl
+                :model-value="type"
+                :label="t('admin.categories.typeLabel')"
+                :options="typeOptions"
+                @update:model-value="switchType"
+            />
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -305,6 +346,7 @@ provide(categoryTreeKey, {
                 :category-id="form.categoryId"
                 :parent-id="form.parentId"
                 :tree="tree"
+                :type="type"
                 @close="form.open = false"
                 @saved="onSaved"
             />

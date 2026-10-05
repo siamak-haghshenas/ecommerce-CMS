@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Data\Categories;
 
+use App\Enums\CategoryType;
+
 /**
  * One category as held in the cached CategoryTree (a plain value, so it can be cached as an array).
  */
@@ -14,6 +16,7 @@ final readonly class CategoryNode
      */
     public function __construct(
         public int $id,
+        public CategoryType $type,
         public ?int $parentId,
         public string $name,
         public string $slug,
@@ -26,12 +29,13 @@ final readonly class CategoryNode
     ) {}
 
     /**
-     * @param  array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}  $row
+     * @param  array{id: int, type: string, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}  $row
      */
     public static function fromArray(array $row): self
     {
         return new self(
             id: $row['id'],
+            type: CategoryType::from($row['type']),
             parentId: $row['parent_id'],
             name: $row['name'],
             slug: $row['slug'],
@@ -45,12 +49,13 @@ final readonly class CategoryNode
     }
 
     /**
-     * @return array{id: int, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}
+     * @return array{id: int, type: string, parent_id: int|null, name: string, slug: string, position: int, is_active: bool, image: array{id: int, original: string, thumb: string|null, medium: string|null, large: string|null, alt: string|null}|null, focus_keyphrase: string|null, seo_score: int|null, readability_score: int|null}
      */
     public function toArray(): array
     {
         return [
             'id' => $this->id,
+            'type' => $this->type->value,
             'parent_id' => $this->parentId,
             'name' => $this->name,
             'slug' => $this->slug,

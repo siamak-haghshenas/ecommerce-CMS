@@ -1,5 +1,5 @@
 /** Content types using the shared SEO analysis (mirrors App\Enums\SeoContentType). */
-export type SeoContentType = 'category' | 'brand' | 'product' | 'page';
+export type SeoContentType = 'category' | 'blog_category' | 'brand' | 'product' | 'page';
 
 /** The form as currently typed; the item may not exist yet. */
 export interface SeoSuggestionRequest {

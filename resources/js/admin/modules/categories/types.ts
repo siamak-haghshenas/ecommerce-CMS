@@ -1,11 +1,15 @@
 import type { MediaPicture } from '../media/types';
 
+/** Product and blog categories share one table; a tree never mixes them. */
+export type CategoryType = 'product' | 'blog';
+
 /** A category's image: a file of the media library. */
 export type CategoryImage = MediaPicture;
 
 /** One node of the admin tree (GET /admin/categories). */
 export interface CategoryNode {
     id: number;
+    type: CategoryType;
     parent_id: number | null;
     name: string;
     slug: string;
@@ -24,6 +28,7 @@ export interface CategoryNode {
 /** A single category with all its fields (GET /admin/categories/{id}). */
 export interface Category {
     id: number;
+    type: CategoryType;
     parent_id: number | null;
     name: string;
     slug: string;
@@ -44,6 +49,8 @@ export interface Category {
 }
 
 export interface SaveCategoryPayload {
+    /** Only read when creating: a category's type never changes. */
+    type?: CategoryType;
     name: string;
     slug: string;
     parent_id: number | null;

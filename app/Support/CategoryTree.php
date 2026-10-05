@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Data\Categories\CategoryNode;
+use App\Enums\CategoryType;
 use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * The whole category tree, loaded in one query and cached as plain arrays.
+ * Every category (product and blog trees), loaded in one query and cached as plain arrays. A tree
+ * never mixes types, so only the top level is filtered by type.
  * Category saves and deletes clear the cache (see Category::booted()).
  */
 final class CategoryTree
 {
     // Versioned: bump it whenever the cached row shape changes.
-    private const string CACHE_KEY = 'category-tree.v2';
+    private const string CACHE_KEY = 'category-tree.v3';
 
     /** @var array<int, CategoryNode> */
     private array $nodes = [];
@@ -23,7 +25,7 @@ final class CategoryTree
     /** @var array<int, list<int>> Child ids per parent id, in display order; 0 holds the top level. */
     private array $childIds = [];
 
-    /** @var array<string, int> */
+    /** @var array<string, int> Keyed "type|slug": slugs are unique per type. */
     private array $idsBySlug = [];
 
     /**
@@ -35,7 +37,7 @@ final class CategoryTree
 
         foreach ($nodes as $node) {
             $this->nodes[$node->id] = $node;
-            $this->idsBySlug[$node->slug] = $node->id;
+            $this->idsBySlug[$node->type->value.'|'.$node->slug] = $node->id;
             $this->childIds[$node->parentId ?? 0][] = $node->id;
         }
     }
@@ -47,6 +49,7 @@ final class CategoryTree
             ->get()
             ->map(fn (Category $category): array => (new CategoryNode(
                 id: $category->id,
+                type: $category->type,
                 parentId: $category->parent_id,
                 name: $category->name,
                 slug: $category->slug,
@@ -72,19 +75,23 @@ final class CategoryTree
         return $this->nodes[$id] ?? null;
     }
 
-    public function findBySlug(string $slug): ?CategoryNode
+    public function findBySlug(string $slug, CategoryType $type): ?CategoryNode
     {
-        return isset($this->idsBySlug[$slug]) ? $this->nodes[$this->idsBySlug[$slug]] : null;
+        $id = $this->idsBySlug[$type->value.'|'.$slug] ?? null;
+
+        return $id === null ? null : $this->nodes[$id];
     }
 
     /**
-     * Direct children in display order; null for the top level.
+     * Direct children in display order; for the top level (null) only those of the given type.
      *
      * @return list<CategoryNode>
      */
-    public function children(?int $parentId): array
+    public function children(?int $parentId, ?CategoryType $type = null): array
     {
-        return array_map(fn (int $id): CategoryNode => $this->nodes[$id], $this->childIds[$parentId ?? 0] ?? []);
+        $children = array_map(fn (int $id): CategoryNode => $this->nodes[$id], $this->childIds[$parentId ?? 0] ?? []);
+
+        return $type === null ? $children : array_values(array_filter($children, fn (CategoryNode $node): bool => $node->type === $type));
     }
 
     /**
@@ -129,14 +136,14 @@ final class CategoryTree
     }
 
     /**
-     * Ids of every category shown on the storefront (active, with only active ancestors).
+     * Ids of every category of this type shown on the storefront (active, with only active ancestors).
      *
      * @return list<int>
      */
-    public function visibleIds(): array
+    public function visibleIds(CategoryType $type): array
     {
         $visible = [];
-        $pending = array_filter($this->children(null), fn (CategoryNode $node): bool => $node->isActive);
+        $pending = array_filter($this->children(null, $type), fn (CategoryNode $node): bool => $node->isActive);
 
         while ($pending !== []) {
             $node = array_shift($pending);
@@ -168,8 +175,8 @@ final class CategoryTree
     }
 
     /**
-     * Whether the category may be placed under the given parent (null = top level):
-     * never under itself or one of its own descendants.
+     * Whether the category may be placed under the given parent (null = top level): never under
+     * itself, one of its own descendants or a category of the other type.
      */
     public function canMoveUnder(int $id, ?int $parentId): bool
     {
@@ -179,6 +186,7 @@ final class CategoryTree
 
         return $parentId !== $id
             && $this->find($parentId) !== null
+            && $this->find($parentId)->type === $this->find($id)?->type
             && ! in_array($parentId, $this->descendantIds($id), true);
     }
 }

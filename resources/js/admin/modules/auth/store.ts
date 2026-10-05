@@ -16,6 +16,11 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
         return user.value?.permissions.includes(permission) ?? false;
     }
 
+    /** Any one of them is enough (e.g. product or blog categories). */
+    function canAny(permissions: PermissionName | PermissionName[]): boolean {
+        return (Array.isArray(permissions) ? permissions : [permissions]).some(can);
+    }
+
     async function loadUser(): Promise<void> {
         if (loaded.value) {
             return;
@@ -44,5 +49,5 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
         user.value = null;
     }
 
-    return { user, loaded, isLoggedIn, can, loadUser, setUser, logout };
+    return { user, loaded, isLoggedIn, can, canAny, loadUser, setUser, logout };
 });

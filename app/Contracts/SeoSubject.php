@@ -28,4 +28,12 @@ interface SeoSubject
      * Whether the item has a picture (the `image` check): a product's gallery, a category's image, a brand's logo.
      */
     public function hasSeoImage(): bool;
+
+    /**
+     * Column values shared by the items whose focus keyphrase this one must not repeat (e.g. a
+     * category's type); empty when every row of the table is the same content type.
+     *
+     * @return array<string, string>
+     */
+    public function seoPeerConstraints(): array;
 }

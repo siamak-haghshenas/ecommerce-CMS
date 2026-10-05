@@ -52,6 +52,13 @@ const typeOptions = computed(() => [
     { value: 'url' as const, label: t('admin.menus.types.url') },
 ]);
 
+/** Product categories, then blog categories (only the groups that have any). */
+const categoryGroups = computed(() =>
+    (['product', 'blog'] as const)
+        .map((type) => ({ type, items: props.targets.categories.filter((category) => category.type === type) }))
+        .filter((group) => group.items.length > 0),
+);
+
 /** The same check as the server: an http/https address, or a path starting with "/". */
 function isValidLink(url: string): boolean {
     if (url.startsWith('/')) {
@@ -101,6 +108,7 @@ function submit(): void {
         label: fields.label.trim(),
         pageId: fields.type === 'page' ? (page?.id ?? null) : null,
         categoryId: fields.type === 'category' ? (category?.id ?? null) : null,
+        categoryType: fields.type === 'category' ? (category?.type ?? null) : null,
         url: fields.type === 'url' ? url : '',
         openInNewTab: fields.openInNewTab,
         targetName: page?.title ?? category?.name ?? '',
@@ -177,10 +185,16 @@ const selectClass =
                     "
                 >
                     <option value="">{{ t('admin.menus.dialog.chooseCategory') }}</option>
-                    <option v-for="category in targets.categories" :key="category.id" :value="String(category.id)">
-                        {{ '— '.repeat(category.depth) }}{{ category.name
-                        }}{{ category.is_visible ? '' : ` (${t('admin.menus.hidden.category_hidden')})` }}
-                    </option>
+                    <optgroup
+                        v-for="group in categoryGroups"
+                        :key="group.type"
+                        :label="t(`admin.menus.categoryGroups.${group.type}`)"
+                    >
+                        <option v-for="category in group.items" :key="category.id" :value="String(category.id)">
+                            {{ '— '.repeat(category.depth) }}{{ category.name
+                            }}{{ category.is_visible ? '' : ` (${t('admin.menus.hidden.category_hidden')})` }}
+                        </option>
+                    </optgroup>
                 </select>
                 <p v-if="errors.target" class="mt-2 text-[13px] text-danger">{{ errors.target }}</p>
             </div>

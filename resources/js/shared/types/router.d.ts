@@ -6,7 +6,7 @@ declare module 'vue-router' {
         title?: string;
         requiresAuth?: boolean;
         guestOnly?: boolean;
-        /** Permission name the page needs (admin app). */
-        permission?: string;
+        /** Permission name the page needs (admin app); a list: any one of them. */
+        permission?: string | string[];
     }
 }

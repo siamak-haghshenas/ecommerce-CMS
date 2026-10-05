@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Data\Categories;
 
+use App\Enums\CategoryType;
+
 final readonly class CategoryData
 {
     public function __construct(
@@ -17,5 +19,7 @@ final readonly class CategoryData
         public bool $isActive,
         /** The image: a media library image, or null. */
         public ?int $imageId = null,
+        /** Only used when creating: a category's type never changes. */
+        public CategoryType $type = CategoryType::Product,
     ) {}
 }

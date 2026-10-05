@@ -25,6 +25,9 @@ enum Permission: string
     case ViewCategories = 'categories.view';
     case ManageCategories = 'categories.manage';
 
+    /** Blog categories (view and manage). Product categories need the categories permissions. */
+    case ManageBlogCategories = 'blog_categories.manage';
+
     case ViewBrands = 'brands.view';
     case ManageBrands = 'brands.manage';
 

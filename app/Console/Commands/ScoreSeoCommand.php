@@ -10,7 +10,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('seo:score {--type= : Only this content type (category, brand, product, page)}')]
+#[Signature('seo:score {--type= : Only this content type (category, blog_category, brand, product, page)}')]
 #[Description('Recalculate the stored SEO and readability scores (e.g. after changing the rules)')]
 class ScoreSeoCommand extends Command
 {
@@ -31,7 +31,7 @@ class ScoreSeoCommand extends Command
         foreach ($types as $type) {
             $count = 0;
 
-            $type->modelClass()::query()->lazyById()->each(function ($item) use ($scoreSeo, &$count): void {
+            $type->modelClass()::query()->where($type->constraints())->lazyById()->each(function ($item) use ($scoreSeo, &$count): void {
                 $scoreSeo->score($item);
                 $count++;
             });

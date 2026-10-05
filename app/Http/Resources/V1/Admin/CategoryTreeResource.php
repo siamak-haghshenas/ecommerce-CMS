@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Resources\V1\Admin;
 
 use App\Data\Categories\CategoryNode;
+use App\Enums\CategoryType;
 use App\Support\CategoryTree;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * The whole category tree for the admin panel, hidden categories included.
+ * One type's category tree for the admin panel, hidden categories included.
  */
 class CategoryTreeResource extends JsonResource
 {
-    public function __construct(private readonly CategoryTree $tree)
+    public function __construct(private readonly CategoryTree $tree, private readonly CategoryType $type)
     {
         parent::__construct($tree);
     }
@@ -39,6 +40,7 @@ class CategoryTreeResource extends JsonResource
 
             return [
                 'id' => $node->id,
+                'type' => $node->type->value,
                 'parent_id' => $node->parentId,
                 'name' => $node->name,
                 'slug' => $node->slug,
@@ -53,6 +55,6 @@ class CategoryTreeResource extends JsonResource
                 'readability_score' => $node->readabilityScore,
                 'children' => $this->branch($node->id, $isVisible),
             ];
-        }, $this->tree->children($parentId));
+        }, $this->tree->children($parentId, $this->type));
     }
 }

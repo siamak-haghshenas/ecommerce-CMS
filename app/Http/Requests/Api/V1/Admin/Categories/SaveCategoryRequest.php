@@ -5,19 +5,27 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Admin\Categories;
 
 use App\Data\Categories\CategoryData;
+use App\Enums\CategoryType;
 use App\Http\Requests\Concerns\HasMediaFields;
 use App\Http\Requests\Concerns\HasSlugField;
 use App\Models\Category;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 
 /**
- * Creating and updating a category share the same fields.
+ * Creating and updating a category share the same fields. `type` is only read when creating: a
+ * category's type never changes. Slugs are unique per type, and a parent must be of the same type.
  */
 class SaveCategoryRequest extends FormRequest
 {
     use HasMediaFields, HasSlugField;
+
+    public function authorize(): bool
+    {
+        return $this->user()?->can($this->categoryType()->managePermission()->value) ?? false;
+    }
 
     protected function prepareForValidation(): void
     {
@@ -34,10 +42,16 @@ class SaveCategoryRequest extends FormRequest
         /** @var Category|null $category */
         $category = $this->route('category');
 
+        $type = $this->categoryType()->value;
+
         return [
+            'type' => [$category === null ? 'nullable' : 'exclude', Rule::enum(CategoryType::class)],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => $this->slugRules('categories', $category?->id),
-            'parent_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
+            'slug' => [
+                ...array_filter($this->slugRules('categories', $category?->id), fn (mixed $rule): bool => ! $rule instanceof Unique),
+                Rule::unique('categories', 'slug')->where('type', $type)->ignore($category?->id),
+            ],
+            'parent_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->where('type', $type)],
             'description' => ['nullable', 'string', 'max:5000'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
@@ -60,7 +74,19 @@ class SaveCategoryRequest extends FormRequest
             focusKeyphrase: $this->optionalText('focus_keyphrase'),
             isActive: $this->boolean('is_active'),
             imageId: $this->libraryImageId('image_id'),
+            type: $this->categoryType(),
         );
+    }
+
+    /**
+     * The category's own type when updating; the requested one (product by default) when creating.
+     */
+    public function categoryType(): CategoryType
+    {
+        /** @var Category|null $category */
+        $category = $this->route('category');
+
+        return $category->type ?? CategoryType::tryFrom($this->string('type')->toString()) ?? CategoryType::Product;
     }
 
     private function optionalText(string $key): ?string

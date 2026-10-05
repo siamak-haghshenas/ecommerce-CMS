@@ -8,8 +8,8 @@ export interface NavItem {
     icon: IconName;
     /** Omitted for modules that are not built yet; they show as "soon". */
     to?: RouteLocationRaw;
-    /** Hidden when the user lacks it. */
-    permission?: PermissionName;
+    /** Hidden when the user lacks it (a list: any one of them). */
+    permission?: PermissionName | PermissionName[];
 }
 
 export interface NavGroup {
@@ -48,7 +48,7 @@ export const navigation: NavGroup[] = [
                 label: 'admin.nav.categories',
                 icon: 'tag',
                 to: { name: 'categories' },
-                permission: Permission.ViewCategories,
+                permission: [Permission.ViewCategories, Permission.ManageBlogCategories],
             },
             {
                 label: 'admin.nav.brands',

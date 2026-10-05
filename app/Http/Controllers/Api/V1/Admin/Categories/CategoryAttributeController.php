@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin\Categories;
 
 use App\Actions\Catalog\SetCategoryAttributesAction;
+use App\Enums\CategoryType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\Catalog\SetCategoryAttributesRequest;
 use App\Http\Resources\V1\Admin\AttributeResource;
@@ -22,6 +23,9 @@ class CategoryAttributeController extends Controller
      */
     public function show(Category $category): JsonResponse
     {
+        // Only product categories have specifications.
+        abort_if($category->type !== CategoryType::Product, 404);
+
         $own = $category->attributeDefinitions()->get();
         $ownIds = $own->pluck('id')->all();
 
@@ -50,6 +54,8 @@ class CategoryAttributeController extends Controller
 
     public function update(SetCategoryAttributesRequest $request, Category $category, SetCategoryAttributesAction $set, #[CurrentUser] User $actor): JsonResponse
     {
+        abort_if($category->type !== CategoryType::Product, 404);
+
         $set->handle($actor, $category, $request->ids());
 
         return $this->show($category);

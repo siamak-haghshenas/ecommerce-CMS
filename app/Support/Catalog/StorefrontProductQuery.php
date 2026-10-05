@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Catalog;
 
 use App\Data\Catalog\StorefrontProductFilters;
+use App\Enums\CategoryType;
 use App\Enums\ProductStatus;
 use App\Models\Product;
 use App\Support\CategoryTree;
@@ -44,7 +45,7 @@ final class StorefrontProductQuery
      */
     public static function visible(): Builder
     {
-        $visibleCategoryIds = CategoryTree::current()->visibleIds();
+        $visibleCategoryIds = CategoryTree::current()->visibleIds(CategoryType::Product);
 
         return Product::query()
             ->where('status', ProductStatus::Published)
@@ -69,7 +70,7 @@ final class StorefrontProductQuery
         if ($filters->categoryId !== null) {
             $tree = CategoryTree::current();
             $ids = $tree->isVisible($filters->categoryId)
-                ? array_values(array_intersect([$filters->categoryId, ...$tree->descendantIds($filters->categoryId)], $tree->visibleIds()))
+                ? array_values(array_intersect([$filters->categoryId, ...$tree->descendantIds($filters->categoryId)], $tree->visibleIds(CategoryType::Product)))
                 : [0];
             $query->whereHas('categories', fn (Builder $categories) => $categories->whereKey($ids));
         }

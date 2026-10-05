@@ -45,7 +45,10 @@ const routes: RouteRecordRaw[] = [
                 path: 'categories',
                 name: 'categories',
                 component: () => import('../modules/categories/pages/CategoriesPage.vue'),
-                meta: { title: 'pageTitles.categories', permission: Permission.ViewCategories },
+                meta: {
+                    title: 'pageTitles.categories',
+                    permission: [Permission.ViewCategories, Permission.ManageBlogCategories],
+                },
             },
             {
                 path: 'brands',
@@ -169,7 +172,7 @@ router.beforeEach(async (to) => {
     }
 
     // The API refuses the same requests; this just avoids opening a page that would only fail.
-    if (to.meta.permission && !auth.can(to.meta.permission as PermissionName)) {
+    if (to.meta.permission && !auth.canAny(to.meta.permission as PermissionName | PermissionName[])) {
         return { name: 'dashboard' };
     }
 

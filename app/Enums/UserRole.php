@@ -60,6 +60,7 @@ enum UserRole: string
                 Permission::ManagePages,
                 Permission::ViewMenus,
                 Permission::ManageMenus,
+                Permission::ManageBlogCategories,
             ],
             self::Author => [
                 Permission::AccessAdminPanel,
@@ -69,6 +70,7 @@ enum UserRole: string
                 Permission::ManagePages,
                 Permission::ViewMenus,
                 Permission::ManageMenus,
+                Permission::ManageBlogCategories,
             ],
         };
     }

@@ -30,7 +30,7 @@ class MenuItemResource extends JsonResource
             'type' => $this->type->value,
             'url' => $this->type === MenuItemType::Url ? $this->url : null,
             'page' => $this->type === MenuItemType::Page && $this->page !== null ? ['slug' => $this->page->slug, 'title' => $this->page->title] : null,
-            'category' => $this->type === MenuItemType::Category && $this->category !== null ? ['slug' => $this->category->slug, 'name' => $this->category->name] : null,
+            'category' => $this->type === MenuItemType::Category && $this->category !== null ? ['slug' => $this->category->slug, 'name' => $this->category->name, 'type' => $this->category->type->value] : null,
             'open_in_new_tab' => $this->open_in_new_tab,
             'children' => $this->parent_id === null && $this->relationLoaded('children')
                 ? self::collection(self::visible($this->children))->resolve($request)

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Storefront\Catalog;
 
 use App\Data\Catalog\StorefrontProductFilters;
 use App\Enums\AttributeType;
+use App\Enums\CategoryType;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Option;
@@ -59,7 +60,7 @@ class ProductFiltersRequest extends FormRequest
 
     public function toFilters(): StorefrontProductFilters
     {
-        $category = $this->filled('category') ? CategoryTree::current()->findBySlug($this->string('category')->toString()) : null;
+        $category = $this->filled('category') ? CategoryTree::current()->findBySlug($this->string('category')->toString(), CategoryType::Product) : null;
 
         return new StorefrontProductFilters(
             search: $this->filled('q') ? $this->string('q')->toString() : null,

@@ -19,8 +19,8 @@ class CategoryOrderController extends Controller
      */
     public function __invoke(ReorderCategoriesRequest $request, ReorderCategoriesAction $reorder, #[CurrentUser] User $actor): CategoryTreeResource
     {
-        $reorder->handle($actor, $request->parentId(), $request->ids());
+        $reorder->handle($actor, $request->type(), $request->parentId(), $request->ids());
 
-        return new CategoryTreeResource(CategoryTree::current());
+        return new CategoryTreeResource(CategoryTree::current(), $request->type());
     }
 }

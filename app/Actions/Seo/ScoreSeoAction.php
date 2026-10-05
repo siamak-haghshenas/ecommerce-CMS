@@ -73,6 +73,7 @@ final readonly class ScoreSeoAction
     {
         /** @var Collection<int, Model&SeoSubject> $items */
         $items = $like->newQuery()
+            ->where($like->seoPeerConstraints())
             ->whereNotNull('focus_keyphrase')
             ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
             ->orderBy($like->getKeyName())

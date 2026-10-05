@@ -9,6 +9,8 @@ export interface MenuRow {
     label: string;
     pageId: number | null;
     categoryId: number | null;
+    /** Product or blog category (category items only). */
+    categoryType: 'product' | 'blog' | null;
     url: string;
     openInNewTab: boolean;
     /** The page title or category name (shown when the label is empty). */
@@ -35,6 +37,7 @@ export function rowFromItem(item: MenuItem): MenuRow {
         label: item.label ?? '',
         pageId: item.page?.id ?? null,
         categoryId: item.category?.id ?? null,
+        categoryType: item.category?.type ?? null,
         url: item.url ?? '',
         openInNewTab: item.open_in_new_tab,
         targetName: item.page?.title ?? item.category?.name ?? '',

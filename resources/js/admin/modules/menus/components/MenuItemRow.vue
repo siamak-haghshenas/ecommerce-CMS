@@ -49,7 +49,7 @@ const actions = computed<ActionMenuItem[]>(() => {
 const detail = computed(() =>
     props.row.type === 'url'
         ? props.row.targetDetail
-        : `${t(`admin.menus.types.${props.row.type}`)} · /${props.row.targetDetail}`,
+        : `${t(props.row.categoryType === 'blog' ? 'admin.menus.categoryGroups.blog' : `admin.menus.types.${props.row.type}`)} · /${props.row.targetDetail}`,
 );
 </script>
 

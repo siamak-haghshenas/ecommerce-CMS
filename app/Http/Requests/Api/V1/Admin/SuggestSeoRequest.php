@@ -62,10 +62,10 @@ class SuggestSeoRequest extends FormRequest
             description: $optional('description'),
             focusKeyphrase: $optional('focus_keyphrase'),
             alternateName: $optional('alternate_name'),
-            parentPath: $type === SeoContentType::Category && $this->filled('parent_id')
+            parentPath: $type->hasParent() && $this->filled('parent_id')
                 ? $this->categoryPath($this->integer('parent_id'))
                 : [],
-            subject: $this->filled('subject_id') ? $type->modelClass()::query()->find($this->integer('subject_id')) : null,
+            subject: $this->filled('subject_id') ? $type->modelClass()::query()->where($type->constraints())->find($this->integer('subject_id')) : null,
         );
     }
 
