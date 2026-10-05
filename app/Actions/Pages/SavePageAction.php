@@ -38,6 +38,10 @@ final readonly class SavePageAction
                 'meta_title' => $data->metaTitle,
                 'meta_description' => $data->metaDescription,
                 'focus_keyphrase' => $data->focusKeyphrase,
+                'robots_noindex' => $data->robotsNoindex,
+                'canonical_url' => $data->canonicalUrl,
+                'og_title' => $data->ogTitle,
+                'og_description' => $data->ogDescription,
             ]);
 
             $changedFields = array_keys($page->getDirty());
@@ -51,8 +55,15 @@ final readonly class SavePageAction
                 $changedFields[] = 'image';
             }
 
+            if ($page->syncMediaAssets(MediaUsageRole::OgImage, $data->ogImageId === null ? [] : [$data->ogImageId])) {
+                $changedFields[] = 'og_image';
+            }
+
             // Library files shown in the content count as used, so they can't be deleted meanwhile.
             $page->syncMediaAssets(MediaUsageRole::Content, RichText::mediaIds($page->content));
+
+            // What the saver had autosaved is now either saved or deliberately left out.
+            $page->autosaves()->where('user_id', $actor->id)->delete();
 
             if (! $creating && $changedFields === []) {
                 return $page;
@@ -62,7 +73,7 @@ final readonly class SavePageAction
             $page->save();
 
             $this->scoreSeo->handle($page, $previousKeyphrase);
-            $this->keepRevision($actor, $page, $data->imageId);
+            $this->keepRevision($actor, $page, $data->imageId, $data->ogImageId);
 
             $event = $creating ? 'page.created' : 'page.updated';
 
@@ -81,9 +92,13 @@ final readonly class SavePageAction
      * Keeps the saved version unless it equals the newest revision (e.g. only the status changed),
      * and removes revisions beyond the last Page::REVISIONS_KEPT.
      */
-    private function keepRevision(User $actor, Page $page, ?int $imageId): void
+    private function keepRevision(User $actor, Page $page, ?int $imageId, ?int $ogImageId): void
     {
-        $snapshot = [...$page->only(['title', 'slug', 'excerpt', 'content', 'meta_title', 'meta_description', 'focus_keyphrase']), 'image_id' => $imageId];
+        $snapshot = [
+            ...$page->only(array_diff(PageRevision::FIELDS, ['image_id', 'og_image_id'])),
+            'image_id' => $imageId,
+            'og_image_id' => $ogImageId,
+        ];
         $latest = $page->revisions()->first();
 
         if ($latest !== null && $this->sameSnapshot($latest->snapshot(), $snapshot)) {

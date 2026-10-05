@@ -24,6 +24,8 @@ export const Permission = {
     ManageMedia: 'media.manage',
     ViewPages: 'pages.view',
     ManagePages: 'pages.manage',
+    ViewMenus: 'menus.view',
+    ManageMenus: 'menus.manage',
     ManageSettings: 'settings.manage',
 } as const;
 

@@ -20,7 +20,11 @@ use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaAssetController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaFolderController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaUploadController;
+use App\Http\Controllers\Api\V1\Admin\Menus\MenuController as AdminMenuController;
+use App\Http\Controllers\Api\V1\Admin\Menus\MenuTargetController;
+use App\Http\Controllers\Api\V1\Admin\Pages\PageAutosaveController;
 use App\Http\Controllers\Api\V1\Admin\Pages\PageController;
+use App\Http\Controllers\Api\V1\Admin\Pages\PagePreviewController;
 use App\Http\Controllers\Api\V1\Admin\Pages\PageRevisionController;
 use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
@@ -35,6 +39,7 @@ use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
+use App\Http\Controllers\Api\V1\Storefront\Content\MenuController as StorefrontMenuController;
 use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -82,7 +87,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // Content: published pages only.
     Route::get('pages', [StorefrontPageController::class, 'index'])->name('pages.index');
+    // A staff member's preview (drafts, scheduled pages, unsaved changes); the token is signed and expires.
+    Route::get('pages/preview/{token}', [StorefrontPageController::class, 'preview'])
+        ->middleware('throttle:60,1')
+        ->name('pages.preview');
     Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
+    Route::get('menus/{location}', [StorefrontMenuController::class, 'show'])->name('menus.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -224,6 +234,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::get('{page}/revisions', [PageRevisionController::class, 'index'])->whereNumber('page')->withTrashed()->name('revisions.index');
                     Route::get('{page}/revisions/{revision}', [PageRevisionController::class, 'show'])
                         ->whereNumber(['page', 'revision'])->withTrashed()->scopeBindings()->name('revisions.show');
+                    Route::post('{page}/preview', PagePreviewController::class)->whereNumber('page')->name('preview');
                 });
 
                 Route::middleware(PermissionMiddleware::using(Permission::ManagePages))->group(function () {
@@ -231,7 +242,22 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('{page}', [PageController::class, 'update'])->whereNumber('page')->name('update');
                     Route::delete('{page}', [PageController::class, 'destroy'])->whereNumber('page')->name('destroy');
                     Route::post('{page}/restore', [PageController::class, 'restore'])->whereNumber('page')->withTrashed()->name('restore');
+                    Route::put('{page}/autosave', [PageAutosaveController::class, 'update'])->whereNumber('page')->name('autosave.update');
+                    Route::delete('{page}/autosave', [PageAutosaveController::class, 'destroy'])->whereNumber('page')->name('autosave.destroy');
                 });
+            });
+
+            // The header and footer menus, each saved as a whole.
+            Route::prefix('menus')->name('menus.')->group(function () {
+                Route::get('targets', MenuTargetController::class)
+                    ->middleware(PermissionMiddleware::using(Permission::ManageMenus))
+                    ->name('targets');
+                Route::get('{location}', [AdminMenuController::class, 'show'])
+                    ->middleware(PermissionMiddleware::using(Permission::ViewMenus))
+                    ->name('show');
+                Route::put('{location}', [AdminMenuController::class, 'update'])
+                    ->middleware(PermissionMiddleware::using(Permission::ManageMenus))
+                    ->name('update');
             });
 
             // The specification fields of the product editor for the chosen categories.

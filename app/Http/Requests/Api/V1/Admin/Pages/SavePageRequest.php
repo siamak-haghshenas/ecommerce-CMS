@@ -49,6 +49,11 @@ class SavePageRequest extends FormRequest
             'focus_keyphrase' => ['nullable', 'string', 'max:120'],
             // The featured image: an image of the media library (null: none).
             'image_id' => ['nullable', 'integer', $this->libraryImageRule()],
+            'robots_noindex' => ['sometimes', 'boolean'],
+            'canonical_url' => ['nullable', 'string', 'max:2048', 'url:http,https'],
+            'og_title' => ['nullable', 'string', 'max:255'],
+            'og_description' => ['nullable', 'string', 'max:500'],
+            'og_image_id' => ['nullable', 'integer', $this->libraryImageRule()],
         ];
     }
 
@@ -65,6 +70,11 @@ class SavePageRequest extends FormRequest
             metaDescription: $this->optionalText('meta_description'),
             focusKeyphrase: $this->optionalText('focus_keyphrase'),
             imageId: $this->libraryImageId('image_id'),
+            robotsNoindex: $this->boolean('robots_noindex'),
+            canonicalUrl: $this->optionalText('canonical_url'),
+            ogTitle: $this->optionalText('og_title'),
+            ogDescription: $this->optionalText('og_description'),
+            ogImageId: $this->libraryImageId('og_image_id'),
         );
     }
 

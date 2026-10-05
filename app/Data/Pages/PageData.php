@@ -23,5 +23,12 @@ final readonly class PageData
         public ?string $focusKeyphrase,
         /** The featured image: a media library image, or null. */
         public ?int $imageId = null,
+        public bool $robotsNoindex = false,
+        /** Absolute http/https address of the original, when this page repeats content found elsewhere. */
+        public ?string $canonicalUrl = null,
+        public ?string $ogTitle = null,
+        public ?string $ogDescription = null,
+        /** The Open Graph image: a media library image, or null (storefronts then use the featured image). */
+        public ?int $ogImageId = null,
     ) {}
 }

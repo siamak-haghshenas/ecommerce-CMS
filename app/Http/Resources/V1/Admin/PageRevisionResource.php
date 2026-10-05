@@ -46,6 +46,11 @@ class PageRevisionResource extends JsonResource
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'focus_keyphrase' => $this->focus_keyphrase,
+            'robots_noindex' => $this->robots_noindex,
+            'canonical_url' => $this->canonical_url,
+            'og_title' => $this->og_title,
+            'og_description' => $this->og_description,
+            'og_image' => $this->ogImage?->picture(),
         ];
     }
 

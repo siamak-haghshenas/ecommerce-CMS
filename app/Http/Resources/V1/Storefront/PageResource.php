@@ -31,6 +31,7 @@ class PageResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'excerpt' => $this->excerpt,
+            'robots_noindex' => $this->robots_noindex,
             'published_at' => $this->published_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
@@ -39,12 +40,31 @@ class PageResource extends JsonResource
             return $data;
         }
 
+        $image = $this->imageAsset()?->picture();
+        $ogImage = $this->ogImageAsset()?->picture();
+
         return [
             ...$data,
             'content' => $this->content,
-            'image' => $this->imageAsset()?->picture(),
+            'image' => $image,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
+            'canonical_url' => $this->canonical_url,
+            'og_title' => $this->og_title,
+            'og_description' => $this->og_description,
+            'og_image' => $ogImage,
+            // Ready to use, with the fallbacks applied (the fields above are as the admin typed them).
+            'seo' => [
+                'title' => $this->meta_title ?? $this->title,
+                'description' => $this->meta_description ?? $this->excerpt,
+                'canonical_url' => $this->canonical_url,
+                'robots_noindex' => $this->robots_noindex,
+                'og' => [
+                    'title' => $this->og_title ?? $this->meta_title ?? $this->title,
+                    'description' => $this->og_description ?? $this->meta_description ?? $this->excerpt,
+                    'image' => $ogImage ?? $image,
+                ],
+            ],
         ];
     }
 

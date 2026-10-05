@@ -183,6 +183,7 @@ return [
     */
 
     'custom' => [
+        'menu_url' => 'Enter an http or https address, or a path starting with /, such as /sale.',
         'phone_number' => [
             'regex' => 'Enter a valid mobile number, such as 09123456789.',
             'unique' => 'An account with this mobile number already exists.',
@@ -268,6 +269,24 @@ return [
         'excerpt' => 'excerpt',
         'content' => 'content',
         'image_id' => 'image',
+        'robots_noindex' => 'hide from search engines',
+        'canonical_url' => 'canonical address',
+        'og_title' => 'social title',
+        'og_description' => 'social description',
+        'og_image_id' => 'social image',
+        'storefront_preview_url' => 'storefront preview address',
+        'items' => 'menu items',
+        'items.*.label' => 'label',
+        'items.*.url' => 'address',
+        'items.*.page_id' => 'page',
+        'items.*.category_id' => 'category',
+        'items.*.type' => 'link type',
+        'items.*.children.*.label' => 'label',
+        'items.*.children.*.url' => 'address',
+        'items.*.children.*.page_id' => 'page',
+        'items.*.children.*.category_id' => 'category',
+        'items.*.children.*.type' => 'link type',
+        'items.*.children.*.children' => 'sub-items',
     ],
 
 ];

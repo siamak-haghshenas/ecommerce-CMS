@@ -58,6 +58,8 @@ enum UserRole: string
                 Permission::ManageMedia,
                 Permission::ViewPages,
                 Permission::ManagePages,
+                Permission::ViewMenus,
+                Permission::ManageMenus,
             ],
             self::Author => [
                 Permission::AccessAdminPanel,
@@ -65,6 +67,8 @@ enum UserRole: string
                 Permission::UploadMedia,
                 Permission::ViewPages,
                 Permission::ManagePages,
+                Permission::ViewMenus,
+                Permission::ManageMenus,
             ],
         };
     }

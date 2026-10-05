@@ -7,6 +7,7 @@ namespace App\Actions\Categories;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
+use App\Models\MenuItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +30,10 @@ final class DeleteCategoryAction
         // Deleted products count too: orders keep referring to them.
         if (DB::table('category_product')->where('category_id', $category->id)->exists()) {
             throw CategoryException::hasProducts();
+        }
+
+        if (MenuItem::query()->where('category_id', $category->id)->exists()) {
+            throw CategoryException::inMenu();
         }
 
         // Category names are not personal data; keeping them makes the entry readable after deletion.

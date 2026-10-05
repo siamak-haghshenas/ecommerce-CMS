@@ -39,6 +39,14 @@ final class CategoryException extends Exception implements ShouldntReport
     }
 
     /**
+     * A header or footer menu links to the category; the admin removes the menu item first.
+     */
+    public static function inMenu(): self
+    {
+        return new self('category_in_menu');
+    }
+
+    /**
      * The new parent is the category itself or one of its descendants.
      */
     public static function invalidParent(): self

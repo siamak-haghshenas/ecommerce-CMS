@@ -45,6 +45,10 @@ enum Permission: string
     case ViewPages = 'pages.view';
     case ManagePages = 'pages.manage';
 
+    /** The header and footer menus. */
+    case ViewMenus = 'menus.view';
+    case ManageMenus = 'menus.manage';
+
     /** Store settings (price display currency, low-stock default). No role lists it: super admin only. */
     case ManageSettings = 'settings.manage';
 }

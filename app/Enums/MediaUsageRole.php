@@ -17,6 +17,8 @@ enum MediaUsageRole: string
     case Image = 'image';
     /** A brand's logo. */
     case Logo = 'logo';
+    /** A page's Open Graph image (social media previews). */
+    case OgImage = 'og_image';
     /** An image inside rich text (e.g. a product description). */
     case Content = 'content';
 }

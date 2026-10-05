@@ -44,6 +44,11 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'product.updated': { icon: 'pen', tone: 'neutral' },
     'product.deleted': { icon: 'trash', tone: 'danger' },
     'product.restored': { icon: 'refresh', tone: 'primary' },
+    'page.created': { icon: 'plus', tone: 'primary' },
+    'page.updated': { icon: 'pen', tone: 'neutral' },
+    'page.deleted': { icon: 'trash', tone: 'danger' },
+    'page.restored': { icon: 'refresh', tone: 'primary' },
+    'menu.updated': { icon: 'menu', tone: 'neutral' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -61,7 +66,7 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
 /** 'staff.role_changed' → 'staffRoleChanged' (the i18n key). */
 const eventKey = computed(() => props.activity.event.replace(/[._](\w)/g, (_, letter: string) => letter.toUpperCase()));
 const look = computed(() => ICONS[props.activity.event] ?? { icon: 'history' as const, tone: 'neutral' as const });
-/** Customers and products open their page from the log. */
+/** Customers, products and pages open their page from the log. */
 const subjectLink = computed(() => {
     const subject = props.activity.subject;
 
@@ -77,7 +82,9 @@ const subjectLink = computed(() => {
         return { name: 'media', query: { file: subject.id } };
     }
 
-    return subject.type === 'product' ? { name: 'product', params: { id: subject.id } } : null;
+    return subject.type === 'product' || subject.type === 'page'
+        ? { name: subject.type, params: { id: subject.id } }
+        : null;
 });
 
 /** Shown when there is no subject: a deleted category keeps its name, a top-level reorder has no parent. */
@@ -88,11 +95,21 @@ const missingSubject = computed(() => {
         return t('admin.activity.topLevel');
     }
 
+    // Menus have no subject: the entry names the menu.
+    if (event === 'menu.updated' && (properties.location === 'header' || properties.location === 'footer')) {
+        return t(`admin.menus.${properties.location}`);
+    }
+
     if (
         /^(category|brand|attribute|option|product|tag|media|media_folder)\./.test(event) &&
         typeof properties.name === 'string'
     ) {
         return properties.name;
+    }
+
+    // A page in the trash is no subject any more; its entries keep the title.
+    if (event.startsWith('page.') && typeof properties.title === 'string') {
+        return properties.title;
     }
 
     return t('admin.activity.someone');

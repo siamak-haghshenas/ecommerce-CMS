@@ -173,6 +173,7 @@ return [
     */
 
     'custom' => [
+        'menu_url' => 'یک نشانی http یا https، یا مسیری که با / شروع می‌شود (مانند /sale) وارد کنید.',
         'phone_number' => [
             'regex' => 'شماره موبایل معتبر وارد کنید؛ مانند ۰۹۱۲۳۴۵۶۷۸۹.',
             'unique' => 'حسابی با این شماره موبایل قبلاً ثبت شده است.',
@@ -253,6 +254,24 @@ return [
         'excerpt' => 'خلاصه',
         'content' => 'محتوا',
         'image_id' => 'تصویر',
+        'robots_noindex' => 'پنهان از موتورهای جستجو',
+        'canonical_url' => 'نشانی اصلی (canonical)',
+        'og_title' => 'عنوان شبکه‌های اجتماعی',
+        'og_description' => 'توضیح شبکه‌های اجتماعی',
+        'og_image_id' => 'تصویر شبکه‌های اجتماعی',
+        'storefront_preview_url' => 'نشانی پیش‌نمایش فروشگاه',
+        'items' => 'آیتم‌های منو',
+        'items.*.label' => 'عنوان',
+        'items.*.url' => 'نشانی',
+        'items.*.page_id' => 'برگه',
+        'items.*.category_id' => 'دسته',
+        'items.*.type' => 'نوع پیوند',
+        'items.*.children.*.label' => 'عنوان',
+        'items.*.children.*.url' => 'نشانی',
+        'items.*.children.*.page_id' => 'برگه',
+        'items.*.children.*.category_id' => 'دسته',
+        'items.*.children.*.type' => 'نوع پیوند',
+        'items.*.children.*.children' => 'زیرمنو',
     ],
 
 ];

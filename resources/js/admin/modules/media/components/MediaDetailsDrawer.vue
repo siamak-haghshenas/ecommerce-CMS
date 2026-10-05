@@ -170,8 +170,8 @@ const purgeDate = computed(() =>
 );
 
 const usageLink = (usage: MediaUsage) =>
-    usage.type === 'product'
-        ? { name: 'product', params: { id: usage.id } }
+    usage.type === 'product' || usage.type === 'page'
+        ? { name: usage.type, params: { id: usage.id } }
         : { name: usage.type === 'category' ? 'categories' : 'brands' };
 
 // ---- the drawer: Esc closes it, focus returns to the grid ----

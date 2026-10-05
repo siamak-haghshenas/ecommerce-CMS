@@ -18,9 +18,13 @@ final class Settings
 
     public const string LOW_STOCK_THRESHOLD = 'low_stock_threshold';
 
+    /** Where a storefront shows previews, with a {token} placeholder; null: not set. */
+    public const string STOREFRONT_PREVIEW_URL = 'storefront_preview_url';
+
     private const array DEFAULTS = [
         self::PRICE_DISPLAY_CURRENCY => 'IRT',
         self::LOW_STOCK_THRESHOLD => 5,
+        self::STOREFRONT_PREVIEW_URL => null,
     ];
 
     private const string CACHE_KEY = 'store-settings';
@@ -35,6 +39,13 @@ final class Settings
         return (int) $this->get(self::LOW_STOCK_THRESHOLD);
     }
 
+    public function storefrontPreviewUrl(): ?string
+    {
+        $url = $this->get(self::STOREFRONT_PREVIEW_URL);
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -47,12 +58,16 @@ final class Settings
     }
 
     /**
-     * @param  array<string, mixed>  $values  only known keys are stored
+     * @param  array<string, mixed>  $values  only known keys are stored; null goes back to the default
      */
     public function set(array $values): void
     {
         foreach (array_intersect_key($values, self::DEFAULTS) as $key => $value) {
-            Setting::query()->updateOrCreate(['key' => $key], ['value' => $value]);
+            if ($value === null) {
+                Setting::query()->whereKey($key)->delete();
+            } else {
+                Setting::query()->updateOrCreate(['key' => $key], ['value' => $value]);
+            }
         }
 
         Cache::forget(self::CACHE_KEY);

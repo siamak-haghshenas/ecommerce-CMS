@@ -25,6 +25,6 @@ class PageRevisionController extends Controller
      */
     public function show(Page $page, PageRevision $revision): PageRevisionResource
     {
-        return (new PageRevisionResource($revision->load(['saver', 'image.media'])))->detailed();
+        return (new PageRevisionResource($revision->load(['saver', 'image.media', 'ogImage.media'])))->detailed();
     }
 }

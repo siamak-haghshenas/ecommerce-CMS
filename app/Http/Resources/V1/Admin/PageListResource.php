@@ -30,6 +30,7 @@ class PageListResource extends JsonResource
             'state' => $this->state(),
             'published_at' => $this->published_at?->toIso8601String(),
             'image' => $this->imageAsset()?->picture(),
+            'robots_noindex' => $this->robots_noindex,
             'seo_score' => $this->seo_score,
             'readability_score' => $this->readability_score,
             'updated_by' => $this->editor === null ? null : ['id' => $this->editor->id, 'name' => $this->editor->name],

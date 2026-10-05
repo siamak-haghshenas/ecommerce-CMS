@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'title', 'slug', 'excerpt', 'content', 'status', 'published_at', 'meta_title', 'meta_description',
-    'focus_keyphrase', 'created_by', 'updated_by',
+    'focus_keyphrase', 'robots_noindex', 'canonical_url', 'og_title', 'og_description', 'created_by', 'updated_by',
 ])]
 class Page extends Model implements SeoSubject
 {
@@ -52,6 +52,7 @@ class Page extends Model implements SeoSubject
             'published_at' => 'datetime',
             'seo_score' => 'integer',
             'readability_score' => 'integer',
+            'robots_noindex' => 'boolean',
             'created_by' => 'integer',
             'updated_by' => 'integer',
         ];
@@ -84,6 +85,16 @@ class Page extends Model implements SeoSubject
     }
 
     /**
+     * Unsaved forms of the page, one per staff member.
+     *
+     * @return HasMany<PageAutosave, $this>
+     */
+    public function autosaves(): HasMany
+    {
+        return $this->hasMany(PageAutosave::class);
+    }
+
+    /**
      * The featured image (at most one).
      *
      * @return MorphToMany<MediaAsset, $this>
@@ -96,6 +107,21 @@ class Page extends Model implements SeoSubject
     public function imageAsset(): ?MediaAsset
     {
         return $this->imageAssets->first();
+    }
+
+    /**
+     * The Open Graph image for social media previews (at most one).
+     *
+     * @return MorphToMany<MediaAsset, $this>
+     */
+    public function ogImageAssets(): MorphToMany
+    {
+        return $this->mediaAssetsFor(MediaUsageRole::OgImage);
+    }
+
+    public function ogImageAsset(): ?MediaAsset
+    {
+        return $this->ogImageAssets->first();
     }
 
     /**

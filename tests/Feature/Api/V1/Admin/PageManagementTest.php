@@ -9,6 +9,7 @@ use App\Models\MediaUsage;
 use App\Models\Page;
 use App\Models\PageRevision;
 use App\Models\User;
+use App\Support\Settings;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 
@@ -234,5 +235,108 @@ describe('list', function () {
         Page::factory()->create(['title' => 'Privacy', 'slug' => 'privacy-policy']);
 
         actingAs(pageManager())->getJson(route('api.v1.admin.pages.index', ['q' => 'policy']))->assertJsonPath('data.*.slug', ['privacy-policy']);
+    });
+});
+
+describe('social and indexing fields', function () {
+    it('saves them, records the social image and keeps them in revisions', function () {
+        $admin = pageManager();
+        $social = libraryImage('social.jpg');
+
+        actingAs($admin)->postJson(route('api.v1.admin.pages.store'), pagePayload([
+            'robots_noindex' => true,
+            'canonical_url' => 'https://example.com/about',
+            'og_title' => 'About the shop',
+            'og_description' => 'Who we are',
+            'og_image_id' => $social->id,
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.robots_noindex', true)
+            ->assertJsonPath('data.canonical_url', 'https://example.com/about')
+            ->assertJsonPath('data.og_image.id', $social->id);
+
+        $page = Page::query()->sole();
+
+        expect(MediaUsage::query()->where('media_asset_id', $social->id)->sole()->role)->toBe(MediaUsageRole::OgImage)
+            ->and($page->revisions()->sole()->only(['robots_noindex', 'og_title', 'og_image_id']))
+            ->toBe(['robots_noindex' => true, 'og_title' => 'About the shop', 'og_image_id' => $social->id]);
+
+        actingAs($admin)->putJson(route('api.v1.admin.pages.update', $page), pagePayload(['og_image_id' => null]))->assertOk();
+
+        expect(MediaUsage::query()->count())->toBe(0)
+            ->and(Activity::query()->where('event', 'page.updated')->sole()->properties['fields'])
+            ->toBe(['robots_noindex', 'canonical_url', 'og_title', 'og_description', 'og_image']);
+    });
+
+    it('refuses a canonical address that is not http or https', function (string $url) {
+        actingAs(pageManager())->postJson(route('api.v1.admin.pages.store'), pagePayload(['canonical_url' => $url]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('canonical_url');
+    })->with(['/about', 'ftp://example.com/about', 'javascript:alert(1)']);
+});
+
+describe('preview', function () {
+    it('gives a token, and the storefront address when the store has one', function () {
+        $page = Page::factory()->draft()->create();
+
+        $response = actingAs(pageManager())->postJson(route('api.v1.admin.pages.preview', $page))
+            ->assertCreated()
+            ->assertJsonPath('data.url', null);
+
+        expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
+
+        app(Settings::class)->set([Settings::STOREFRONT_PREVIEW_URL => 'https://shop.example/preview?token={token}']);
+
+        $url = actingAs(pageManager())->postJson(route('api.v1.admin.pages.preview', $page))->json('data.url');
+
+        expect($url)->toStartWith('https://shop.example/preview?token=')->not->toContain('{token}');
+    });
+});
+
+describe('autosave', function () {
+    it('keeps the unsaved form without touching the page, its versions or the audit log', function () {
+        $author = pageManager();
+        $page = Page::factory()->create(['title' => 'About', 'slug' => 'about']);
+
+        travel(1)->minutes();
+        actingAs($author)->putJson(route('api.v1.admin.pages.autosave.update', $page), [
+            'title' => 'About (typing',
+            'slug' => 'taken-or-not',
+            'content' => '<p>Draft</p><script>x()</script>',
+        ])->assertOk()->assertJsonStructure(['data' => ['saved_at']]);
+
+        expect($page->fresh()?->title)->toBe('About')
+            ->and($page->revisions()->count())->toBe(0)
+            ->and(Activity::query()->count())->toBe(0);
+
+        actingAs($author)->getJson(route('api.v1.admin.pages.show', $page))
+            ->assertJsonPath('data.autosave.title', 'About (typing')
+            ->assertJsonPath('data.autosave.content', '<p>Draft</p>');
+
+        // Another staff member doesn't see it.
+        actingAs(pageManager())->getJson(route('api.v1.admin.pages.show', $page))->assertJsonPath('data.autosave', null);
+    });
+
+    it('is deleted by a normal save, or by Discard', function () {
+        $author = pageManager();
+        $page = Page::factory()->create(['slug' => 'about-us']);
+        $autosave = fn () => actingAs($author)->putJson(route('api.v1.admin.pages.autosave.update', $page), ['title' => 'Typing'])->assertOk();
+
+        $autosave();
+        actingAs($author)->putJson(route('api.v1.admin.pages.update', $page), pagePayload())->assertOk()->assertJsonPath('data.autosave', null);
+        expect($page->autosaves()->count())->toBe(0);
+
+        $autosave();
+        actingAs($author)->deleteJson(route('api.v1.admin.pages.autosave.destroy', $page))->assertNoContent();
+        expect($page->autosaves()->count())->toBe(0);
+    });
+
+    it('is only for staff who manage pages, and not for pages in the trash', function () {
+        $page = Page::factory()->create();
+
+        actingAs(pageManager(UserRole::Customer))->putJson(route('api.v1.admin.pages.autosave.update', $page), ['title' => 'x'])->assertForbidden();
+
+        $page->delete();
+        actingAs(pageManager())->putJson(route('api.v1.admin.pages.autosave.update', $page), ['title' => 'x'])->assertNotFound();
     });
 });

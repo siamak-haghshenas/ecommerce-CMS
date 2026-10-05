@@ -10,6 +10,7 @@ import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
 import NumberField from '@/shared/ui/NumberField.vue';
 import SegmentedControl from '@/shared/ui/SegmentedControl.vue';
+import TextField from '@/shared/ui/TextField.vue';
 import { Permission } from '../../../permissions';
 import { useAdminAuthStore } from '../../auth/store';
 import { settingsApi } from '../api';
@@ -20,12 +21,12 @@ const { t } = useI18n();
 const toast = useToast();
 const auth = useAdminAuthStore();
 const store = useSettingsStore();
-const form = useApiForm(['price_display_currency', 'low_stock_threshold'] as const);
+const form = useApiForm(['price_display_currency', 'low_stock_threshold', 'storefront_preview_url'] as const);
 
 /** Only the super admin changes settings; everyone else sees them. */
 const canManage = computed(() => auth.can(Permission.ManageSettings));
 
-const fields = reactive({ currency: 'IRT' as PriceDisplayCurrency, lowStock: 5 as number | null });
+const fields = reactive({ currency: 'IRT' as PriceDisplayCurrency, lowStock: 5 as number | null, previewUrl: '' });
 const loading = ref(true);
 const loadError = ref<string | null>(null);
 
@@ -42,6 +43,7 @@ async function load(): Promise<void> {
         const settings = await settingsApi.get();
         fields.currency = settings.price_display_currency;
         fields.lowStock = settings.low_stock_threshold;
+        fields.previewUrl = settings.storefront_preview_url ?? '';
     } catch (caught) {
         loadError.value = toApiError(caught).message;
     } finally {
@@ -53,7 +55,11 @@ void load();
 
 async function save(): Promise<void> {
     const saved = await form.submit(() =>
-        settingsApi.update({ price_display_currency: fields.currency, low_stock_threshold: fields.lowStock ?? 0 }),
+        settingsApi.update({
+            price_display_currency: fields.currency,
+            low_stock_threshold: fields.lowStock ?? 0,
+            storefront_preview_url: fields.previewUrl.trim() === '' ? null : fields.previewUrl.trim(),
+        }),
     );
 
     if (saved) {
@@ -107,6 +113,19 @@ async function save(): Promise<void> {
                 :disabled="!canManage"
                 :error="form.errors.low_stock_threshold"
             />
+
+            <fieldset :disabled="!canManage">
+                <TextField
+                    v-model="fields.previewUrl"
+                    :label="t('admin.settings.previewUrl')"
+                    :hint="t('admin.settings.previewUrlHint')"
+                    placeholder="https://shop.example/preview?token={token}"
+                    dir="ltr"
+                    optional
+                    autocomplete="off"
+                    :error="form.errors.storefront_preview_url"
+                />
+            </fieldset>
 
             <div v-if="canManage">
                 <AppButton type="submit" size="md" :loading="form.processing.value">{{

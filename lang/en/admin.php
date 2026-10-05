@@ -20,6 +20,8 @@ return [
         'catalog_value_in_use' => 'Products use “:value”, so it can’t be removed. Remove it from those products first.',
         'attribute_type_locked' => 'Products already have values for this specification, so its type can’t change.',
         'category_has_products' => 'This category has products. Move them to other categories first.',
+        'category_in_menu' => 'A menu links to this category. Remove it from the header or footer menu first.',
+        'preview_url_invalid' => 'Enter an http or https address that contains {token}, such as https://shop.example/preview?token={token}.',
         'brand_has_products' => 'This brand has products. Change their brand first, or hide the brand instead.',
         'stock_changed' => 'The stock changed while you were editing (for example, an order was placed). Reload the product and enter the stock again.',
         'brand_list_changed' => 'The brands have changed in the meantime. Refresh and try again.',

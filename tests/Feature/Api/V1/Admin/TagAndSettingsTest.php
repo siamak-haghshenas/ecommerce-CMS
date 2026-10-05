@@ -92,7 +92,7 @@ describe('settings', function () {
         actingAs(staffMember(UserRole::Author))
             ->getJson(route('api.v1.admin.settings.show'))
             ->assertOk()
-            ->assertExactJson(['data' => ['price_display_currency' => 'IRT', 'low_stock_threshold' => 5]]);
+            ->assertExactJson(['data' => ['price_display_currency' => 'IRT', 'low_stock_threshold' => 5, 'storefront_preview_url' => null]]);
     });
 
     it('lets only the super admin change them', function () {
@@ -111,6 +111,29 @@ describe('settings', function () {
         actingAs(staffMember(UserRole::SuperAdmin))
             ->putJson(route('api.v1.admin.settings.update'), ['price_display_currency' => 'USD'])
             ->assertUnprocessable();
+    });
+
+    it('accepts a storefront preview address only with a {token} placeholder, and clears it with null', function (mixed $url, bool $accepted) {
+        $response = actingAs(staffMember(UserRole::SuperAdmin))
+            ->putJson(route('api.v1.admin.settings.update'), ['storefront_preview_url' => $url]);
+
+        $accepted
+            ? $response->assertOk()->assertJsonPath('data.storefront_preview_url', $url)
+            : $response->assertUnprocessable()->assertJsonValidationErrors('storefront_preview_url');
+    })->with([
+        'with the placeholder' => ['https://shop.example/preview?token={token}', true],
+        'in the path' => ['http://localhost:3000/preview/{token}', true],
+        'cleared' => [null, true],
+        'without the placeholder' => ['https://shop.example/preview', false],
+        'not http' => ['javascript:alert(1)//{token}', false],
+        'relative' => ['/preview?token={token}', false],
+    ]);
+
+    it('forgets a cleared preview address', function () {
+        app(Settings::class)->set([Settings::STOREFRONT_PREVIEW_URL => 'https://shop.example/p/{token}']);
+        app(Settings::class)->set([Settings::STOREFRONT_PREVIEW_URL => null]);
+
+        expect(app(Settings::class)->storefrontPreviewUrl())->toBeNull();
     });
 
     it('uses the store low-stock threshold unless the product has its own', function () {

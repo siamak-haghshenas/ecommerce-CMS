@@ -86,6 +86,32 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.product', permission: Permission.ViewProducts },
             },
             {
+                path: 'pages',
+                name: 'pages',
+                component: () => import('../modules/pages/pages/PagesPage.vue'),
+                meta: { title: 'pageTitles.pages', permission: Permission.ViewPages },
+            },
+            {
+                path: 'pages/new',
+                name: 'page-create',
+                component: () => import('../modules/pages/pages/PageEditorPage.vue'),
+                props: { id: null },
+                meta: { title: 'pageTitles.pageCreate', permission: Permission.ManagePages },
+            },
+            {
+                path: 'pages/:id(\\d+)',
+                name: 'page',
+                component: () => import('../modules/pages/pages/PageEditorPage.vue'),
+                props: (route) => ({ id: Number(route.params.id) }),
+                meta: { title: 'pageTitles.page', permission: Permission.ViewPages },
+            },
+            {
+                path: 'menus',
+                name: 'menus',
+                component: () => import('../modules/menus/pages/MenusPage.vue'),
+                meta: { title: 'pageTitles.menus', permission: Permission.ViewMenus },
+            },
+            {
                 path: 'media',
                 name: 'media',
                 component: () => import('../modules/media/pages/MediaPage.vue'),
