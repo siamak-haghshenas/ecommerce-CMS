@@ -20,7 +20,7 @@ final readonly class PreviewPageAction
     public function handle(User $actor, Page $page): PagePreview
     {
         $expiresAt = now()->toImmutable()->addMinutes(PreviewToken::LIFETIME_MINUTES);
-        $token = PreviewToken::create($page->id, $actor->id, $expiresAt);
+        $token = PreviewToken::create(PreviewToken::PAGE, $page->id, $actor->id, $expiresAt);
         $template = $this->settings->storefrontPreviewUrl();
 
         return new PagePreview(

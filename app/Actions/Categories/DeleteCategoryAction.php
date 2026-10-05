@@ -32,6 +32,11 @@ final class DeleteCategoryAction
             throw CategoryException::hasProducts();
         }
 
+        // Trashed posts count too: they can be restored.
+        if (DB::table('category_post')->where('category_id', $category->id)->exists()) {
+            throw CategoryException::hasPosts();
+        }
+
         if (MenuItem::query()->where('category_id', $category->id)->exists()) {
             throw CategoryException::inMenu();
         }

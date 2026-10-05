@@ -11,6 +11,7 @@ use App\Models\MediaAsset;
 use App\Models\MediaFolder;
 use App\Models\Option;
 use App\Models\Page;
+use App\Models\Post;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
@@ -45,7 +46,7 @@ class ActivityResource extends JsonResource
     /**
      * A user or category, or null when there is none (or it has been deleted).
      *
-     * @return array{type: 'user'|'category'|'brand'|'page'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
+     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
      */
     private function summary(mixed $model): ?array
     {
@@ -57,8 +58,8 @@ class ActivityResource extends JsonResource
             return ['type' => 'brand', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
         }
 
-        if ($model instanceof Page) {
-            return ['type' => 'page', 'id' => $model->id, 'name' => $model->title, 'is_anonymised' => false];
+        if ($model instanceof Page || $model instanceof Post) {
+            return ['type' => $model instanceof Page ? 'page' : 'post', 'id' => $model->id, 'name' => $model->title, 'is_anonymised' => false];
         }
 
         if ($model instanceof Attribute || $model instanceof Option || $model instanceof Product || $model instanceof Tag

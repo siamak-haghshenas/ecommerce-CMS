@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\Permission;
+use App\Http\Controllers\Api\V1\Admin\Account\BylineController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\Auth as AdminAuth;
 use App\Http\Controllers\Api\V1\Admin\Brands\BrandController as AdminBrandController;
@@ -26,6 +27,11 @@ use App\Http\Controllers\Api\V1\Admin\Pages\PageAutosaveController;
 use App\Http\Controllers\Api\V1\Admin\Pages\PageController;
 use App\Http\Controllers\Api\V1\Admin\Pages\PagePreviewController;
 use App\Http\Controllers\Api\V1\Admin\Pages\PageRevisionController;
+use App\Http\Controllers\Api\V1\Admin\Posts\PostAuthorController;
+use App\Http\Controllers\Api\V1\Admin\Posts\PostAutosaveController;
+use App\Http\Controllers\Api\V1\Admin\Posts\PostController;
+use App\Http\Controllers\Api\V1\Admin\Posts\PostPreviewController;
+use App\Http\Controllers\Api\V1\Admin\Posts\PostRevisionController;
 use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
@@ -37,6 +43,7 @@ use App\Http\Controllers\Api\V1\Admin\Staff\StaffRoleController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
 use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
 use App\Http\Controllers\Api\V1\Storefront\Blog\BlogCategoryController;
+use App\Http\Controllers\Api\V1\Storefront\Blog\PostController as StorefrontPostController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
@@ -85,6 +92,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::prefix('blog')->name('blog.')->group(function () {
         Route::get('categories', [BlogCategoryController::class, 'index'])->name('categories.index');
         Route::get('categories/{slug}', [BlogCategoryController::class, 'show'])->name('categories.show');
+        Route::get('posts', [StorefrontPostController::class, 'index'])->name('posts.index');
+        // A staff member's preview (drafts, scheduled posts, unsaved changes); the token is signed and expires.
+        Route::get('posts/preview/{token}', [StorefrontPostController::class, 'preview'])
+            ->middleware('throttle:60,1')
+            ->name('posts.preview');
+        Route::get('posts/{slug}', [StorefrontPostController::class, 'show'])->name('posts.show');
     });
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
@@ -235,6 +248,32 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 });
             });
 
+            // Blog posts. {post} also resolves posts in the trash, so they can be viewed and restored.
+            Route::prefix('posts')->name('posts.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewPosts))->group(function () {
+                    Route::get('/', [PostController::class, 'index'])->name('index');
+                    Route::get('authors', PostAuthorController::class)->name('authors');
+                    Route::get('{post}', [PostController::class, 'show'])->whereNumber('post')->withTrashed()->name('show');
+                    Route::get('{post}/revisions', [PostRevisionController::class, 'index'])->whereNumber('post')->withTrashed()->name('revisions.index');
+                    Route::get('{post}/revisions/{revision}', [PostRevisionController::class, 'show'])
+                        ->whereNumber(['post', 'revision'])->withTrashed()->scopeBindings()->name('revisions.show');
+                    Route::post('{post}/preview', PostPreviewController::class)->whereNumber('post')->name('preview');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManagePosts))->group(function () {
+                    Route::post('/', [PostController::class, 'store'])->name('store');
+                    Route::put('{post}', [PostController::class, 'update'])->whereNumber('post')->name('update');
+                    Route::delete('{post}', [PostController::class, 'destroy'])->whereNumber('post')->name('destroy');
+                    Route::post('{post}/restore', [PostController::class, 'restore'])->whereNumber('post')->withTrashed()->name('restore');
+                    Route::put('{post}/autosave', [PostAutosaveController::class, 'update'])->whereNumber('post')->name('autosave.update');
+                    Route::delete('{post}/autosave', [PostAutosaveController::class, 'destroy'])->whereNumber('post')->name('autosave.destroy');
+                });
+            });
+
+            // The signed-in staff member's own public author byline.
+            Route::get('byline', [BylineController::class, 'show'])->name('byline.show');
+            Route::put('byline', [BylineController::class, 'update'])->name('byline.update');
+
             // Pages. {page} also resolves pages in the trash, so they can be viewed and restored.
             Route::prefix('pages')->name('pages.')->group(function () {
                 Route::middleware(PermissionMiddleware::using(Permission::ViewPages))->group(function () {
@@ -301,8 +340,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             });
 
             Route::prefix('tags')->name('tags.')->group(function () {
+                // Tags are shared by products and posts: either permission lists them (suggestions).
                 Route::get('/', [TagController::class, 'index'])
-                    ->middleware(PermissionMiddleware::using(Permission::ViewProducts))
+                    ->middleware(PermissionMiddleware::using([Permission::ViewProducts->value, Permission::ViewPosts->value]))
                     ->name('index');
 
                 Route::middleware(PermissionMiddleware::using(Permission::ManageProducts))->group(function () {

@@ -82,6 +82,16 @@ class Category extends Model implements SeoSubject
     }
 
     /**
+     * Posts in this blog category (product categories have none).
+     *
+     * @return BelongsToMany<Post, $this>
+     */
+    public function posts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class);
+    }
+
+    /**
      * The category's own attributes, in order. Sub-categories inherit them (see CategoryAttributeController).
      *
      * @return BelongsToMany<Attribute, $this>

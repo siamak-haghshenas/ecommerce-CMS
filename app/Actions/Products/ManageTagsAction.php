@@ -10,8 +10,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The Tags page: rename, merge duplicates, delete. Product search text includes tag names,
- * so the affected products are refreshed.
+ * The Tags page: rename, merge duplicates, delete. Tags are shared by products and blog posts.
+ * Product search text includes tag names, so the affected products are refreshed.
  */
 final readonly class ManageTagsAction
 {
@@ -33,12 +33,13 @@ final readonly class ManageTagsAction
     }
 
     /**
-     * Move every product of $tag to $into, then delete $tag.
+     * Move every product and post of $tag to $into, then delete $tag.
      */
     public function merge(User $actor, Tag $tag, Tag $into): Tag
     {
         DB::transaction(function () use ($tag, $into): void {
             $into->products()->syncWithoutDetaching($tag->products()->pluck('products.id')->all());
+            $into->posts()->syncWithoutDetaching($tag->posts()->withTrashed()->pluck('posts.id')->all());
             $tag->delete();
         });
 

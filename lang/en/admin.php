@@ -20,6 +20,7 @@ return [
         'catalog_value_in_use' => 'Products use “:value”, so it can’t be removed. Remove it from those products first.',
         'attribute_type_locked' => 'Products already have values for this specification, so its type can’t change.',
         'category_has_products' => 'This category has products. Move them to other categories first.',
+        'category_has_posts' => 'This blog category has posts (some may be in the trash). Move them to other categories first.',
         'category_in_menu' => 'A menu links to this category. Remove it from the header or footer menu first.',
         'preview_url_invalid' => 'Enter an http or https address that contains {token}, such as https://shop.example/preview?token={token}.',
         'brand_has_products' => 'This brand has products. Change their brand first, or hide the brand instead.',
@@ -36,6 +37,12 @@ return [
         'media_upload_incomplete' => 'The upload isn’t finished yet.',
     ],
 
+    'posts' => [
+        'errors' => [
+            'primary_not_in_categories' => 'The primary category must be one of the post’s categories.',
+            'author_not_staff' => 'Choose a staff member as the author.',
+        ],
+    ],
     'products' => [
         'errors' => [
             'simple_one_variant' => 'A simple product has exactly one variant.',

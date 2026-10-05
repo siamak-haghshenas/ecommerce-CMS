@@ -20,8 +20,8 @@ final class ResolvePagePreviewAction
      */
     public function handle(string $token): Page
     {
-        $claims = PreviewToken::read($token) ?? throw (new ModelNotFoundException)->setModel(Page::class);
-        $page = Page::query()->with(['imageAssets.media', 'ogImageAssets.media'])->findOrFail($claims['page_id']);
+        $claims = PreviewToken::read($token, PreviewToken::PAGE) ?? throw (new ModelNotFoundException)->setModel(Page::class);
+        $page = Page::query()->with(['imageAssets.media', 'ogImageAssets.media'])->findOrFail($claims['id']);
         $autosave = $page->autosaves()->where('user_id', $claims['user_id'])->first();
 
         if ($autosave === null || ! $autosave->isNewerThan($page)) {

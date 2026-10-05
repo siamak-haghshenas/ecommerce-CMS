@@ -39,6 +39,14 @@ final class CategoryException extends Exception implements ShouldntReport
     }
 
     /**
+     * Blog posts (including ones in the trash) are still in the category.
+     */
+    public static function hasPosts(): self
+    {
+        return new self('category_has_posts');
+    }
+
+    /**
      * A header or footer menu links to the category; the admin removes the menu item first.
      */
     public static function inMenu(): self

@@ -7,27 +7,33 @@ namespace App\Support;
 use Carbon\CarbonImmutable;
 
 /**
- * A token that lets a storefront show one page as a staff member sees it in the editor (drafts,
- * scheduled pages, unsaved changes). It carries the page, the staff member and an expiry, signed
- * with the app key; nothing is stored, so a token can't be revoked before it expires.
+ * A token that lets a storefront show one page or post as a staff member sees it in the editor
+ * (drafts, scheduled items, unsaved changes). It carries what it shows (`page` or `post` and the
+ * id), the staff member and an expiry, signed with the app key; nothing is stored, so a token
+ * can't be revoked before it expires.
  */
 final class PreviewToken
 {
     public const int LIFETIME_MINUTES = 60;
 
-    public static function create(int $pageId, int $userId, CarbonImmutable $expiresAt): string
+    public const string PAGE = 'page';
+
+    public const string POST = 'post';
+
+    public static function create(string $kind, int $id, int $userId, CarbonImmutable $expiresAt): string
     {
-        $payload = self::encode((string) json_encode(['p' => $pageId, 'u' => $userId, 'e' => $expiresAt->getTimestamp()]));
+        $payload = self::encode((string) json_encode(['k' => $kind, 'p' => $id, 'u' => $userId, 'e' => $expiresAt->getTimestamp()]));
 
         return $payload.'.'.self::encode(self::signature($payload));
     }
 
     /**
-     * The token's page and staff member, or null when it is forged, malformed or expired.
+     * The token's item and staff member, or null when it is forged, malformed, expired or for
+     * another kind of item.
      *
-     * @return array{page_id: int, user_id: int}|null
+     * @return array{id: int, user_id: int}|null
      */
-    public static function read(string $token): ?array
+    public static function read(string $token, string $kind): ?array
     {
         $parts = explode('.', $token);
 
@@ -41,7 +47,12 @@ final class PreviewToken
             return null;
         }
 
-        return $claims['e'] < now()->getTimestamp() ? null : ['page_id' => $claims['p'], 'user_id' => $claims['u']];
+        // Tokens made before posts existed carry no kind: they are page tokens.
+        if (($claims['k'] ?? self::PAGE) !== $kind || $claims['e'] < now()->getTimestamp()) {
+            return null;
+        }
+
+        return ['id' => $claims['p'], 'user_id' => $claims['u']];
     }
 
     private static function signature(string $payload): string

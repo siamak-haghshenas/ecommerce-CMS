@@ -54,6 +54,8 @@ it('returns the current staff member with roles and permissions', function () {
             'pages.manage',
             'menus.view',
             'menus.manage',
+            'posts.view',
+            'posts.manage',
         ]);
 });
 
@@ -65,11 +67,11 @@ it('lists every permission for a super admin, who holds none directly', function
         ->assertJsonPath('data.permissions', array_map(fn (Permission $permission) => $permission->value, Permission::cases()));
 });
 
-it('gives an author panel access, media view/upload, pages, menus and blog categories', function () {
+it('gives an author panel access, media view/upload, pages, menus and the blog', function () {
     actingAs(User::factory()->withRole(UserRole::Author)->create())
         ->getJson(route('api.v1.admin.auth.me'))
         ->assertOk()
-        ->assertJsonPath('data.permissions', ['access-admin-panel', 'blog_categories.manage', 'media.view', 'media.upload', 'pages.view', 'pages.manage', 'menus.view', 'menus.manage']);
+        ->assertJsonPath('data.permissions', ['access-admin-panel', 'blog_categories.manage', 'media.view', 'media.upload', 'pages.view', 'pages.manage', 'menus.view', 'menus.manage', 'posts.view', 'posts.manage']);
 });
 
 it('logs out a staff member who was deactivated while logged in', function () {
