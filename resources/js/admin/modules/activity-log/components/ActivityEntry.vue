@@ -53,6 +53,9 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'post.updated': { icon: 'pen', tone: 'neutral' },
     'post.deleted': { icon: 'trash', tone: 'danger' },
     'post.restored': { icon: 'refresh', tone: 'primary' },
+    'promotion.created': { icon: 'plus', tone: 'primary' },
+    'promotion.updated': { icon: 'pen', tone: 'neutral' },
+    'promotion.deleted': { icon: 'trash', tone: 'danger' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -82,6 +85,10 @@ const subjectLink = computed(() => {
         return { name: 'customer', params: { id: subject.id } };
     }
 
+    if (subject.type === 'promotion') {
+        return { name: 'promotion', params: { id: subject.id } };
+    }
+
     if (subject.type === 'media') {
         return { name: 'media', query: { file: subject.id } };
     }
@@ -105,7 +112,7 @@ const missingSubject = computed(() => {
     }
 
     if (
-        /^(category|brand|attribute|option|product|tag|media|media_folder)\./.test(event) &&
+        /^(category|brand|attribute|option|product|promotion|tag|media|media_folder)\./.test(event) &&
         typeof properties.name === 'string'
     ) {
         return properties.name;

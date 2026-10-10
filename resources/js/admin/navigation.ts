@@ -33,6 +33,12 @@ export const navigation: NavGroup[] = [
                 to: { name: 'customers' },
                 permission: Permission.ViewCustomers,
             },
+            {
+                label: 'admin.nav.discounts',
+                icon: 'tag',
+                to: { name: 'discounts' },
+                permission: Permission.ViewDiscounts,
+            },
         ],
     },
     {

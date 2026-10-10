@@ -122,11 +122,31 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.postCreate', permission: Permission.ManagePosts },
             },
             {
-                path: 'blog/:id(\d+)',
+                path: 'blog/:id(\\d+)',
                 name: 'post',
                 component: () => import('../modules/posts/pages/PostEditorPage.vue'),
                 props: (route) => ({ id: Number(route.params.id) }),
                 meta: { title: 'pageTitles.post', permission: Permission.ViewPosts },
+            },
+            {
+                path: 'discounts',
+                name: 'discounts',
+                component: () => import('../modules/discounts/pages/DiscountsPage.vue'),
+                meta: { title: 'pageTitles.discounts', permission: Permission.ViewDiscounts },
+            },
+            {
+                path: 'discounts/promotions/new',
+                name: 'promotion-create',
+                component: () => import('../modules/discounts/pages/PromotionEditorPage.vue'),
+                props: { id: null },
+                meta: { title: 'pageTitles.promotionCreate', permission: Permission.ManageDiscounts },
+            },
+            {
+                path: 'discounts/promotions/:id(\\d+)',
+                name: 'promotion',
+                component: () => import('../modules/discounts/pages/PromotionEditorPage.vue'),
+                props: (route) => ({ id: Number(route.params.id) }),
+                meta: { title: 'pageTitles.promotion', permission: Permission.ViewDiscounts },
             },
             {
                 path: 'menus',

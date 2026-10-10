@@ -39,6 +39,9 @@ export type ActivityEvent =
     | 'post.updated'
     | 'post.deleted'
     | 'post.restored'
+    | 'promotion.created'
+    | 'promotion.updated'
+    | 'promotion.deleted'
     | 'tag.renamed'
     | 'tag.merged'
     | 'tag.deleted'
@@ -63,6 +66,7 @@ export interface ActivityUser {
         | 'product'
         | 'page'
         | 'post'
+        | 'promotion'
         | 'tag'
         | 'media'
         | 'media_folder';
