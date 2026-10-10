@@ -177,4 +177,6 @@ export interface Tag {
     name: string;
     slug: string;
     products_count?: number;
+    /** Tags are shared with blog posts. */
+    posts_count?: number;
 }

@@ -10,7 +10,8 @@ import type { CategoryNode } from '../../categories/types';
  * A product's categories (several) with one primary category, used for breadcrumbs and URLs.
  * The first added category becomes primary until another one is chosen.
  */
-const props = defineProps<{ tree: CategoryNode[]; error?: string }>();
+/** `hint` replaces the product wording (posts use the same field with blog categories). */
+const props = defineProps<{ tree: CategoryNode[]; error?: string; hint?: string }>();
 const ids = defineModel<number[]>('ids', { required: true });
 const primaryId = defineModel<number | null>('primaryId', { required: true });
 
@@ -47,7 +48,7 @@ function remove(categoryId: number): void {
 <template>
     <div class="flex flex-col gap-2">
         <span :id="`${id}-label`" class="text-sm font-semibold text-fg">{{ t('admin.products.categories') }}</span>
-        <p class="text-[13px] leading-relaxed text-fg-muted">{{ t('admin.products.categoriesHint') }}</p>
+        <p class="text-[13px] leading-relaxed text-fg-muted">{{ props.hint ?? t('admin.products.categoriesHint') }}</p>
 
         <ul
             v-if="chosen.length > 0"

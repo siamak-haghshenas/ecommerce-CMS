@@ -25,7 +25,7 @@ import { fromLocalInput, toLocalInput } from '../../products/variants';
 import { slugify } from '../../seo/analysis';
 import SeoPanel from '../../seo/components/SeoPanel.vue';
 import { pagesApi } from '../api';
-import PageHistoryDialog from '../components/PageHistoryDialog.vue';
+import VersionHistoryDialog from '../components/VersionHistoryDialog.vue';
 import type { Page, PageAutosave, PageRevision, PageStatus, SavePagePayload } from '../types';
 
 /** Create (`id` null) or edit a page. Every save keeps a version, shown under History. */
@@ -241,6 +241,8 @@ async function save(): Promise<void> {
 // ---- history ----
 
 const historyOpen = ref(false);
+const loadRevisions = () => pagesApi.revisions(page.value?.id ?? 0);
+const loadRevision = (revisionId: number) => pagesApi.revision(page.value?.id ?? 0, revisionId);
 
 function restoreRevision(revision: PageRevision): void {
     applyVersion(revision);
@@ -695,10 +697,11 @@ const cardClass = 'flex flex-col gap-4.5 rounded-2xl border border-line bg-surfa
             </div>
         </div>
 
-        <PageHistoryDialog
+        <VersionHistoryDialog
             v-if="page"
             :open="historyOpen"
-            :page-id="page.id"
+            :load-revisions="loadRevisions"
+            :load-revision="loadRevision"
             :can-restore="editable"
             @close="historyOpen = false"
             @restore="restoreRevision"

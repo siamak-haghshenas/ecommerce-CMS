@@ -126,6 +126,13 @@ async function confirm(): Promise<void> {
                     >
                         {{ t('admin.tags.products', { n: formatNumber(tag.products_count ?? 0) }) }}
                     </RouterLink>
+                    <RouterLink
+                        v-if="tag.posts_count"
+                        :to="{ name: 'posts', query: { tag: String(tag.id) } }"
+                        class="text-sm whitespace-nowrap text-fg-muted hover:text-primary"
+                    >
+                        {{ t('admin.tags.posts', { n: formatNumber(tag.posts_count) }) }}
+                    </RouterLink>
                     <ActionMenu
                         v-if="canManage"
                         :label="t('admin.tags.actionsFor', { name: tag.name })"

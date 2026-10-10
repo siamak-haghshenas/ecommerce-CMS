@@ -10,14 +10,20 @@ import AppIcon from '@/shared/ui/AppIcon.vue';
 import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import EmptyState from '@/shared/ui/EmptyState.vue';
 import FormAlert from '@/shared/ui/FormAlert.vue';
-import { pagesApi } from '../api';
 import type { PageRevision, PageRevisionSummary } from '../types';
 
 /**
- * A page's saved versions, newest first. Choosing one shows it as it was saved; "Restore" hands it
+ * The saved versions of a page or post, newest first. Choosing one shows it as it was saved; "Restore" hands it
  * to the editor, which loads it as unsaved changes (saving makes it a new version).
  */
-const props = defineProps<{ open: boolean; pageId: number; canRestore: boolean }>();
+const props = defineProps<{
+    open: boolean;
+    canRestore: boolean;
+    /** The versions, newest first (without content). */
+    loadRevisions: () => Promise<PageRevisionSummary[]>;
+    /** One version with every saved field. */
+    loadRevision: (id: number) => Promise<PageRevision>;
+}>();
 const emit = defineEmits<{ close: []; restore: [revision: PageRevision] }>();
 
 const KEPT = 20;
@@ -39,7 +45,7 @@ async function loadList(): Promise<void> {
     selectedId.value = null;
 
     try {
-        revisions.value = await pagesApi.revisions(props.pageId);
+        revisions.value = await props.loadRevisions();
 
         if (revisions.value[0]) {
             void choose(revisions.value[0].id);
@@ -64,7 +70,7 @@ async function choose(id: number): Promise<void> {
     revisionError.value = null;
 
     try {
-        const loaded = await pagesApi.revision(props.pageId, id);
+        const loaded = await props.loadRevision(id);
 
         // Ignore a slow answer for a version the admin has since moved away from.
         if (selectedId.value === id) {

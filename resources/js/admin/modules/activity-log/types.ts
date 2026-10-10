@@ -35,6 +35,10 @@ export type ActivityEvent =
     | 'page.deleted'
     | 'page.restored'
     | 'menu.updated'
+    | 'post.created'
+    | 'post.updated'
+    | 'post.deleted'
+    | 'post.restored'
     | 'tag.renamed'
     | 'tag.merged'
     | 'tag.deleted'
@@ -51,7 +55,17 @@ export type ActivityEvent =
 /** The user or category an entry is about (null once deleted). */
 export interface ActivityUser {
     type:
-        'user' | 'category' | 'brand' | 'attribute' | 'option' | 'product' | 'page' | 'tag' | 'media' | 'media_folder';
+        | 'user'
+        | 'category'
+        | 'brand'
+        | 'attribute'
+        | 'option'
+        | 'product'
+        | 'page'
+        | 'post'
+        | 'tag'
+        | 'media'
+        | 'media_folder';
     id: number;
     name: string;
     is_anonymised: boolean;

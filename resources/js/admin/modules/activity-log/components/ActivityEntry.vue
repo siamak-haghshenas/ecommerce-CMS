@@ -49,6 +49,10 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'page.deleted': { icon: 'trash', tone: 'danger' },
     'page.restored': { icon: 'refresh', tone: 'primary' },
     'menu.updated': { icon: 'menu', tone: 'neutral' },
+    'post.created': { icon: 'plus', tone: 'primary' },
+    'post.updated': { icon: 'pen', tone: 'neutral' },
+    'post.deleted': { icon: 'trash', tone: 'danger' },
+    'post.restored': { icon: 'refresh', tone: 'primary' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -82,7 +86,7 @@ const subjectLink = computed(() => {
         return { name: 'media', query: { file: subject.id } };
     }
 
-    return subject.type === 'product' || subject.type === 'page'
+    return subject.type === 'product' || subject.type === 'page' || subject.type === 'post'
         ? { name: subject.type, params: { id: subject.id } }
         : null;
 });
@@ -108,7 +112,7 @@ const missingSubject = computed(() => {
     }
 
     // A page in the trash is no subject any more; its entries keep the title.
-    if (event.startsWith('page.') && typeof properties.title === 'string') {
+    if ((event.startsWith('page.') || event.startsWith('post.')) && typeof properties.title === 'string') {
         return properties.title;
     }
 

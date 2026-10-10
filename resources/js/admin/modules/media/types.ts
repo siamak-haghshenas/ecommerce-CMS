@@ -9,7 +9,7 @@ export interface MediaUrls {
 
 /** Where a file is used (the details view). */
 export interface MediaUsage {
-    type: 'product' | 'category' | 'brand' | 'page';
+    type: 'product' | 'category' | 'brand' | 'page' | 'post' | 'byline';
     id: number;
     name: string;
     role: 'gallery' | 'variant_image' | 'image' | 'logo' | 'content';

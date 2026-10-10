@@ -6,6 +6,7 @@ import AppAvatar from '@/shared/ui/AppAvatar.vue';
 import AppIcon from '@/shared/ui/AppIcon.vue';
 import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import BrandMark from '@/shared/ui/BrandMark.vue';
+import BylineDialog from '../modules/account/components/BylineDialog.vue';
 import { useAdminAuthStore } from '../modules/auth/store';
 import { navigation } from '../navigation';
 import { ROLE_KEYS } from '../permissions';
@@ -22,6 +23,7 @@ const router = useRouter();
 const route = useRoute();
 const auth = useAdminAuthStore();
 const loggingOut = ref(false);
+const bylineOpen = ref(false);
 
 /** A section is active on its own page and its sub-pages (a customer's detail is "Customers"); the dashboard only on itself. */
 function isActive(to: RouteLocationRaw): boolean {
@@ -140,6 +142,15 @@ async function logout(): Promise<void> {
             </div>
             <button
                 type="button"
+                :aria-label="t('admin.byline.open')"
+                :title="t('admin.byline.open')"
+                class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[10px] text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                @click="bylineOpen = true"
+            >
+                <AppIcon name="pen" />
+            </button>
+            <button
+                type="button"
                 :aria-label="t('admin.logout')"
                 :title="collapsed ? t('admin.logout') : undefined"
                 :disabled="loggingOut"
@@ -150,5 +161,6 @@ async function logout(): Promise<void> {
                 <AppIcon v-else name="logout" flip-in-rtl />
             </button>
         </div>
+        <BylineDialog :open="bylineOpen" @close="bylineOpen = false" />
     </div>
 </template>

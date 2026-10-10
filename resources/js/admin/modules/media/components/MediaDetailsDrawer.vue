@@ -169,10 +169,19 @@ const purgeDate = computed(() =>
         : null,
 );
 
-const usageLink = (usage: MediaUsage) =>
-    usage.type === 'product' || usage.type === 'page'
-        ? { name: usage.type, params: { id: usage.id } }
-        : { name: usage.type === 'category' ? 'categories' : 'brands' };
+const usageLink = (usage: MediaUsage) => {
+    switch (usage.type) {
+        case 'product':
+        case 'page':
+        case 'post':
+            return { name: usage.type, params: { id: usage.id } };
+        // A staff member's author byline picture.
+        case 'byline':
+            return { name: 'staff' };
+        default:
+            return { name: usage.type === 'category' ? 'categories' : 'brands' };
+    }
+};
 
 // ---- the drawer: Esc closes it, focus returns to the grid ----
 

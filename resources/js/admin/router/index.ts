@@ -109,6 +109,26 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.page', permission: Permission.ViewPages },
             },
             {
+                path: 'blog',
+                name: 'posts',
+                component: () => import('../modules/posts/pages/PostsPage.vue'),
+                meta: { title: 'pageTitles.posts', permission: Permission.ViewPosts },
+            },
+            {
+                path: 'blog/new',
+                name: 'post-create',
+                component: () => import('../modules/posts/pages/PostEditorPage.vue'),
+                props: { id: null },
+                meta: { title: 'pageTitles.postCreate', permission: Permission.ManagePosts },
+            },
+            {
+                path: 'blog/:id(\d+)',
+                name: 'post',
+                component: () => import('../modules/posts/pages/PostEditorPage.vue'),
+                props: (route) => ({ id: Number(route.params.id) }),
+                meta: { title: 'pageTitles.post', permission: Permission.ViewPosts },
+            },
+            {
                 path: 'menus',
                 name: 'menus',
                 component: () => import('../modules/menus/pages/MenusPage.vue'),
