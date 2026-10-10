@@ -11,6 +11,7 @@ use App\Models\MediaUsage;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\SaleEvent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -69,6 +70,7 @@ class MediaAssetResource extends JsonResource
             $item instanceof Brand => 'brand',
             $item instanceof Page => 'page',
             $item instanceof Post => 'post',
+            $item instanceof SaleEvent => 'sale_event',
             // A staff member's author byline picture.
             $item instanceof User => 'byline',
             default => null,

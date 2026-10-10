@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\SaleEvent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,6 +25,7 @@ enum SeoContentType: string
     case Product = 'product';
     case Page = 'page';
     case Post = 'post';
+    case SaleEvent = 'sale_event';
 
     /**
      * @return class-string<Model&SeoSubject>
@@ -36,6 +38,7 @@ enum SeoContentType: string
             self::Product => Product::class,
             self::Page => Page::class,
             self::Post => Post::class,
+            self::SaleEvent => SaleEvent::class,
         };
     }
 
@@ -66,6 +69,7 @@ enum SeoContentType: string
             self::Product => Permission::ManageProducts,
             self::Page => Permission::ManagePages,
             self::Post => Permission::ManagePosts,
+            self::SaleEvent => Permission::ManageDiscounts,
         };
     }
 
@@ -81,6 +85,7 @@ enum SeoContentType: string
             self::Product => 'a product page',
             self::Page => 'an informational page of the store (e.g. about us, terms, shipping and returns)',
             self::Post => 'a blog article of the store',
+            self::SaleEvent => 'the landing page of a time-limited sale event, listing its discounted products',
         };
     }
 

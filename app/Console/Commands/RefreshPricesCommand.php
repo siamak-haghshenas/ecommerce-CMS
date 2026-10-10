@@ -10,8 +10,8 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('prices:refresh {--due : Only products whose sale or promotion starts or ends now}')]
-#[Description('Store the current price of product variants (sale prices and promotions).')]
+#[Signature('prices:refresh {--due : Only products whose sale, promotion or sale event starts or ends now}')]
+#[Description('Store the current price of product variants (sale prices, promotions and sale events).')]
 class RefreshPricesCommand extends Command
 {
     public function handle(RefreshPricesAction $refresh): int

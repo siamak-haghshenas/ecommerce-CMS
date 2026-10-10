@@ -40,7 +40,7 @@ final class StorefrontProductQuery
     }
 
     /**
-     * The filters that define "where" the shopper is (search, category, brand, tag): the base
+     * The filters that define "where" the shopper is (search, category, brand, tag, sale event): the base
      * of the filter counts.
      *
      * @param  Builder<Product>  $query
@@ -62,7 +62,11 @@ final class StorefrontProductQuery
 
         return $query
             ->when($filters->brandId !== null, fn (Builder $query) => $query->where('brand_id', $filters->brandId))
-            ->when($filters->tagId !== null, fn (Builder $query) => $query->whereHas('tags', fn (Builder $tags) => $tags->whereKey($filters->tagId)));
+            ->when($filters->tagId !== null, fn (Builder $query) => $query->whereHas('tags', fn (Builder $tags) => $tags->whereKey($filters->tagId)))
+            // A landing page lists the products with an enabled variant in the event.
+            ->when($filters->saleEventId !== null, fn (Builder $query) => $query->whereHas('variants', fn (Builder $variants) => $variants
+                ->where('is_enabled', true)
+                ->whereHas('saleEventItems', fn (Builder $items) => $items->where('sale_event_id', $filters->saleEventId))));
     }
 
     /**

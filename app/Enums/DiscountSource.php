@@ -12,4 +12,6 @@ enum DiscountSource: string
     /** The variant's own sale price. */
     case Sale = 'sale';
     case Promotion = 'promotion';
+    /** The sale event chosen for the variant (the highest-priority one running for it). */
+    case SaleEvent = 'sale_event';
 }

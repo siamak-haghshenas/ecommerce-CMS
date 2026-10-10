@@ -286,6 +286,13 @@ return [
         'excluded_product_ids.*' => 'محصول مستثنا',
         'starts_at' => 'شروع',
         'ends_at' => 'پایان',
+        'variant' => 'تنوع',
+        'discount_type' => 'نوع تخفیف',
+        'discount_value' => 'تخفیف',
+        'has_landing_page' => 'صفحه فرود',
+        'landing_title' => 'عنوان صفحه',
+        'landing_description' => 'توضیحات',
+        'banner_id' => 'بنر',
     ],
 
 ];

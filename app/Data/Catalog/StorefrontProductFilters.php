@@ -27,5 +27,7 @@ final readonly class StorefrontProductFilters
         public bool $onSale = false,
         public string $sort = 'newest',
         public int $perPage = 24,
+        /** A sale event with a visible landing page: its products. */
+        public ?int $saleEventId = null,
     ) {}
 }

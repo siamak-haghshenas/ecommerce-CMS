@@ -7,9 +7,9 @@ namespace App\Support;
 use Carbon\CarbonImmutable;
 
 /**
- * A token that lets a storefront show one page or post as a staff member sees it in the editor
- * (drafts, scheduled items, unsaved changes). It carries what it shows (`page` or `post` and the
- * id), the staff member and an expiry, signed with the app key; nothing is stored, so a token
+ * A token that lets a storefront show one page, post or sale event landing page as a staff member
+ * sees it in the editor (drafts, scheduled items, unsaved changes). It carries what it shows
+ * (`page`, `post` or `sale_event` and the id), the staff member and an expiry, signed with the app key; nothing is stored, so a token
  * can't be revoked before it expires.
  */
 final class PreviewToken
@@ -19,6 +19,9 @@ final class PreviewToken
     public const string PAGE = 'page';
 
     public const string POST = 'post';
+
+    /** A sale event's landing page. */
+    public const string SALE_EVENT = 'sale_event';
 
     public static function create(string $kind, int $id, int $userId, CarbonImmutable $expiresAt): string
     {

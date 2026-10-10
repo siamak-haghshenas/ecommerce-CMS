@@ -301,6 +301,13 @@ return [
         'excluded_product_ids.*' => 'excluded product',
         'starts_at' => 'start',
         'ends_at' => 'end',
+        'variant' => 'variant',
+        'discount_type' => 'discount type',
+        'discount_value' => 'discount',
+        'has_landing_page' => 'landing page',
+        'landing_title' => 'page title',
+        'landing_description' => 'description',
+        'banner_id' => 'banner',
     ],
 
 ];

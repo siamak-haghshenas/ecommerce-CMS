@@ -26,6 +26,7 @@ return [
         'brand_has_products' => 'This brand has products. Change their brand first, or hide the brand instead.',
         'stock_changed' => 'The stock changed while you were editing (for example, an order was placed). Reload the product and enter the stock again.',
         'brand_list_changed' => 'The brands have changed in the meantime. Refresh and try again.',
+        'sale_event_list_changed' => 'The sale events have changed in the meantime. Refresh and try again.',
         'ai_not_configured' => 'AI suggestions are not set up yet. Ask the store administrator to add the AI API key.',
         'ai_unavailable' => 'The AI service is not responding right now. Please try again in a few minutes.',
         'ai_invalid_response' => 'The AI service returned an unusable answer. Please try again.',
@@ -40,6 +41,14 @@ return [
     'promotions' => [
         'errors' => [
             'no_targets' => 'Choose at least one product, category, brand or tag, or apply the promotion to all products.',
+        ],
+    ],
+    'sale_events' => [
+        'errors' => [
+            'percent_max' => 'The discount can be at most :max%.',
+            'not_below_price' => 'The discount must be less than the variant’s price.',
+            'outside_event' => 'These dates must fall inside the event’s dates, with the end after the start.',
+            'variant_deleted' => 'This variant has been deleted, so it can’t be added.',
         ],
     ],
     'posts' => [

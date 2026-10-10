@@ -19,6 +19,8 @@ enum MediaUsageRole: string
     case Logo = 'logo';
     /** A staff member's picture on their author byline. */
     case Avatar = 'avatar';
+    /** A sale event landing page's banner. */
+    case Banner = 'banner';
     /** A page's Open Graph image (social media previews). */
     case OgImage = 'og_image';
     /** An image inside rich text (e.g. a product description). */

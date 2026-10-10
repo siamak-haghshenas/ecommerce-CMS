@@ -18,7 +18,8 @@ final readonly class VariantPrice
         /** Null: the regular price. */
         public ?DiscountSource $source,
         public ?int $promotionId,
-        /** The next sale or promotion start or end that may change the price; null: none. */
+        /** The next sale, promotion or sale event start or end that may change the price; null: none. */
         public ?CarbonInterface $recalcAt,
+        public ?int $saleEventId = null,
     ) {}
 }

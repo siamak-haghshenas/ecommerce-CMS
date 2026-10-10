@@ -21,7 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * A sellable SKU. Prices are whole Rials. Stock only changes through AdjustStockAction,
  * which records every change in stock_movements. Its picture (`image_asset_id`) is one of the
  * product's gallery files. The price shoppers pay now is stored in `current_price` (the lowest
- * of the regular price, the sale price and the promotions that apply; see App\Support\Pricing).
+ * of the regular price, the sale price, the promotions and the sale event that apply; see
+ * App\Support\Pricing).
  */
 #[Fillable([
     'product_id', 'sku', 'price', 'sale_price', 'sale_starts_at', 'sale_ends_at', 'is_enabled',
@@ -52,13 +53,14 @@ class ProductVariant extends Model
             'current_price' => 'integer',
             'discount_source' => DiscountSource::class,
             'promotion_id' => 'integer',
+            'sale_event_id' => 'integer',
             'price_recalc_at' => 'datetime',
         ];
     }
 
     protected static function booted(): void
     {
-        // Prices and sales are saved through products; promotions are added afterwards by
+        // Prices and sales are saved through products; promotions and events are added afterwards by
         // RefreshPricesAction. Until then the stored price follows the variant's own sale.
         static::saving(function (self $variant): void {
             if ($variant->current_price !== null && ! $variant->isDirty(['price', 'sale_price', 'sale_starts_at', 'sale_ends_at'])) {
@@ -75,6 +77,7 @@ class ProductVariant extends Model
                 'current_price' => $onSale ? $variant->sale_price : $variant->price,
                 'discount_source' => $onSale ? DiscountSource::Sale : null,
                 'promotion_id' => null,
+                'sale_event_id' => null,
                 'price_recalc_at' => $future === [] ? null : min($future),
             ]);
         });
@@ -88,6 +91,26 @@ class ProductVariant extends Model
     public function promotion(): BelongsTo
     {
         return $this->belongsTo(Promotion::class);
+    }
+
+    /**
+     * The sale event that gives the current price, if one does.
+     *
+     * @return BelongsTo<SaleEvent, $this>
+     */
+    public function saleEvent(): BelongsTo
+    {
+        return $this->belongsTo(SaleEvent::class);
+    }
+
+    /**
+     * The variant's place in sale events (past ones included).
+     *
+     * @return HasMany<SaleEventItem, $this>
+     */
+    public function saleEventItems(): HasMany
+    {
+        return $this->hasMany(SaleEventItem::class);
     }
 
     /**
@@ -147,7 +170,7 @@ class ProductVariant extends Model
     }
 
     /**
-     * Whether a sale or a promotion lowers the price now.
+     * Whether a sale, a promotion or a sale event lowers the price now.
      */
     public function isDiscounted(): bool
     {

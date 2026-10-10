@@ -79,12 +79,13 @@ class ProductResource extends JsonResource
                 'price' => $variant->currentPrice(),
                 'regular_price' => $variant->price,
                 'discount_percent' => $variant->discountPercent(),
-                // What gives the price: the variant's own sale or a promotion (null: the regular price).
+                // What gives the price: the variant's own sale, a promotion or a sale event (null: the regular price).
                 'discount_source' => $variant->discount_source?->value,
                 'sale_ends_at' => $variant->discount_source === DiscountSource::Sale ? $variant->sale_ends_at?->toIso8601String() : null,
                 'promotion' => $variant->discount_source === DiscountSource::Promotion && $variant->promotion !== null
                     ? ['name' => $variant->promotion->name, 'ends_at' => $variant->promotion->ends_at?->toIso8601String()]
                     : null,
+                'sale_event' => $this->saleEvent($variant),
                 'in_stock' => $this->resource->isAvailable($variant),
                 'low_stock' => $this->resource->isLowStock($variant),
                 'image_id' => $variant->image_asset_id,
@@ -130,6 +131,30 @@ class ProductResource extends JsonResource
     }
 
     /**
+     * The sale event giving the variant's price: its name, the landing page's slug (null without a
+     * visible landing page) and when the discount ends for this variant (the item's own end or the event's).
+     *
+     * @return array{name: string, slug: string|null, ends_at: string}|null
+     */
+    private function saleEvent(ProductVariant $variant): ?array
+    {
+        $event = $variant->saleEvent;
+
+        if ($variant->discount_source !== DiscountSource::SaleEvent || $event === null) {
+            return null;
+        }
+
+        $item = $variant->saleEventItems->firstWhere('sale_event_id', $event->id);
+        $endsAt = $item === null ? $event->ends_at : $item->ends_at ?? $event->ends_at;
+
+        return [
+            'name' => $event->name,
+            'slug' => $event->hasVisibleLanding() ? $event->slug : null,
+            'ends_at' => $endsAt->toIso8601String(),
+        ];
+    }
+
+    /**
      * The relations toArray() reads.
      *
      * @return list<string>
@@ -138,7 +163,8 @@ class ProductResource extends JsonResource
     {
         return [
             'brand.logoAssets.media', 'categories', 'tags', 'galleryAssets.media', 'options.values',
-            'variants.optionValues', 'variants.promotion', 'attributeValues.attribute', 'attributeValues.attributeValue',
+            'variants.optionValues', 'variants.promotion', 'variants.saleEvent', 'variants.saleEventItems',
+            'attributeValues.attribute', 'attributeValues.attributeValue',
         ];
     }
 }

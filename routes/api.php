@@ -37,6 +37,9 @@ use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
 use App\Http\Controllers\Api\V1\Admin\Products\TagController;
 use App\Http\Controllers\Api\V1\Admin\Promotions\PromotionController;
+use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventController;
+use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventOrderController;
+use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventPreviewController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
@@ -48,6 +51,7 @@ use App\Http\Controllers\Api\V1\Storefront\Blog\PostController as StorefrontPost
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
+use App\Http\Controllers\Api\V1\Storefront\Catalog\SaleEventController as StorefrontSaleEventController;
 use App\Http\Controllers\Api\V1\Storefront\Content\MenuController as StorefrontMenuController;
 use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +109,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
     Route::get('products/filters', [StorefrontProductController::class, 'filters'])->name('products.filters');
     Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+    // Sale event landing pages (data only); their products come from `products?sale_event={slug}`.
+    Route::get('sale-events', [StorefrontSaleEventController::class, 'index'])->name('sale-events.index');
+    Route::get('sale-events/preview/{token}', [StorefrontSaleEventController::class, 'preview'])
+        ->middleware('throttle:60,1')
+        ->name('sale-events.preview');
+    Route::get('sale-events/{slug}', [StorefrontSaleEventController::class, 'show'])->name('sale-events.show');
 
     // Content: published pages only.
     Route::get('pages', [StorefrontPageController::class, 'index'])->name('pages.index');
@@ -321,6 +331,22 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::post('preview', [PromotionController::class, 'preview'])->name('preview');
                     Route::put('{promotion}', [PromotionController::class, 'update'])->whereNumber('promotion')->name('update');
                     Route::delete('{promotion}', [PromotionController::class, 'destroy'])->whereNumber('promotion')->name('destroy');
+                });
+            });
+
+            // Sale events: time-limited sales on chosen variants, in priority order (saving reprices their products).
+            Route::prefix('sale-events')->name('sale-events.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewDiscounts))->group(function () {
+                    Route::get('/', [SaleEventController::class, 'index'])->name('index');
+                    Route::get('{saleEvent}', [SaleEventController::class, 'show'])->whereNumber('saleEvent')->name('show');
+                    Route::post('{saleEvent}/preview', SaleEventPreviewController::class)->whereNumber('saleEvent')->name('preview');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageDiscounts))->group(function () {
+                    Route::post('/', [SaleEventController::class, 'store'])->name('store');
+                    Route::put('order', SaleEventOrderController::class)->name('order');
+                    Route::put('{saleEvent}', [SaleEventController::class, 'update'])->whereNumber('saleEvent')->name('update');
+                    Route::delete('{saleEvent}', [SaleEventController::class, 'destroy'])->whereNumber('saleEvent')->name('destroy');
                 });
             });
 

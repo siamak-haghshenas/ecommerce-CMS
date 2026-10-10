@@ -10,6 +10,7 @@ use App\Enums\CategoryType;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Option;
+use App\Models\SaleEvent;
 use App\Models\Tag;
 use App\Support\CategoryTree;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -19,7 +20,7 @@ use Illuminate\Validation\Rule;
 /**
  * Query parameters of the public product list and its filters, in storefront URL form:
  *
- *   ?q=کفش&category=shoes&brand=adidas&tag=gift
+ *   ?q=کفش&category=shoes&brand=adidas&tag=gift&sale_event=yalda-night (a landing page's products)
  *   &filter[material]=cotton,linen   ("select": any of the value slugs)
  *   &filter[screen-size]=13..16      ("number": a range; either side may be empty)
  *   &filter[waterproof]=1            ("boolean")
@@ -45,6 +46,7 @@ class ProductFiltersRequest extends FormRequest
             'category' => ['nullable', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
             'tag' => ['nullable', 'string', 'max:255'],
+            'sale_event' => ['nullable', 'string', 'max:120'],
             'filter' => ['nullable', 'array', 'max:20'],
             'filter.*' => ['string', 'max:500'],
             'option' => ['nullable', 'array', 'max:5'],
@@ -77,6 +79,9 @@ class ProductFiltersRequest extends FormRequest
             onSale: $this->boolean('on_sale'),
             sort: $this->string('sort', 'newest')->toString(),
             perPage: $this->filled('per_page') ? $this->integer('per_page') : 24,
+            saleEventId: $this->filled('sale_event')
+                ? (SaleEvent::query()->withVisibleLanding()->where('slug', $this->string('sale_event')->toString())->value('id') ?? self::NONE)
+                : null,
         );
     }
 
