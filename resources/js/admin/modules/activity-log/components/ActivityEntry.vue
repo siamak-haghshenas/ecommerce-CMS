@@ -56,6 +56,10 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'promotion.created': { icon: 'plus', tone: 'primary' },
     'promotion.updated': { icon: 'pen', tone: 'neutral' },
     'promotion.deleted': { icon: 'trash', tone: 'danger' },
+    'sale_event.created': { icon: 'plus', tone: 'primary' },
+    'sale_event.updated': { icon: 'pen', tone: 'neutral' },
+    'sale_event.deleted': { icon: 'trash', tone: 'danger' },
+    'sale_event.reordered': { icon: 'swap', tone: 'neutral' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -87,6 +91,10 @@ const subjectLink = computed(() => {
 
     if (subject.type === 'promotion') {
         return { name: 'promotion', params: { id: subject.id } };
+    }
+
+    if (subject.type === 'sale_event') {
+        return { name: 'sale-event', params: { id: subject.id } };
     }
 
     if (subject.type === 'media') {

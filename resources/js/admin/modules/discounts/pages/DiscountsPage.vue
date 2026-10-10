@@ -20,6 +20,7 @@ import { Permission } from '../../../permissions';
 import { useAdminAuthStore } from '../../auth/store';
 import { useMoney } from '../../settings/store';
 import { payloadOf, promotionsApi } from '../api';
+import DiscountTabs from '../components/DiscountTabs.vue';
 import type { Promotion, PromotionState } from '../types';
 
 /** Sales › Discounts: the promotions (coupons come with their own phase). */
@@ -180,11 +181,6 @@ async function remove(): Promise<void> {
         busy.value = false;
     }
 }
-
-const tabClass = (on: boolean): string[] => [
-    'flex h-11 items-center gap-2 border-b-2 px-1 text-sm font-semibold',
-    on ? 'border-primary text-fg' : 'border-transparent text-fg-muted',
-];
 </script>
 
 <template>
@@ -200,13 +196,7 @@ const tabClass = (on: boolean): string[] => [
             </AppButton>
         </div>
 
-        <nav :aria-label="t('admin.discounts.title')" class="flex gap-6 border-b border-line">
-            <span :class="tabClass(true)" aria-current="page">{{ t('admin.discounts.tabs.promotions') }}</span>
-            <span :class="tabClass(false)" :title="t('admin.nav.soon')">
-                {{ t('admin.discounts.tabs.coupons') }}
-                <AppBadge>{{ t('admin.nav.soon') }}</AppBadge>
-            </span>
-        </nav>
+        <DiscountTabs active="promotions" />
 
         <div class="flex flex-wrap items-center gap-3">
             <SearchInput v-model="search" :label="t('admin.discounts.promotions.search')" />

@@ -175,6 +175,8 @@ const usageLink = (usage: MediaUsage) => {
         case 'page':
         case 'post':
             return { name: usage.type, params: { id: usage.id } };
+        case 'sale_event':
+            return { name: 'sale-event', params: { id: usage.id } };
         // A staff member's author byline picture.
         case 'byline':
             return { name: 'staff' };

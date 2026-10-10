@@ -9,10 +9,10 @@ export interface MediaUrls {
 
 /** Where a file is used (the details view). */
 export interface MediaUsage {
-    type: 'product' | 'category' | 'brand' | 'page' | 'post' | 'byline';
+    type: 'product' | 'category' | 'brand' | 'page' | 'post' | 'sale_event' | 'byline';
     id: number;
     name: string;
-    role: 'gallery' | 'variant_image' | 'image' | 'logo' | 'content';
+    role: 'gallery' | 'variant_image' | 'image' | 'logo' | 'content' | 'og_image' | 'avatar' | 'banner';
 }
 
 export interface MediaAsset {

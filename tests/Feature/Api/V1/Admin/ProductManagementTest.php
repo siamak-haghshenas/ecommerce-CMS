@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Products\AdjustStockAction;
+use App\Actions\Products\MatchingProductIdsAction;
 use App\Enums\StockMovementReason;
 use App\Enums\UserRole;
 use App\Models\Attribute;
@@ -468,6 +469,29 @@ describe('list', function () {
         actingAs(productManager())
             ->getJson(route('api.v1.admin.products.index', ['stock' => 'out']))
             ->assertJsonPath('data.*.name', ['Out']);
+    });
+
+    it('finds products with something to sell: stock left, backorders or untracked stock', function () {
+        Product::factory()->withVariant(stock: 0)->create(['name' => 'Out']);
+        Product::factory()->withVariant(stock: 0)->create(['name' => 'Backorder', 'allow_backorders' => true]);
+        Product::factory()->withVariant(stock: 0)->create(['name' => 'Untracked', 'track_stock' => false]);
+        Product::factory()->withVariant(stock: 3)->create(['name' => 'In']);
+
+        actingAs(productManager())
+            ->getJson(route('api.v1.admin.products.index', ['stock' => 'in', 'sort' => 'name']))
+            ->assertJsonPath('data.*.name', ['Backorder', 'In', 'Untracked']);
+    });
+
+    it('returns the ids of every product matching the filters, up to the limit', function () {
+        $brand = Brand::factory()->create();
+        $first = Product::factory()->withVariant()->create(['brand_id' => $brand->id]);
+        $second = Product::factory()->withVariant()->create(['brand_id' => $brand->id]);
+        Product::factory()->withVariant()->create();
+
+        actingAs(productManager())
+            ->getJson(route('api.v1.admin.products.ids', ['brand_id' => $brand->id]))
+            ->assertOk()
+            ->assertExactJson(['data' => ['ids' => [$second->id, $first->id], 'total' => 2, 'limit' => MatchingProductIdsAction::LIMIT]]);
     });
 
     it('deletes, lists deleted products and restores them', function () {

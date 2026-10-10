@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\V1\Admin\Promotions\PromotionController;
 use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventController;
 use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventOrderController;
 use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventPreviewController;
+use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventVariantController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
@@ -244,6 +245,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::prefix('products')->name('products.')->group(function () {
                 Route::middleware(PermissionMiddleware::using(Permission::ViewProducts))->group(function () {
                     Route::get('/', [ProductController::class, 'index'])->name('index');
+                    Route::get('ids', [ProductController::class, 'ids'])->name('ids');
                     Route::get('{product}', [ProductController::class, 'show'])->whereNumber('product')->withTrashed()->name('show');
                     Route::get('{product}/stock-movements', StockMovementController::class)->whereNumber('product')->withTrashed()->name('stock-movements');
                 });
@@ -345,6 +347,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::middleware(PermissionMiddleware::using(Permission::ManageDiscounts))->group(function () {
                     Route::post('/', [SaleEventController::class, 'store'])->name('store');
                     Route::put('order', SaleEventOrderController::class)->name('order');
+                    Route::post('variants', SaleEventVariantController::class)->name('variants');
                     Route::put('{saleEvent}', [SaleEventController::class, 'update'])->whereNumber('saleEvent')->name('update');
                     Route::delete('{saleEvent}', [SaleEventController::class, 'destroy'])->whereNumber('saleEvent')->name('destroy');
                 });

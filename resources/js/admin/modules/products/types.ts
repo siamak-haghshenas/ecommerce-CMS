@@ -150,7 +150,7 @@ export interface ProductFilters {
     category_id?: number;
     brand_id?: number;
     tag_id?: number;
-    stock?: 'low' | 'out';
+    stock?: 'in' | 'low' | 'out';
     needs_seo?: 1;
     trashed?: 1;
     sort?: 'newest' | 'name' | 'updated';

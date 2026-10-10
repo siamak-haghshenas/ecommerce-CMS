@@ -270,3 +270,33 @@ describe('the list, deleting and preview', function () {
             ->and(PreviewToken::read($token, PreviewToken::PAGE))->toBeNull();
     });
 });
+
+describe('adding products', function () {
+    it('returns the enabled variants of the chosen products, in the order chosen', function () {
+        $hat = eventVariant(50_000)->product;
+        $shoe = eventVariant(200_000)->product;
+        $second = ProductVariant::factory()->for($shoe)->create(['price' => 210_000]);
+        ProductVariant::factory()->for($shoe)->create(['is_enabled' => false]);
+        $deleted = eventVariant()->product;
+        $deleted->delete();
+
+        actingAs(saleEventManager())
+            ->postJson(route('api.v1.admin.sale-events.variants'), ['product_ids' => [$shoe->id, $hat->id, $deleted->id]])
+            ->assertOk()
+            ->assertJsonPath('data.*.product.id', [$shoe->id, $shoe->id, $hat->id])
+            ->assertJsonPath('data.1.variant.id', $second->id)
+            ->assertJsonPath('data.1.variant.price', 210_000)
+            ->assertJsonPath('data.2.product.name', $hat->name);
+    });
+
+    it('needs the discounts.manage permission and at least one product', function () {
+        actingAs(saleEventManager(UserRole::Author))
+            ->postJson(route('api.v1.admin.sale-events.variants'), ['product_ids' => [1]])
+            ->assertForbidden();
+
+        actingAs(saleEventManager())
+            ->postJson(route('api.v1.admin.sale-events.variants'), ['product_ids' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('product_ids');
+    });
+});

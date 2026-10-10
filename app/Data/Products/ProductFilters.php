@@ -17,7 +17,7 @@ final readonly class ProductFilters
         public ?int $categoryId = null,
         public ?int $brandId = null,
         public ?int $tagId = null,
-        /** "low" (at or below the threshold) or "out" (nothing left to sell). */
+        /** "in" (something to sell), "low" (at or below the threshold) or "out" (nothing left to sell). */
         public ?string $stock = null,
         public bool $needsSeo = false,
         /** Show deleted products instead. */

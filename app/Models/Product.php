@@ -195,6 +195,17 @@ class Product extends Model implements SeoSubject
      */
     private function filterStock(Builder $query, string $stock): void
     {
+        if ($stock === 'in') {
+            // An enabled variant shoppers can buy: untracked stock, backorders or a quantity left.
+            $query->whereHas('variants', fn (Builder $variants) => $variants->where('is_enabled', true))
+                ->where(fn (Builder $available) => $available
+                    ->where('track_stock', false)
+                    ->orWhere('allow_backorders', true)
+                    ->orWhereHas('variants', fn (Builder $variants) => $variants->where('is_enabled', true)->where('stock_quantity', '>', 0)));
+
+            return;
+        }
+
         $query->where('track_stock', true);
 
         if ($stock === 'low') {

@@ -25,7 +25,7 @@ class IndexProductsRequest extends FormRequest
             'category_id' => ['nullable', 'integer'],
             'brand_id' => ['nullable', 'integer'],
             'tag_id' => ['nullable', 'integer'],
-            'stock' => ['nullable', Rule::in(['low', 'out'])],
+            'stock' => ['nullable', Rule::in(['in', 'low', 'out'])],
             'needs_seo' => ['nullable', 'boolean'],
             'trashed' => ['nullable', 'boolean'],
             'sort' => ['nullable', Rule::in(['newest', 'name', 'updated'])],

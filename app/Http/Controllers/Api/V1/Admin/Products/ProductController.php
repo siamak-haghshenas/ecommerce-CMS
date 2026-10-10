@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\Admin\Products;
 
 use App\Actions\Products\ChangeProductStatusAction;
 use App\Actions\Products\DeleteProductAction;
+use App\Actions\Products\MatchingProductIdsAction;
 use App\Actions\Products\SaveProductAction;
 use App\Actions\Products\SearchProductsAction;
 use App\Http\Controllers\Controller;
@@ -26,6 +27,14 @@ class ProductController extends Controller
     public function index(IndexProductsRequest $request, SearchProductsAction $search): AnonymousResourceCollection
     {
         return ProductListResource::collection($search->handle($request->toFilters()));
+    }
+
+    /**
+     * The ids of every product matching the list's filters ("select all matching"), up to a limit.
+     */
+    public function ids(IndexProductsRequest $request, MatchingProductIdsAction $matching): JsonResponse
+    {
+        return response()->json(['data' => $matching->handle($request->toFilters())]);
     }
 
     /**
