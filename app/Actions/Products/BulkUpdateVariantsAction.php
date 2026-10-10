@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Products;
 
+use App\Actions\Pricing\RefreshPricesAction;
 use App\Data\Products\BulkVariantChange;
 use App\Enums\StockMovementReason;
 use App\Exceptions\ProductException;
@@ -19,7 +20,10 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class BulkUpdateVariantsAction
 {
-    public function __construct(private AdjustStockAction $adjustStock) {}
+    public function __construct(
+        private AdjustStockAction $adjustStock,
+        private RefreshPricesAction $refreshPrices,
+    ) {}
 
     /**
      * @param  list<BulkVariantChange>  $changes
@@ -46,7 +50,10 @@ final readonly class BulkUpdateVariantsAction
                 }
             }
 
-            $this->log($actor, $variants->only($changed)->map(fn (ProductVariant $variant): Product => $variant->product)->unique('id')->values()->all());
+            $products = $variants->only($changed)->map(fn (ProductVariant $variant): Product => $variant->product)->unique('id')->values()->all();
+            $this->log($actor, $products);
+            // A changed price or sale may lose to (or beat) a promotion.
+            $this->refreshPrices->handle(array_map(fn (Product $product): int => $product->id, $products));
 
             return $changed;
         });

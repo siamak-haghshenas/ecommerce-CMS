@@ -6,6 +6,7 @@ namespace App\Http\Resources\V1\Storefront;
 
 use App\Data\Categories\CategoryNode;
 use App\Enums\AttributeType;
+use App\Enums\DiscountSource;
 use App\Models\Category;
 use App\Models\OptionValue;
 use App\Models\Product;
@@ -78,7 +79,12 @@ class ProductResource extends JsonResource
                 'price' => $variant->currentPrice(),
                 'regular_price' => $variant->price,
                 'discount_percent' => $variant->discountPercent(),
-                'sale_ends_at' => $variant->isOnSale() ? $variant->sale_ends_at?->toIso8601String() : null,
+                // What gives the price: the variant's own sale or a promotion (null: the regular price).
+                'discount_source' => $variant->discount_source?->value,
+                'sale_ends_at' => $variant->discount_source === DiscountSource::Sale ? $variant->sale_ends_at?->toIso8601String() : null,
+                'promotion' => $variant->discount_source === DiscountSource::Promotion && $variant->promotion !== null
+                    ? ['name' => $variant->promotion->name, 'ends_at' => $variant->promotion->ends_at?->toIso8601String()]
+                    : null,
                 'in_stock' => $this->resource->isAvailable($variant),
                 'low_stock' => $this->resource->isLowStock($variant),
                 'image_id' => $variant->image_asset_id,
@@ -132,7 +138,7 @@ class ProductResource extends JsonResource
     {
         return [
             'brand.logoAssets.media', 'categories', 'tags', 'galleryAssets.media', 'options.values',
-            'variants.optionValues', 'attributeValues.attribute', 'attributeValues.attributeValue',
+            'variants.optionValues', 'variants.promotion', 'attributeValues.attribute', 'attributeValues.attributeValue',
         ];
     }
 }

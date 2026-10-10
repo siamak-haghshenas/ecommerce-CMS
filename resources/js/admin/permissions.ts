@@ -29,6 +29,8 @@ export const Permission = {
     ManageMenus: 'menus.manage',
     ViewPosts: 'posts.view',
     ManagePosts: 'posts.manage',
+    ViewDiscounts: 'discounts.view',
+    ManageDiscounts: 'discounts.manage',
     ManageSettings: 'settings.manage',
 } as const;
 

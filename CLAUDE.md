@@ -232,6 +232,19 @@ Laravel coding guidelines (Boost) live in AGENTS.md and must be followed:
 - **Admin UI** (`admin/modules/posts`, routes `/admin/blog`, `/admin/blog/new`, `/admin/blog/:id`): Content › Blog. **List**: search, status, blog category (sub-categories included), author, sort, Needs SEO work, Trash, and a removable tag chip (`?tag=`, set by the Tags page's "N posts" link); rows show the primary category and the author's byline (else account name). **Editor**: the Pages editor (content, excerpt and featured image, social & indexing, SEO panel with type `post`, autosave with Restore / Discard, Preview, History) plus a "Categories, tags & author" card: `CategoriesField` with the blog tree (primary), `TagsInput` (shared tags), the author picker (`GET admin/posts/authors`; staff without a byline are marked) and "Allow comments". The History dialog is shared with pages (`pages/components/VersionHistoryDialog.vue`, given `loadRevisions` / `loadRevision`). **Byline**: a pen button in the sidebar's account area opens `account/components/BylineDialog.vue` (name, slug suggested via Finglish, bio, picture; an empty name removes it). The audit log links post entries to the editor; the media library's "where it's used" links posts to the editor and bylines to Staff.
 - **Comments** (`post_comments`): only **logged-in customers** (Storefront API Bearer token, active account) on posts with `comments_enabled`. `POST /api/v1/blog/posts/{slug}/comments` (`display_name`: prefilled by storefronts with the customer's name, editable; `body`: plain text ≤ 2000 characters; rate limited per customer) → status `pending`. **Moderation:** staff approve, reject or delete; only **approved** comments are shown (`GET /api/v1/blog/posts/{slug}/comments`, paginated, oldest first). **Replies: staff only**, one per comment, shown under it as the **store's answer** (never a staff name). Customers never see others' phone or email; the account is linked only for moderation. **Anonymising a customer deletes their comments.** Admin: a Comments page (filter by status / post, pending count in the menu, approve / reject / delete / reply). Audit log `comment.approved|rejected|deleted|replied` (comment and post ids only, no comment text or names).
 
+### Discounts (4 phases, each reviewed and committed: 1 promotions backend + pricing ✅, 2 promotions admin UI, 3 coupons (definitions, admin, check endpoint), 4 applying coupons and counting usage, with checkout & orders)
+- **Two kinds now:** automatic **promotions** (catalog prices) and **coupons** (one code per order). Buy X get Y, tiered and cart-level automatic rules are not included.
+- **Who manages:** Super Admin and Admin (`discounts.view`, `discounts.manage`). Author has no access.
+- **Promotions** (`promotions` + `promotion_targets`): `name` (shown to storefronts as the label), `type` `percent` (1–90) or `fixed` (Rials off each unit), `value`, optional `max_discount` (percent only), targets: all products or chosen **products, categories (sub-categories included), brands, tags**, optional excluded products, `starts_at`, optional `ends_at`, `is_active`. They change the price storefronts show, like a sale price, without editing SKUs.
+- **Best price wins, never stacked:** a variant's current price is the lowest of its regular price, its active sale price and every active promotion that targets it. Amounts are whole Rials, rounded down (to whole Toman when the store displays Toman).
+- **One pricing service** (`App\Support\Pricing`) computes prices for the admin, the Storefront API and later the cart. The current price is stored per variant (`product_variants.current_price`, `discount_source` `sale|promotion|null`, `promotion_id`) so storefront filters and sorting by price stay SQL; it is refreshed when a product, sale or promotion is saved and by a scheduled command each minute for promotions starting or ending.
+- **Storefront API:** variants keep `price` (current) / `regular_price` / `discount_percent` / `sale_ends_at`, plus `discount_source` and `promotion { name, ends_at }` when a promotion gives the price. Product lists, filters (`min_price`, `max_price`, `on_sale` includes promotions) and sorting use the current price.
+- **Coupons** (`coupons` + `coupon_targets`): one **shared code** per coupon (Latin letters and digits, unique, case-insensitive; typed or generated), `name` (admin), `type` `percent` | `fixed` (off the order) | `free_shipping`, `value`, `max_discount`, `min_order_amount`, eligible items (all, or chosen products / categories / brands / tags, with excluded products), **`exclude_discounted`** (items whose price comes from a sale or promotion don't count), `usage_limit` (total), `per_customer_limit` (default 1), `first_order_only`, `starts_at`, `ends_at`, `is_active`. **One coupon per order**, taken off the already-discounted prices. Any logged-in customer may use one (no per-customer lists).
+- **Checking a code** (until a cart exists): `POST /api/v1/coupons/check` (customer Bearer token) with `code` and `items` `[{ variant_id, quantity }]` → the discount in Rials, the eligible items and `free_shipping`, or an error code (`CouponException`): `coupon_not_found`, `coupon_inactive`, `coupon_not_started`, `coupon_expired`, `coupon_min_order`, `coupon_no_eligible_items`, `coupon_limit_reached`, `coupon_customer_limit_reached`, `coupon_first_order_only`. The last three count real orders once they exist (phase 4: `coupon_redemptions`).
+- **Admin UI:** Sales › Discounts with **Promotions** / **Coupons** tabs: lists with a status (scheduled, active, expired, disabled) and filters, an editor (targets picked like product categories / brands / tags; a promotion previews how many products it affects), code generation, usage count for coupons.
+- **Audit log:** `promotion.created|updated|deleted`, `coupon.created|updated|deleted` (changed field names only).
+- **Backend (phase 1):** `Promotion` (`state()`: disabled / scheduled / active / expired; `relevant()` and `inState()` scopes) + `PromotionTarget`; `AppSupportPricingPricing::price($variant, $promotions, $at)` → `VariantPrice` (current, source, promotion, next change) and `PromotionSet` (relevant promotions with categories expanded to sub-categories). `RefreshPricesAction::handle(?productIds)` stores `current_price`, `discount_source`, `promotion_id`, `price_recalc_at` (no timestamps or events); it runs after a product save and a bulk edit (those products), a promotion save (everything) or delete (its products), a product category move (everything) and a tag merge or delete (those products). The variant's `saving` hook keeps the stored price in line with its own sale until then. `php artisan prices:refresh` (`--due`: variants whose `price_recalc_at` passed) runs every minute with `--due`. `ProductVariant::currentPrice()` / `isDiscounted()` / `discountPercent()` read the stored price (`isOnSale()` still means the variant's own sale); the admin product list's "on sale" covers promotions. Admin API: `GET promotions` (`q`, `status`, `per_page`) · `GET promotions/{promotion}` (with `products_count`) · `POST`/`PUT`/`DELETE` · `POST promotions/preview` (the form → `products_count`); targets are sent as `product_ids`, `category_ids` (product categories), `brand_ids`, `tag_ids`, `excluded_product_ids`; a `starts_at` left empty means now.
+
 ### Pricing & Currency
 - **One store currency**, selected by the admin in settings. All prices are stored and displayed in that currency.
 
@@ -333,6 +346,8 @@ app/
 | `PUT menus/{location}` (`items`, the whole tree) | `menus.manage` |
 | `GET posts` (`q`, `status`, `category_id`, `tag_id`, `author_id`, `needs_seo`, `trashed`, `sort`, `per_page`) · `GET posts/authors` · `GET posts/{post}` · `GET posts/{post}/revisions[/{revision}]` · `POST posts/{post}/preview` | `posts.view` |
 | `POST posts` · `PUT posts/{post}` · `DELETE posts/{post}` · `POST posts/{post}/restore` · `PUT`/`DELETE posts/{post}/autosave` | `posts.manage` |
+| `GET promotions` · `GET promotions/{promotion}` | `discounts.view` |
+| `POST promotions` · `POST promotions/preview` · `PUT promotions/{promotion}` · `DELETE promotions/{promotion}` | `discounts.manage` |
 | `GET byline` · `PUT byline` (`author_name`, `slug`, `author_bio`, `avatar_id`) | any staff (their own) |
 | `GET settings` | any staff |
 | `PUT settings` | `settings.manage` (super admin) |
@@ -405,7 +420,7 @@ resources/js/
 
 Ask the user before implementing anything related to these:
 
-- Discounts / coupons / sale prices and tax (VAT).
+- Tax (VAT).
 - API documentation for storefront developers (e.g. OpenAPI).
 - Order lifecycle: statuses, refunds, returns, invoices, notifications.
 - Extras: search, reviews, wishlists, reports/dashboards, import/export.
@@ -418,3 +433,13 @@ Ask the user before implementing anything related to these:
 
 - Do not implement a section until the user asks for it.
 - Ask questions one by one when requirements are unclear.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

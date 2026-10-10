@@ -37,6 +37,11 @@ return [
         'media_upload_incomplete' => 'The upload isn’t finished yet.',
     ],
 
+    'promotions' => [
+        'errors' => [
+            'no_targets' => 'Choose at least one product, category, brand or tag, or apply the promotion to all products.',
+        ],
+    ],
     'posts' => [
         'errors' => [
             'primary_not_in_categories' => 'The primary category must be one of the post’s categories.',

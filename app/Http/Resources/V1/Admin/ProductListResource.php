@@ -39,7 +39,7 @@ class ProductListResource extends JsonResource
             'brand' => $this->brand === null ? null : ['id' => $this->brand->id, 'name' => $this->brand->name],
             'primary_category' => $primary === null ? null : ['id' => $primary->id, 'name' => $primary->name],
             'price' => $prices->isEmpty() ? null : ['min' => $prices->min(), 'max' => $prices->max()],
-            'on_sale' => $enabled->contains(fn (ProductVariant $variant): bool => $variant->isOnSale()),
+            'on_sale' => $enabled->contains(fn (ProductVariant $variant): bool => $variant->isDiscounted()),
             'stock' => ! $this->track_stock ? null : [
                 'total' => (int) $enabled->sum('stock_quantity'),
                 'low' => $enabled->contains(fn (ProductVariant $variant): bool => $variant->stock_quantity <= $threshold),

@@ -13,6 +13,7 @@ use App\Models\Option;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class ActivityResource extends JsonResource
     /**
      * A user or category, or null when there is none (or it has been deleted).
      *
-     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
+     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'promotion'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
      */
     private function summary(mixed $model): ?array
     {
@@ -56,6 +57,10 @@ class ActivityResource extends JsonResource
 
         if ($model instanceof Brand) {
             return ['type' => 'brand', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof Promotion) {
+            return ['type' => 'promotion', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
         }
 
         if ($model instanceof Page || $model instanceof Post) {

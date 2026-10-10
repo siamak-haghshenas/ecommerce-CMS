@@ -56,8 +56,8 @@ final class BuildStorefrontFiltersAction
     private function priceRange(array $productIds): ?array
     {
         $range = DB::table('product_variants')
-            ->selectRaw('MIN('.StorefrontProductQuery::CURRENT_PRICE.') AS min_price', StorefrontProductQuery::now())
-            ->selectRaw('MAX('.StorefrontProductQuery::CURRENT_PRICE.') AS max_price', StorefrontProductQuery::now())
+            ->selectRaw('MIN('.StorefrontProductQuery::CURRENT_PRICE.') AS min_price')
+            ->selectRaw('MAX('.StorefrontProductQuery::CURRENT_PRICE.') AS max_price')
             ->whereIn('product_id', $productIds)
             ->where('is_enabled', true)
             ->whereNull('deleted_at')

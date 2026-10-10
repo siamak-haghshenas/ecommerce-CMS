@@ -11,7 +11,6 @@ use App\Models\Product;
 use App\Support\CategoryTree;
 use App\Support\Seo\SeoText;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 
 /**
  * The product queries of the Storefront API. A product is visible when it is published, its
@@ -21,24 +20,10 @@ use Illuminate\Support\Carbon;
 final class StorefrontProductQuery
 {
     /**
-     * The price shoppers pay now: the sale price while its sale runs, else the regular price.
-     * Mirrors ProductVariant::currentPrice(). Bind now() twice.
+     * The price shoppers pay now: the stored lowest of the regular price, the sale price and the
+     * promotions that apply (ProductVariant::currentPrice(), kept up to date by RefreshPricesAction).
      */
-    public const string CURRENT_PRICE = 'CASE WHEN product_variants.sale_price IS NOT NULL'
-        .' AND product_variants.sale_price < product_variants.price'
-        .' AND (product_variants.sale_starts_at IS NULL OR product_variants.sale_starts_at <= ?)'
-        .' AND (product_variants.sale_ends_at IS NULL OR product_variants.sale_ends_at > ?)'
-        .' THEN product_variants.sale_price ELSE product_variants.price END';
-
-    /**
-     * @return list<Carbon>
-     */
-    public static function now(): array
-    {
-        $now = now();
-
-        return [$now, $now];
-    }
+    public const string CURRENT_PRICE = 'COALESCE(product_variants.current_price, product_variants.price)';
 
     /**
      * @return Builder<Product>
@@ -116,8 +101,8 @@ final class StorefrontProductQuery
         if ($filters->minPrice !== null || $filters->maxPrice !== null) {
             $query->whereHas('variants', fn (Builder $variants) => $variants
                 ->where('is_enabled', true)
-                ->when($filters->minPrice !== null, fn (Builder $q) => $q->whereRaw(self::CURRENT_PRICE.' >= ?', [...self::now(), $filters->minPrice]))
-                ->when($filters->maxPrice !== null, fn (Builder $q) => $q->whereRaw(self::CURRENT_PRICE.' <= ?', [...self::now(), $filters->maxPrice])));
+                ->when($filters->minPrice !== null, fn (Builder $q) => $q->whereRaw(self::CURRENT_PRICE.' >= ?', [$filters->minPrice]))
+                ->when($filters->maxPrice !== null, fn (Builder $q) => $q->whereRaw(self::CURRENT_PRICE.' <= ?', [$filters->maxPrice])));
         }
 
         if ($filters->inStock) {
@@ -130,7 +115,7 @@ final class StorefrontProductQuery
         if ($filters->onSale) {
             $query->whereHas('variants', fn (Builder $variants) => $variants
                 ->where('is_enabled', true)
-                ->whereRaw(self::CURRENT_PRICE.' < product_variants.price', self::now()));
+                ->whereRaw(self::CURRENT_PRICE.' < product_variants.price'));
         }
 
         return $query;
@@ -146,7 +131,7 @@ final class StorefrontProductQuery
     {
         return $query->select('products.*')->selectSub(
             fn ($sub) => $sub->from('product_variants')
-                ->selectRaw('MIN('.self::CURRENT_PRICE.')', self::now())
+                ->selectRaw('MIN('.self::CURRENT_PRICE.')')
                 ->whereColumn('product_variants.product_id', 'products.id')
                 ->where('product_variants.is_enabled', true)
                 ->whereNull('product_variants.deleted_at'),

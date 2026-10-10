@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\V1\Admin\Products\BulkProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\ProductController;
 use App\Http\Controllers\Api\V1\Admin\Products\StockMovementController;
 use App\Http\Controllers\Api\V1\Admin\Products\TagController;
+use App\Http\Controllers\Api\V1\Admin\Promotions\PromotionController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
@@ -306,6 +307,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::put('{location}', [AdminMenuController::class, 'update'])
                     ->middleware(PermissionMiddleware::using(Permission::ManageMenus))
                     ->name('update');
+            });
+
+            // Promotions: automatic catalog discounts (saving reprices the catalog).
+            Route::prefix('promotions')->name('promotions.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewDiscounts))->group(function () {
+                    Route::get('/', [PromotionController::class, 'index'])->name('index');
+                    Route::get('{promotion}', [PromotionController::class, 'show'])->whereNumber('promotion')->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageDiscounts))->group(function () {
+                    Route::post('/', [PromotionController::class, 'store'])->name('store');
+                    Route::post('preview', [PromotionController::class, 'preview'])->name('preview');
+                    Route::put('{promotion}', [PromotionController::class, 'update'])->whereNumber('promotion')->name('update');
+                    Route::delete('{promotion}', [PromotionController::class, 'destroy'])->whereNumber('promotion')->name('destroy');
+                });
             });
 
             // The specification fields of the product editor for the chosen categories.

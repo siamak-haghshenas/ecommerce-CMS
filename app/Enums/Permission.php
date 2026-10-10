@@ -56,6 +56,10 @@ enum Permission: string
     case ViewPosts = 'posts.view';
     case ManagePosts = 'posts.manage';
 
+    /** Promotions (and, later, coupons). */
+    case ViewDiscounts = 'discounts.view';
+    case ManageDiscounts = 'discounts.manage';
+
     /** Store settings (price display currency, low-stock default). No role lists it: super admin only. */
     case ManageSettings = 'settings.manage';
 }

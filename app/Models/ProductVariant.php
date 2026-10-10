@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\DiscountSource;
 use Carbon\CarbonInterface;
 use Database\Factories\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,7 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * A sellable SKU. Prices are whole Rials. Stock only changes through AdjustStockAction,
  * which records every change in stock_movements. Its picture (`image_asset_id`) is one of the
- * product's gallery files.
+ * product's gallery files. The price shoppers pay now is stored in `current_price` (the lowest
+ * of the regular price, the sale price and the promotions that apply; see App\Support\Pricing).
  */
 #[Fillable([
     'product_id', 'sku', 'price', 'sale_price', 'sale_starts_at', 'sale_ends_at', 'is_enabled',
@@ -45,7 +49,56 @@ class ProductVariant extends Model
             'is_enabled' => 'boolean',
             'image_asset_id' => 'integer',
             'position' => 'integer',
+            'current_price' => 'integer',
+            'discount_source' => DiscountSource::class,
+            'promotion_id' => 'integer',
+            'price_recalc_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Prices and sales are saved through products; promotions are added afterwards by
+        // RefreshPricesAction. Until then the stored price follows the variant's own sale.
+        static::saving(function (self $variant): void {
+            if ($variant->current_price !== null && ! $variant->isDirty(['price', 'sale_price', 'sale_starts_at', 'sale_ends_at'])) {
+                return;
+            }
+
+            $onSale = $variant->isOnSale();
+            $future = array_filter(
+                $variant->sale_price === null ? [] : [$variant->sale_starts_at, $variant->sale_ends_at],
+                fn (?CarbonInterface $moment): bool => $moment !== null && $moment->isFuture(),
+            );
+
+            $variant->forceFill([
+                'current_price' => $onSale ? $variant->sale_price : $variant->price,
+                'discount_source' => $onSale ? DiscountSource::Sale : null,
+                'promotion_id' => null,
+                'price_recalc_at' => $future === [] ? null : min($future),
+            ]);
+        });
+    }
+
+    /**
+     * The promotion that gives the current price, if one does.
+     *
+     * @return BelongsTo<Promotion, $this>
+     */
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
+    }
+
+    /**
+     * Variants whose price is due to change (a sale or promotion started or ended).
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function priceDue(Builder $query): void
+    {
+        $query->where('price_recalc_at', '<=', now());
     }
 
     /**
@@ -86,22 +139,30 @@ class ProductVariant extends Model
     }
 
     /**
-     * The price shoppers pay now: the sale price while the sale runs, else the regular price.
+     * The price shoppers pay now (stored; see the class description).
      */
-    public function currentPrice(?CarbonInterface $at = null): int
+    public function currentPrice(): int
     {
-        return $this->isOnSale($at) ? (int) $this->sale_price : $this->price;
+        return $this->current_price ?? $this->price;
     }
 
     /**
-     * The discount in whole percent while on sale, else 0.
+     * Whether a sale or a promotion lowers the price now.
      */
-    public function discountPercent(?CarbonInterface $at = null): int
+    public function isDiscounted(): bool
     {
-        if (! $this->isOnSale($at) || $this->price === 0) {
+        return $this->currentPrice() < $this->price;
+    }
+
+    /**
+     * The discount in whole percent, else 0.
+     */
+    public function discountPercent(): int
+    {
+        if (! $this->isDiscounted() || $this->price === 0) {
             return 0;
         }
 
-        return (int) round(($this->price - (int) $this->sale_price) / $this->price * 100);
+        return (int) round(($this->price - $this->currentPrice()) / $this->price * 100);
     }
 }
