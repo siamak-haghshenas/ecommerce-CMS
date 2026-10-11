@@ -89,12 +89,12 @@ const subjectLink = computed(() => {
         return { name: 'customer', params: { id: subject.id } };
     }
 
-    if (subject.type === 'promotion') {
-        return { name: 'promotion', params: { id: subject.id } };
-    }
-
     if (subject.type === 'sale_event') {
         return { name: 'sale-event', params: { id: subject.id } };
+    }
+
+    if (subject.type === 'promotion') {
+        return { name: 'discounts' };
     }
 
     if (subject.type === 'media') {
@@ -124,6 +124,11 @@ const missingSubject = computed(() => {
         typeof properties.name === 'string'
     ) {
         return properties.name;
+    }
+
+    // A removed promotion row keeps its SKU.
+    if (event.startsWith('promotion.') && typeof properties.sku === 'string') {
+        return properties.sku;
     }
 
     // A page in the trash is no subject any more; its entries keep the title.

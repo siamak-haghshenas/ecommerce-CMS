@@ -52,6 +52,7 @@ class SaleEventVariantResource extends JsonResource
                 'current_price' => $variant->currentPrice(),
                 'discount_source' => $variant->discount_source?->value,
                 'sale_event_id' => $variant->sale_event_id,
+                'promotion_id' => $variant->promotion_id,
                 'is_enabled' => $variant->is_enabled,
                 'is_deleted' => $variant->trashed(),
             ],

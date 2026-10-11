@@ -14,47 +14,32 @@ use App\Support\Settings;
 use Carbon\CarbonInterface;
 
 /**
- * The one place prices are worked out: the lowest of the regular price, the variant's running
- * sale price, every running promotion that targets it and the sale event chosen for it (of the
- * events running for the variant, the highest-priority one). Discounts never stack. Promotion and
- * event discounts are rounded down to whole Rials, or to whole Toman when the store shows Toman.
+ * The one place prices are worked out: the lowest of the variant's running sale price, the sale
+ * event chosen for it (of the events running for the variant, the highest-priority one) and its
+ * running promotion row, never above the regular price. Discounts never stack. Event and promotion
+ * discounts are rounded down to whole Rials, or to whole Toman when the store shows Toman. The order
+ * limit of whatever gives the price comes with it.
  */
 final readonly class Pricing
 {
     public function __construct(private Settings $settings) {}
 
     /**
-     * @param  list<Promotion>  $promotions  the promotions that target the variant's product
      * @param  list<SaleEventItem>  $eventItems  the variant's items in events, highest priority first (with `saleEvent`)
+     * @param  list<Promotion>  $promotions  the variant's promotion rows that haven't ended
      */
-    public function price(ProductVariant $variant, array $promotions, CarbonInterface $at, array $eventItems = []): VariantPrice
+    public function price(ProductVariant $variant, CarbonInterface $at, array $eventItems = [], array $promotions = []): VariantPrice
     {
-        $best = new VariantPrice($variant->price, null, null, null);
+        $best = new VariantPrice($variant->price, null, null);
         $changes = [];
 
         if ($variant->sale_price !== null && $variant->sale_price < $variant->price) {
             if ($variant->isOnSale($at)) {
-                $best = new VariantPrice((int) $variant->sale_price, DiscountSource::Sale, null, null);
+                $best = new VariantPrice((int) $variant->sale_price, DiscountSource::Sale, null);
             }
 
             $changes[] = $variant->sale_starts_at;
             $changes[] = $variant->sale_ends_at;
-        }
-
-        foreach ($promotions as $promotion) {
-            $changes[] = $promotion->starts_at;
-            $changes[] = $promotion->ends_at;
-
-            if ($promotion->state($at) !== 'active') {
-                continue;
-            }
-
-            $price = $variant->price - $this->discount($promotion, $variant->price);
-
-            // Lower wins; on a tie the variant's own sale is kept.
-            if ($price < $best->current) {
-                $best = new VariantPrice($price, DiscountSource::Promotion, $promotion->id, null);
-            }
         }
 
         $chosen = null;
@@ -68,32 +53,33 @@ final readonly class Pricing
                 $discount = $this->eventDiscount($item, $variant->price);
                 $chosen = $discount > 0 && $discount < $variant->price ? $item : null;
 
+                // Lower wins; on a tie the variant's own sale is kept.
                 if ($chosen !== null && $variant->price - $discount < $best->current) {
-                    $best = new VariantPrice($variant->price - $discount, DiscountSource::SaleEvent, null, null, $item->sale_event_id);
+                    $best = new VariantPrice($variant->price - $discount, DiscountSource::SaleEvent, null, $item->sale_event_id, $item->max_per_order);
                 }
+            }
+        }
+
+        foreach ($promotions as $promotion) {
+            $changes[] = $promotion->starts_at;
+            $changes[] = $promotion->ends_at;
+
+            if (! $promotion->runsAt($at)) {
+                continue;
+            }
+
+            $discount = $this->promotionDiscount($promotion, $variant->price);
+
+            // Lower wins; on a tie the sale or event is kept.
+            if ($discount > 0 && $discount < $variant->price && $variant->price - $discount < $best->current) {
+                $best = new VariantPrice($variant->price - $discount, DiscountSource::Promotion, null, null, $promotion->max_per_order, $promotion->id);
             }
         }
 
         $future = array_filter($changes, fn (?CarbonInterface $moment): bool => $moment !== null && $moment->gt($at));
         $next = $future === [] ? null : min($future);
 
-        return new VariantPrice($best->current, $best->source, $best->promotionId, $next, $best->saleEventId);
-    }
-
-    /**
-     * Rials off one unit with a regular price of $price.
-     */
-    public function discount(Promotion $promotion, int $price): int
-    {
-        $discount = $promotion->type === PromotionType::Percent
-            ? intdiv($price * $promotion->value, 100)
-            : $promotion->value;
-
-        if ($promotion->type === PromotionType::Percent && $promotion->max_discount !== null) {
-            $discount = min($discount, $promotion->max_discount);
-        }
-
-        return $this->roundDown($discount, $price);
+        return new VariantPrice($best->current, $best->source, $next, $best->saleEventId, $best->maxPerOrder, $best->promotionId);
     }
 
     /**
@@ -101,11 +87,20 @@ final readonly class Pricing
      */
     public function eventDiscount(SaleEventItem $item, int $price): int
     {
-        $discount = $item->discount_type === PromotionType::Percent
-            ? intdiv($price * $item->discount_value, 100)
-            : $item->discount_value;
+        return $this->discount($item->discount_type, $item->discount_value, $price);
+    }
 
-        return $this->roundDown($discount, $price);
+    /**
+     * Rials off one unit of a variant in a promotion row, with a regular price of $price.
+     */
+    public function promotionDiscount(Promotion $promotion, int $price): int
+    {
+        return $this->discount($promotion->discount_type, $promotion->discount_value, $price);
+    }
+
+    private function discount(PromotionType $type, int $value, int $price): int
+    {
+        return $this->roundDown($type === PromotionType::Percent ? intdiv($price * $value, 100) : $value, $price);
     }
 
     /**

@@ -21,5 +21,7 @@ final readonly class SaleEventItemData
         public ?CarbonImmutable $startsAt,
         /** Null: the event's end. */
         public ?CarbonImmutable $endsAt,
+        /** The most units one order may hold at the event's price; null: no limit. */
+        public ?int $maxPerOrder = null,
     ) {}
 }

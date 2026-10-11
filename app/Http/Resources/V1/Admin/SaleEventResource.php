@@ -101,6 +101,7 @@ class SaleEventResource extends JsonResource
             'id' => $item->id,
             'discount_type' => $item->discount_type->value,
             'discount_value' => $item->discount_value,
+            'max_per_order' => $item->max_per_order,
             'starts_at' => $item->starts_at?->toIso8601String(),
             'ends_at' => $item->ends_at?->toIso8601String(),
             'overridden_by' => $this->overriding[$item->product_variant_id] ?? [],

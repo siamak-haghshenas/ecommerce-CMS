@@ -56,7 +56,7 @@ enum Permission: string
     case ViewPosts = 'posts.view';
     case ManagePosts = 'posts.manage';
 
-    /** Promotions (and, later, coupons). */
+    /** Sale events (and, later, coupons). */
     case ViewDiscounts = 'discounts.view';
     case ManageDiscounts = 'discounts.manage';
 

@@ -79,13 +79,16 @@ class ProductResource extends JsonResource
                 'price' => $variant->currentPrice(),
                 'regular_price' => $variant->price,
                 'discount_percent' => $variant->discountPercent(),
-                // What gives the price: the variant's own sale, a promotion or a sale event (null: the regular price).
+                // What gives the price: the variant's own sale, a sale event or a promotion (null: the regular price).
                 'discount_source' => $variant->discount_source?->value,
                 'sale_ends_at' => $variant->discount_source === DiscountSource::Sale ? $variant->sale_ends_at?->toIso8601String() : null,
-                'promotion' => $variant->discount_source === DiscountSource::Promotion && $variant->promotion !== null
-                    ? ['name' => $variant->promotion->name, 'ends_at' => $variant->promotion->ends_at?->toIso8601String()]
-                    : null,
                 'sale_event' => $this->saleEvent($variant),
+                // When a promotion gives the price: when it ends and how many discounted units are left (null: no limit).
+                'promotion' => $variant->discount_source === DiscountSource::Promotion && $variant->promotion !== null
+                    ? ['ends_at' => $variant->promotion->ends_at->toIso8601String(), 'remaining' => $variant->promotion->remaining()]
+                    : null,
+                // The most units one order (cart) may hold at this price, set by the sale event or promotion giving it; null: no limit.
+                'max_per_order' => $variant->max_per_order,
                 'in_stock' => $this->resource->isAvailable($variant),
                 'low_stock' => $this->resource->isLowStock($variant),
                 'image_id' => $variant->image_asset_id,
@@ -163,7 +166,7 @@ class ProductResource extends JsonResource
     {
         return [
             'brand.logoAssets.media', 'categories', 'tags', 'galleryAssets.media', 'options.values',
-            'variants.optionValues', 'variants.promotion', 'variants.saleEvent', 'variants.saleEventItems',
+            'variants.optionValues', 'variants.saleEvent', 'variants.promotion', 'variants.saleEventItems',
             'attributeValues.attribute', 'attributeValues.attributeValue',
         ];
     }

@@ -16,5 +16,5 @@ Schedule::command('model:prune')->hourly()->withoutOverlapping();
 // Removes customer API tokens that expired more than a day ago.
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
-// Applies sale prices and promotions that start or end (stored per variant for storefront filters).
+// Applies sale prices and sale events that start or end (stored per variant for storefront filters).
 Schedule::command('prices:refresh --due')->everyMinute()->withoutOverlapping();

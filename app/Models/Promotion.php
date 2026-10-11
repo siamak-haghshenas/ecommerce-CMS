@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\PromotionScope;
 use App\Enums\PromotionType;
 use Carbon\CarbonInterface;
 use Database\Factories\PromotionFactory;
@@ -13,20 +12,34 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * An automatic catalog discount: a percentage or a fixed amount off the regular price of the
- * products it targets, during its time window. A variant's price is the lowest of its regular
- * price, its sale price and every promotion that applies (see App\Support\Pricing\Pricing).
+ * One SKU's discount: a percentage or a fixed amount off its regular price between `starts_at`
+ * and `ends_at`, with an optional order limit (`max_per_order`) and number of discounted units in
+ * all (`quantity_limit`; `sold_count` is counted by orders). A variant's rows never overlap in
+ * time. The price competes with the variant's sale price and sale events (the lowest wins; see
+ * App\Support\Pricing\Pricing).
  */
-#[Fillable(['name', 'type', 'value', 'max_discount', 'scope', 'starts_at', 'ends_at', 'is_active', 'created_by', 'updated_by'])]
+#[Fillable([
+    'product_id', 'product_variant_id', 'discount_type', 'discount_value', 'max_per_order', 'quantity_limit',
+    'starts_at', 'ends_at', 'created_by', 'updated_by',
+])]
 class Promotion extends Model
 {
     /** @use HasFactory<PromotionFactory> */
     use HasFactory;
 
     public const int MAX_PERCENT = 90;
+
+    /** The highest order limit a row may set. */
+    public const int MAX_PER_ORDER = 10000;
+
+    /** The highest number of discounted units a row may set. */
+    public const int MAX_QUANTITY = 1000000;
+
+    /** The most rows one save may send. */
+    public const int MAX_PER_SAVE = 1000;
 
     /**
      * Get the attributes that should be cast.
@@ -36,69 +49,78 @@ class Promotion extends Model
     protected function casts(): array
     {
         return [
-            'type' => PromotionType::class,
-            'scope' => PromotionScope::class,
-            'value' => 'integer',
-            'max_discount' => 'integer',
+            'product_id' => 'integer',
+            'product_variant_id' => 'integer',
+            'discount_type' => PromotionType::class,
+            'discount_value' => 'integer',
+            'max_per_order' => 'integer',
+            'quantity_limit' => 'integer',
+            'sold_count' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
-            'is_active' => 'boolean',
-            'created_by' => 'integer',
-            'updated_by' => 'integer',
         ];
     }
 
     /**
-     * @return HasMany<PromotionTarget, $this>
+     * @return BelongsTo<Product, $this>
      */
-    public function targets(): HasMany
+    public function product(): BelongsTo
     {
-        return $this->hasMany(PromotionTarget::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     /**
-     * "disabled", "scheduled", "active" or "expired".
+     * @return BelongsTo<ProductVariant, $this>
      */
-    public function state(?CarbonInterface $at = null): string
+    public function variant(): BelongsTo
     {
-        $at ??= now();
-
-        return match (true) {
-            ! $this->is_active => 'disabled',
-            $this->starts_at !== null && $this->starts_at->gt($at) => 'scheduled',
-            $this->ends_at !== null && $this->ends_at->lte($at) => 'expired',
-            default => 'active',
-        };
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id')->withTrashed();
     }
 
     /**
-     * Promotions that apply now or may apply later (enabled, not ended): the ones prices depend on.
+     * Rows prices still depend on: not ended.
      *
      * @param  Builder<self>  $query
      */
     #[Scope]
     protected function relevant(Builder $query): void
     {
-        $query->where('is_active', true)->where(fn (Builder $end) => $end->whereNull('ends_at')->orWhere('ends_at', '>', now()));
+        $query->where('ends_at', '>', now());
+    }
+
+    public function isSoldOut(): bool
+    {
+        return $this->quantity_limit !== null && $this->sold_count >= $this->quantity_limit;
     }
 
     /**
-     * The admin list's status filter.
-     *
-     * @param  Builder<self>  $query
+     * Discounted units left; null: no limit.
      */
-    #[Scope]
-    protected function inState(Builder $query, string $state): void
+    public function remaining(): ?int
     {
-        $now = now();
+        return $this->quantity_limit === null ? null : max(0, $this->quantity_limit - $this->sold_count);
+    }
 
-        match ($state) {
-            'disabled' => $query->where('is_active', false),
-            'scheduled' => $query->where('is_active', true)->where('starts_at', '>', $now),
-            'expired' => $query->where('is_active', true)->where('ends_at', '<=', $now),
-            default => $query->where('is_active', true)
-                ->where(fn (Builder $start) => $start->whereNull('starts_at')->orWhere('starts_at', '<=', $now))
-                ->where(fn (Builder $end) => $end->whereNull('ends_at')->orWhere('ends_at', '>', $now)),
+    /**
+     * "scheduled", "active", "sold_out" or "ended".
+     */
+    public function state(?CarbonInterface $at = null): string
+    {
+        $at ??= now();
+
+        return match (true) {
+            $this->ends_at->lte($at) => 'ended',
+            $this->isSoldOut() => 'sold_out',
+            $this->starts_at->gt($at) => 'scheduled',
+            default => 'active',
         };
+    }
+
+    /**
+     * Whether it gives the variant its discount at $at.
+     */
+    public function runsAt(CarbonInterface $at): bool
+    {
+        return $this->state($at) === 'active';
     }
 }

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * One variant of a sale event: a percentage or a fixed amount off its regular price, during the
  * event or a narrower window of its own (`starts_at` / `ends_at` inside the event's dates).
  */
-#[Fillable(['sale_event_id', 'product_id', 'product_variant_id', 'discount_type', 'discount_value', 'starts_at', 'ends_at'])]
+#[Fillable(['sale_event_id', 'product_id', 'product_variant_id', 'discount_type', 'discount_value', 'max_per_order', 'starts_at', 'ends_at'])]
 class SaleEventItem extends Model
 {
     public $timestamps = false;
@@ -30,9 +30,11 @@ class SaleEventItem extends Model
             'sale_event_id' => 'integer',
             'product_id' => 'integer',
             'product_variant_id' => 'integer',
-            // The same kinds as promotions: a percentage (1–90) or Rials off each unit.
+            // A percentage (1–90) or Rials off each unit.
             'discount_type' => PromotionType::class,
             'discount_value' => 'integer',
+            // The most units of the variant one order may hold at the event's price; null: no limit.
+            'max_per_order' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];

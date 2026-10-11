@@ -245,7 +245,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::prefix('products')->name('products.')->group(function () {
                 Route::middleware(PermissionMiddleware::using(Permission::ViewProducts))->group(function () {
                     Route::get('/', [ProductController::class, 'index'])->name('index');
-                    Route::get('ids', [ProductController::class, 'ids'])->name('ids');
+                    Route::get('matching', [ProductController::class, 'matching'])->name('matching');
                     Route::get('{product}', [ProductController::class, 'show'])->whereNumber('product')->withTrashed()->name('show');
                     Route::get('{product}/stock-movements', StockMovementController::class)->whereNumber('product')->withTrashed()->name('stock-movements');
                 });
@@ -321,18 +321,15 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     ->name('update');
             });
 
-            // Promotions: automatic catalog discounts (saving reprices the catalog).
+            // Promotions: one row per SKU discount with its own dates and limits (saving reprices their products).
             Route::prefix('promotions')->name('promotions.')->group(function () {
-                Route::middleware(PermissionMiddleware::using(Permission::ViewDiscounts))->group(function () {
-                    Route::get('/', [PromotionController::class, 'index'])->name('index');
-                    Route::get('{promotion}', [PromotionController::class, 'show'])->whereNumber('promotion')->name('show');
-                });
+                Route::get('/', [PromotionController::class, 'index'])
+                    ->middleware(PermissionMiddleware::using(Permission::ViewDiscounts))
+                    ->name('index');
 
                 Route::middleware(PermissionMiddleware::using(Permission::ManageDiscounts))->group(function () {
-                    Route::post('/', [PromotionController::class, 'store'])->name('store');
-                    Route::post('preview', [PromotionController::class, 'preview'])->name('preview');
-                    Route::put('{promotion}', [PromotionController::class, 'update'])->whereNumber('promotion')->name('update');
-                    Route::delete('{promotion}', [PromotionController::class, 'destroy'])->whereNumber('promotion')->name('destroy');
+                    Route::put('/', [PromotionController::class, 'save'])->name('save');
+                    Route::get('variants', [PromotionController::class, 'variants'])->name('variants');
                 });
             });
 

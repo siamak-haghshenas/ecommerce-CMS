@@ -6,7 +6,6 @@ namespace App\Actions\Pricing;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Promotion;
 use App\Support\Pricing\Pricing;
 use App\Support\Pricing\PromotionSet;
 use App\Support\Pricing\SaleEventSet;
@@ -19,9 +18,8 @@ final readonly class RefreshPricesAction
 
     /**
      * Store the current price of the given products' variants (null: every product). Called when
-     * a product, a promotion, a sale event or what promotions target (categories, tags) changes,
-     * and each minute for prices whose sale, promotion or event starts or ends
-     * (`prices:refresh --due`).
+     * a product, a sale event or promotions change, and each minute for prices whose sale, event or
+     * promotion starts or ends (`prices:refresh --due`).
      *
      * @param  list<int>|null  $productIds
      * @return int how many variants changed
@@ -32,25 +30,18 @@ final readonly class RefreshPricesAction
             return 0;
         }
 
-        $promotions = PromotionSet::load();
         $events = SaleEventSet::load($productIds);
+        $promotions = PromotionSet::load($productIds);
         $now = now();
         $changed = 0;
 
         Product::withTrashed()
             ->when($productIds !== null, fn (Builder $query) => $query->whereKey($productIds))
-            ->with(['categories:id', 'tags:id', 'variants'])
-            ->chunkById(200, function ($products) use ($promotions, $events, $now, &$changed): void {
+            ->with('variants')
+            ->chunkById(200, function ($products) use ($events, $promotions, $now, &$changed): void {
                 foreach ($products as $product) {
-                    $applicable = $promotions->forProduct(
-                        $product->id,
-                        $product->brand_id,
-                        $product->categories->modelKeys(),
-                        $product->tags->modelKeys(),
-                    );
-
                     foreach ($product->variants as $variant) {
-                        $changed += $this->store($variant, $applicable, $events, $now) ? 1 : 0;
+                        $changed += $this->store($variant, $events, $promotions, $now) ? 1 : 0;
                     }
                 }
             });
@@ -58,18 +49,16 @@ final readonly class RefreshPricesAction
         return $changed;
     }
 
-    /**
-     * @param  list<Promotion>  $promotions
-     */
-    private function store(ProductVariant $variant, array $promotions, SaleEventSet $events, CarbonInterface $now): bool
+    private function store(ProductVariant $variant, SaleEventSet $events, PromotionSet $promotions, CarbonInterface $now): bool
     {
-        $price = $this->pricing->price($variant, $promotions, $now, $events->forVariant($variant->id));
+        $price = $this->pricing->price($variant, $now, $events->forVariant($variant->id), $promotions->forVariant($variant->id));
 
         $variant->forceFill([
             'current_price' => $price->current,
             'discount_source' => $price->source,
-            'promotion_id' => $price->promotionId,
             'sale_event_id' => $price->saleEventId,
+            'promotion_id' => $price->promotionId,
+            'max_per_order' => $price->maxPerOrder,
             'price_recalc_at' => $price->recalcAt,
         ]);
 

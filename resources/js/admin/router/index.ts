@@ -131,22 +131,8 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'discounts',
                 name: 'discounts',
-                component: () => import('../modules/discounts/pages/DiscountsPage.vue'),
+                component: () => import('../modules/discounts/pages/PromotionsPage.vue'),
                 meta: { title: 'pageTitles.discounts', permission: Permission.ViewDiscounts },
-            },
-            {
-                path: 'discounts/promotions/new',
-                name: 'promotion-create',
-                component: () => import('../modules/discounts/pages/PromotionEditorPage.vue'),
-                props: { id: null },
-                meta: { title: 'pageTitles.promotionCreate', permission: Permission.ManageDiscounts },
-            },
-            {
-                path: 'discounts/promotions/:id(\\d+)',
-                name: 'promotion',
-                component: () => import('../modules/discounts/pages/PromotionEditorPage.vue'),
-                props: (route) => ({ id: Number(route.params.id) }),
-                meta: { title: 'pageTitles.promotion', permission: Permission.ViewDiscounts },
             },
             {
                 path: 'discounts/sale-events',

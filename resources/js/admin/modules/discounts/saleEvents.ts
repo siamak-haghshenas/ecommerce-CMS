@@ -6,10 +6,19 @@ import type { SaleEventItem, SaleEventItemPayload, SaleEventVariant } from './ty
 /** SaleEvent::MAX_PERCENT */
 export const MAX_PERCENT = 90;
 
+/** SaleEvent::MAX_PER_ORDER: the highest order limit an item may set. */
+export const MAX_PER_ORDER = 10_000;
+
+/** Whether the server would refuse this order limit (null: no limit, fine). */
+export function limitInvalid(limit: number | null): boolean {
+    return limit !== null && (limit < 1 || limit > MAX_PER_ORDER);
+}
+
 /** Which of the three linked fields was typed: it decides what is saved. */
 export type DiscountField = 'percent' | 'off' | 'final';
 
-export type RowProblem = 'required' | 'percent_range' | 'not_below_price' | 'dates_order' | 'outside_event';
+export type RowProblem =
+    'required' | 'percent_range' | 'not_below_price' | 'limit_range' | 'dates_order' | 'outside_event';
 
 /** One variant of the event as the editor holds it. Amounts are Rials. */
 export interface EventRow {
@@ -23,7 +32,7 @@ export interface EventRow {
     price: number;
     currentPrice: number;
     /** What gives the variant's price now (null: the regular price). */
-    discountSource: 'sale' | 'promotion' | 'sale_event' | null;
+    discountSource: 'sale' | 'sale_event' | 'promotion' | null;
     /** The event giving the price now, when it comes from an event. */
     saleEventId: number | null;
     isEnabled: boolean;
@@ -31,6 +40,8 @@ export interface EventRow {
     field: DiscountField;
     /** The typed field's value: a percentage, Rials off or the final price in Rials. Null: not filled in. */
     value: number | null;
+    /** The most units one order may hold at the event's price; null: no limit. */
+    maxPerOrder: number | null;
     /** `datetime-local` values; empty: the event's dates. */
     startsAt: string;
     endsAt: string;
@@ -54,6 +65,7 @@ export function rowFromItem(item: SaleEventItem, toLocal: (iso: string | null) =
         isDeleted: item.variant.is_deleted || item.product.is_deleted,
         field: item.discount_type === 'percent' ? 'percent' : 'off',
         value: item.discount_value,
+        maxPerOrder: item.max_per_order,
         startsAt: toLocal(item.starts_at),
         endsAt: toLocal(item.ends_at),
         overriddenBy: item.overridden_by,
@@ -78,6 +90,7 @@ export function rowsFromVariants(
                     id: 0,
                     discount_type: start.field === 'percent' ? 'percent' : 'fixed',
                     discount_value: 0,
+                    max_per_order: null,
                     starts_at: null,
                     ends_at: null,
                     overridden_by: [],
@@ -90,8 +103,11 @@ export function rowsFromVariants(
         }));
 }
 
+/** What the linked fields need: the regular price and the typed field (also used by promotion rows). */
+export type Linked = Pick<EventRow, 'price' | 'field' | 'value'>;
+
 /** Rials off before rounding, or null while the row has no usable value. */
-function rawOff(row: EventRow): number | null {
+export function rawOff(row: Linked): number | null {
     if (row.value === null) {
         return null;
     }
@@ -110,7 +126,7 @@ function rawOff(row: EventRow): number | null {
  * What the customer gets off, like `Pricing::eventDiscount()`: rounded down to whole display units
  * (10 Rials when the store shows Toman), never more than the price.
  */
-export function discountOf(row: EventRow, rialsPerUnit: number): number | null {
+export function discountOf(row: Linked, rialsPerUnit: number): number | null {
     const off = rawOff(row);
 
     return off === null ? null : Math.max(0, Math.min(row.price, Math.floor(off / rialsPerUnit) * rialsPerUnit));
@@ -118,7 +134,7 @@ export function discountOf(row: EventRow, rialsPerUnit: number): number | null {
 
 /** The three linked fields as shown: the typed one as typed, the other two computed from it. */
 export function linkedValues(
-    row: EventRow,
+    row: Linked,
     rialsPerUnit: number,
 ): { percent: number | null; off: number | null; final: number | null } {
     const off = discountOf(row, rialsPerUnit);
@@ -135,7 +151,7 @@ export function linkedValues(
 }
 
 /** The row after typing into one of the linked fields. */
-export function typed(row: EventRow, field: DiscountField, value: number | null): EventRow {
+export function typed<T extends Linked>(row: T, field: DiscountField, value: number | null): T {
     return { ...row, field, value };
 }
 
@@ -145,6 +161,7 @@ export function toItemPayload(row: EventRow, fromLocal: (value: string) => strin
         variant_id: row.variantId,
         discount_type: row.field === 'percent' ? 'percent' : 'fixed',
         discount_value: (row.field === 'percent' ? row.value : rawOff(row)) ?? 0,
+        max_per_order: row.maxPerOrder,
         starts_at: fromLocal(row.startsAt),
         ends_at: fromLocal(row.endsAt),
     };
@@ -166,6 +183,10 @@ export function rowProblem(row: EventRow, event: { startsAt: string; endsAt: str
         return 'required';
     } else if (off >= row.price) {
         return 'not_below_price';
+    }
+
+    if (limitInvalid(row.maxPerOrder)) {
+        return 'limit_range';
     }
 
     if (row.startsAt !== '' && row.endsAt !== '' && row.endsAt <= row.startsAt) {
@@ -216,14 +237,19 @@ export function applyDiscount(
     return { rows: next, skipped };
 }
 
+/** The same order limit (null: none) on several rows. */
+export function applyLimit(rows: EventRow[], ids: Set<number>, limit: number | null): EventRow[] {
+    return rows.map((row) => (ids.has(row.variantId) ? { ...row, maxPerOrder: limit } : row));
+}
+
 /** The same window on several rows (empty strings: back to the event's dates). */
 export function applyDates(rows: EventRow[], ids: Set<number>, startsAt: string, endsAt: string): EventRow[] {
     return rows.map((row) => (ids.has(row.variantId) ? { ...row, startsAt, endsAt } : row));
 }
 
 /** Rows grouped by product, products in the order they were first added. */
-export function groupByProduct(rows: EventRow[]): { productId: number; rows: EventRow[] }[] {
-    const groups = new Map<number, EventRow[]>();
+export function groupByProduct<T extends { productId: number }>(rows: T[]): { productId: number; rows: T[] }[] {
+    const groups = new Map<number, T[]>();
 
     for (const row of rows) {
         groups.set(row.productId, [...(groups.get(row.productId) ?? []), row]);

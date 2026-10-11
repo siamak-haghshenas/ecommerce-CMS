@@ -40,7 +40,10 @@ return [
 
     'promotions' => [
         'errors' => [
-            'no_targets' => 'Choose at least one product, category, brand or tag, or apply the promotion to all products.',
+            'percent_max' => 'The discount can be at most :max%.',
+            'not_below_price' => 'The discount must be less than this variant’s price.',
+            'variant_deleted' => 'This variant has been deleted and can’t be added.',
+            'overlap' => 'These dates overlap another discount of this variant.',
         ],
     ],
     'sale_events' => [

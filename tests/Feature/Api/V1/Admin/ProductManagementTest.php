@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Products\AdjustStockAction;
-use App\Actions\Products\MatchingProductIdsAction;
+use App\Actions\Products\MatchingProductsAction;
 use App\Enums\StockMovementReason;
 use App\Enums\UserRole;
 use App\Models\Attribute;
@@ -482,16 +482,16 @@ describe('list', function () {
             ->assertJsonPath('data.*.name', ['Backorder', 'In', 'Untracked']);
     });
 
-    it('returns the ids of every product matching the filters, up to the limit', function () {
+    it('returns every product matching the filters, up to the limit', function () {
         $brand = Brand::factory()->create();
         $first = Product::factory()->withVariant()->create(['brand_id' => $brand->id]);
         $second = Product::factory()->withVariant()->create(['brand_id' => $brand->id]);
         Product::factory()->withVariant()->create();
 
         actingAs(productManager())
-            ->getJson(route('api.v1.admin.products.ids', ['brand_id' => $brand->id]))
+            ->getJson(route('api.v1.admin.products.matching', ['brand_id' => $brand->id]))
             ->assertOk()
-            ->assertExactJson(['data' => ['ids' => [$second->id, $first->id], 'total' => 2, 'limit' => MatchingProductIdsAction::LIMIT]]);
+            ->assertExactJson(['data' => ['products' => [['id' => $second->id, 'name' => $second->name], ['id' => $first->id, 'name' => $first->name]], 'total' => 2, 'limit' => MatchingProductsAction::LIMIT]]);
     });
 
     it('deletes, lists deleted products and restores them', function () {

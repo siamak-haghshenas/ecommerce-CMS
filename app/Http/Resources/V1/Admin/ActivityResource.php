@@ -60,8 +60,12 @@ class ActivityResource extends JsonResource
             return ['type' => 'brand', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
         }
 
-        if ($model instanceof Promotion || $model instanceof SaleEvent) {
-            return ['type' => $model instanceof Promotion ? 'promotion' : 'sale_event', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        if ($model instanceof SaleEvent) {
+            return ['type' => 'sale_event', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof Promotion) {
+            return ['type' => 'promotion', 'id' => $model->id, 'name' => $model->product->name.' · '.$model->variant->sku, 'is_anonymised' => false];
         }
 
         if ($model instanceof Page || $model instanceof Post) {

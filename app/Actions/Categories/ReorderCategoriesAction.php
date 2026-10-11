@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Categories;
 
-use App\Actions\Pricing\RefreshPricesAction;
 use App\Data\Categories\CategoryNode;
 use App\Enums\CategoryType;
 use App\Exceptions\CategoryException;
@@ -15,8 +14,6 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class ReorderCategoriesAction
 {
-    public function __construct(private RefreshPricesAction $refreshPrices) {}
-
     /**
      * Set the complete child order of one parent (null = the type's top level). The ids may include
      * categories moved in from elsewhere, but must include every current child.
@@ -41,9 +38,7 @@ final readonly class ReorderCategoriesAction
             }
         }
 
-        $moved = false;
-
-        DB::transaction(function () use ($actor, $parentId, $ids, &$moved): void {
+        DB::transaction(function () use ($actor, $parentId, $ids): void {
             $categories = Category::query()->whereKey($ids)->get()->keyBy('id');
             $orderChanged = false;
 
@@ -62,7 +57,6 @@ final readonly class ReorderCategoriesAction
                 $category->save();
 
                 if ($previousParentId !== $parentId) {
-                    $moved = true;
                     activity('admin')
                         ->causedBy($actor)
                         ->performedOn($category)
@@ -87,10 +81,5 @@ final readonly class ReorderCategoriesAction
                 $entry->log('category.reordered');
             }
         });
-
-        // Promotions on a category include its sub-categories: moved branches may gain or lose them.
-        if ($moved && $type === CategoryType::Product) {
-            $this->refreshPrices->handle();
-        }
     }
 }

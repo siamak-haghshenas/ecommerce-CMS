@@ -101,7 +101,7 @@ final readonly class SaveProductAction
 
             $this->refreshSearchText->handle($product);
             $this->scoreSeo->handle($product, $previousKeyphrase);
-            // Promotions follow categories, brand and tags: apply them to the saved variants.
+            // A changed price or sale may lose to (or beat) a sale event.
             $this->refreshPrices->handle([$product->id]);
 
             if ($isNew || $changed !== []) {

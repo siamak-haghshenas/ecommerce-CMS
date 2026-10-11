@@ -16,6 +16,7 @@ use App\Support\Settings;
 use Spatie\Activitylog\Models\Activity;
 
 use function Pest\Laravel\actingAs;
+use function Pest\Laravel\freezeSecond;
 use function Pest\Laravel\getJson;
 
 beforeEach(function () {
@@ -93,6 +94,22 @@ describe('saving', function () {
             ->and(Activity::query()->where('event', 'sale_event.created')->sole()->properties['name'])->toBe('Yalda night');
     });
 
+    it('gives a variant the order limit of the event that prices it', function () {
+        $limited = eventVariant(200_000);
+        $unlimited = eventVariant(200_000);
+
+        actingAs(saleEventManager())->postJson(route('api.v1.admin.sale-events.store'), saleEventPayload([
+            saleEventItemPayload($limited, overrides: ['max_per_order' => 3]),
+            saleEventItemPayload($unlimited),
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.items.0.max_per_order', 3)
+            ->assertJsonPath('data.items.1.max_per_order', null);
+
+        expect($limited->fresh()?->max_per_order)->toBe(3)
+            ->and($unlimited->fresh()?->max_per_order)->toBeNull();
+    });
+
     it('rounds event discounts down to whole Toman when the store shows Toman', function () {
         app(Settings::class)->set([Settings::PRICE_DISPLAY_CURRENCY => 'IRT']);
         $variant = eventVariant(123_456);
@@ -105,6 +122,8 @@ describe('saving', function () {
     });
 
     it('updates items by variant, removes missing ones and restores their price', function () {
+        // The payload's dates come from now(): keep them equal between the two saves.
+        freezeSecond();
         $kept = eventVariant(100_000);
         $removed = eventVariant(100_000);
         $admin = saleEventManager();
@@ -158,6 +177,7 @@ describe('saving', function () {
         'slug not Latin' => [[], ['slug' => 'یلدا'], 'slug'],
         'percent over 90' => [['percent', 91], [], 'items.0.discount_value'],
         'amount not below the price' => [['fixed', 100_000], [], 'items.0.discount_value'],
+        'order limit of zero' => [['percent', 10, ['max_per_order' => 0]], [], 'items.0.max_per_order'],
         'item starts before the event' => [['percent', 10, ['starts_at' => now()->subDays(2)->toIso8601String()]], [], 'items.0.starts_at'],
         'item ends after the event' => [['percent', 10, ['ends_at' => now()->addDays(5)->toIso8601String()]], [], 'items.0.ends_at'],
     ]);
@@ -178,7 +198,7 @@ describe('saving', function () {
 });
 
 describe('priority', function () {
-    it('uses the highest-priority running event, then the lowest price wins against sales and promotions', function () {
+    it('uses the highest-priority running event, then the lowest price wins against the variant’s sale', function () {
         $variant = eventVariant(100_000, ['sale_price' => 85_000]);
         $admin = saleEventManager();
         $small = actingAs($admin)->postJson(route('api.v1.admin.sale-events.store'), saleEventPayload([saleEventItemPayload($variant, 'percent', 10)], ['name' => 'Small']))->json('data.id');

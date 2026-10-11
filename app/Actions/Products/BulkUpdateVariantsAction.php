@@ -52,7 +52,7 @@ final readonly class BulkUpdateVariantsAction
 
             $products = $variants->only($changed)->map(fn (ProductVariant $variant): Product => $variant->product)->unique('id')->values()->all();
             $this->log($actor, $products);
-            // A changed price or sale may lose to (or beat) a promotion.
+            // A changed price or sale may lose to (or beat) a sale event.
             $this->refreshPrices->handle(array_map(fn (Product $product): int => $product->id, $products));
 
             return $changed;

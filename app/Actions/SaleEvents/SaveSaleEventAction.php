@@ -122,6 +122,7 @@ final readonly class SaveSaleEventAction
                 'product_id' => (int) $productIds[$data->variantId],
                 'discount_type' => $data->discountType,
                 'discount_value' => $data->discountValue,
+                'max_per_order' => $data->maxPerOrder,
                 'starts_at' => $data->startsAt,
                 'ends_at' => $data->endsAt,
             ]);

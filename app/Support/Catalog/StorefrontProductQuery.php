@@ -21,7 +21,7 @@ final class StorefrontProductQuery
 {
     /**
      * The price shoppers pay now: the stored lowest of the regular price, the sale price and the
-     * promotions that apply (ProductVariant::currentPrice(), kept up to date by RefreshPricesAction).
+     * sale event that applies (ProductVariant::currentPrice(), kept up to date by RefreshPricesAction).
      */
     public const string CURRENT_PRICE = 'COALESCE(product_variants.current_price, product_variants.price)';
 

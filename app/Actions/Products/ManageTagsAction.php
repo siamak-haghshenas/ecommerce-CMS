@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Products;
 
-use App\Actions\Pricing\RefreshPricesAction;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
@@ -19,7 +18,6 @@ final readonly class ManageTagsAction
     public function __construct(
         private ResolveTagsAction $resolveTags,
         private RefreshProductSearchTextAction $refreshSearchText,
-        private RefreshPricesAction $refreshPrices,
     ) {}
 
     public function rename(User $actor, Tag $tag, string $name): Tag
@@ -39,8 +37,6 @@ final readonly class ManageTagsAction
      */
     public function merge(User $actor, Tag $tag, Tag $into): Tag
     {
-        $productIds = $tag->products()->pluck('products.id')->map(fn (mixed $id): int => (int) $id)->all();
-
         DB::transaction(function () use ($tag, $into): void {
             $into->products()->syncWithoutDetaching($tag->products()->pluck('products.id')->all());
             $into->posts()->syncWithoutDetaching($tag->posts()->withTrashed()->pluck('posts.id')->all());
@@ -48,8 +44,6 @@ final readonly class ManageTagsAction
         });
 
         $this->refreshProducts($into);
-        // Promotions on the merged tag no longer reach these products (and the target tag's do).
-        $this->refreshPrices->handle($productIds);
 
         activity('admin')->causedBy($actor)->performedOn($into)->event('tag.merged')
             ->withProperties(['from' => $tag->name, 'to' => $into->name])->log('tag.merged');
@@ -62,7 +56,6 @@ final readonly class ManageTagsAction
         $productIds = $tag->products()->pluck('products.id')->all();
         $tag->delete();
         $this->refreshSearchText->forQuery(Product::query()->whereKey($productIds));
-        $this->refreshPrices->handle(array_map(intval(...), $productIds));
 
         activity('admin')->causedBy($actor)->event('tag.deleted')
             ->withProperties(['name' => $tag->name])->log('tag.deleted');

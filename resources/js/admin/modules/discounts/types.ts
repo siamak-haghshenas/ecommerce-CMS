@@ -1,65 +1,9 @@
 import type { MediaPicture } from '../media/types';
 
-export type PromotionType = 'percent' | 'fixed';
-export type PromotionScope = 'all' | 'selected';
-export type PromotionState = 'active' | 'scheduled' | 'expired' | 'disabled';
+/** A percentage or a fixed amount off each unit. */
+export type DiscountType = 'percent' | 'fixed';
 
-/** A product, category, brand or tag a promotion applies to (or excludes). */
-export interface NamedItem {
-    id: number;
-    name: string;
-}
-
-export interface Promotion {
-    id: number;
-    name: string;
-    type: PromotionType;
-    /** A percentage (1–90) or Rials off each unit. */
-    value: number;
-    /** Percent promotions only: the most Rials taken off one unit. */
-    max_discount: number | null;
-    scope: PromotionScope;
-    state: PromotionState;
-    products: NamedItem[];
-    categories: NamedItem[];
-    brands: NamedItem[];
-    tags: NamedItem[];
-    excluded_products: NamedItem[];
-    starts_at: string | null;
-    ends_at: string | null;
-    is_active: boolean;
-    /** Only on the detail view: how many products it applies to. */
-    products_count?: number;
-    created_at: string | null;
-    updated_at: string | null;
-}
-
-export interface PromotionFilters {
-    q?: string;
-    status?: PromotionState;
-    page?: number;
-}
-
-export interface SavePromotionPayload {
-    name: string;
-    type: PromotionType;
-    value: number;
-    max_discount: number | null;
-    scope: PromotionScope;
-    product_ids: number[];
-    category_ids: number[];
-    brand_ids: number[];
-    tag_ids: number[];
-    excluded_product_ids: number[];
-    /** Null: now. */
-    starts_at: string | null;
-    ends_at: string | null;
-    is_active: boolean;
-}
-
-// ---- sale events ----
-
-export type SaleEventState = PromotionState;
+export type SaleEventState = 'active' | 'scheduled' | 'expired' | 'disabled';
 
 /** A higher-priority event that takes a variant over while their dates overlap. */
 export interface OverridingEvent {
@@ -72,9 +16,11 @@ export interface OverridingEvent {
 /** A variant in a sale event, with its own discount. Amounts are Rials. */
 export interface SaleEventItem {
     id: number;
-    discount_type: PromotionType;
+    discount_type: DiscountType;
     /** A percentage (1–90) or Rials off each unit. */
     discount_value: number;
+    /** The most units one order may hold at the event's price; null: no limit. */
+    max_per_order: number | null;
     /** Null: the event's dates. */
     starts_at: string | null;
     ends_at: string | null;
@@ -87,8 +33,9 @@ export interface SaleEventItem {
         price: number;
         sale_price: number | null;
         current_price: number;
-        discount_source: 'sale' | 'promotion' | 'sale_event' | null;
+        discount_source: 'sale' | 'sale_event' | 'promotion' | null;
         sale_event_id: number | null;
+        promotion_id: number | null;
         is_enabled: boolean;
         is_deleted: boolean;
     };
@@ -143,8 +90,9 @@ export interface SaleEventFilters {
 
 export interface SaleEventItemPayload {
     variant_id: number;
-    discount_type: PromotionType;
+    discount_type: DiscountType;
     discount_value: number;
+    max_per_order: number | null;
     starts_at: string | null;
     ends_at: string | null;
 }
@@ -179,3 +127,57 @@ export interface SaleEventPreview {
 
 /** A variant with its product, as "Add products" adds it (the same shape as an item's). */
 export type SaleEventVariant = Pick<SaleEventItem, 'variant' | 'product'>;
+
+// ---- promotions ----
+
+export type PromotionState = 'scheduled' | 'active' | 'sold_out' | 'ended';
+
+/** One SKU's discount with its own dates and limits, with its variant and product. Amounts are Rials. */
+export interface Promotion extends SaleEventVariant {
+    id: number;
+    discount_type: DiscountType;
+    /** A percentage (1–90) or Rials off each unit. */
+    discount_value: number;
+    /** The most units one order may hold at this price; null: no limit. */
+    max_per_order: number | null;
+    /** How many units are sold at this price in all; null: no limit. */
+    quantity_limit: number | null;
+    /** Counted by orders. */
+    sold_count: number;
+    starts_at: string;
+    ends_at: string;
+    state: PromotionState;
+}
+
+export interface PromotionPayload {
+    /** Null: a new row. */
+    id: number | null;
+    variant_id: number;
+    discount_type: DiscountType;
+    discount_value: number;
+    max_per_order: number | null;
+    quantity_limit: number | null;
+    starts_at: string | null;
+    ends_at: string | null;
+}
+
+/** A product in "Add product", with its enabled variants. */
+export interface PromotionPickerProduct {
+    id: number;
+    name: string;
+    type: 'simple' | 'variable';
+    status: 'draft' | 'published' | 'archived';
+    image: string | null;
+    variants: {
+        id: number;
+        sku: string;
+        label: string;
+        price: number;
+        current_price: number;
+        in_stock: boolean;
+        /** Null when the product doesn't track stock. */
+        stock_quantity: number | null;
+        /** It has a row that hasn't ended: a new one must not overlap it. */
+        has_promotion: boolean;
+    }[];
+}

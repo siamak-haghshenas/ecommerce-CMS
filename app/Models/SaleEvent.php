@@ -22,8 +22,8 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 /**
  * A time-limited sale on chosen variants (weekend sale, end-of-year sale, ...). Each variant has
  * its own discount (SaleEventItem). `position` is the priority: of the events running for a
- * variant, the highest one is used, and its price then competes with the variant's sale price and
- * promotions (the lowest wins; see App\Support\Pricing\Pricing). An event may have a landing page,
+ * variant, the highest one is used, and its price then competes with the variant's sale price
+ * (the lowest wins; see App\Support\Pricing\Pricing). An event may have a landing page,
  * which storefronts get as data.
  */
 #[Fillable([
@@ -37,6 +37,9 @@ class SaleEvent extends Model implements SeoSubject
     use HasFactory, HasSeo, UsesMediaLibrary;
 
     public const int MAX_PERCENT = 90;
+
+    /** The highest order limit (units of one variant per order) an item may set. */
+    public const int MAX_PER_ORDER = 10000;
 
     /** At most this many variants per event. */
     public const int MAX_ITEMS = 2000;
@@ -101,7 +104,7 @@ class SaleEvent extends Model implements SeoSubject
     }
 
     /**
-     * "disabled", "scheduled", "active" or "expired" (the same states as promotions).
+     * "disabled", "scheduled", "active" or "expired".
      */
     public function state(?CarbonInterface $at = null): string
     {

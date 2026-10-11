@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Actions\Pricing\RefreshPricesAction;
 use App\Enums\DiscountSource;
 use App\Enums\UserRole;
-use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Promotion;
-use App\Models\Tag;
 use App\Models\User;
 use App\Support\Settings;
+use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
 
 use function Pest\Laravel\actingAs;
@@ -20,228 +18,219 @@ use function Pest\Laravel\artisan;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\travel;
 
+beforeEach(function () {
+    app(Settings::class)->set([Settings::PRICE_DISPLAY_CURRENCY => 'IRR']);
+});
+
 function promotionManager(UserRole $role = UserRole::Admin): User
 {
     return User::factory()->withRole($role)->create();
 }
 
 /**
- * A product in a (product) category, with one variant at $price Rials.
+ * A published product with one variant at $price Rials and 10 in stock.
+ *
+ * @param  array<string, mixed>  $product
+ * @param  array<string, mixed>  $variant
  */
-function pricedProduct(int $price = 100_000, ?Category $category = null, array $attributes = [], array $variant = []): Product
+function promotedVariant(int $price = 200_000, array $product = [], array $variant = []): ProductVariant
 {
-    $product = Product::factory()->published()->create($attributes);
-    $product->categories()->attach($category ?? Category::factory()->create(), ['is_primary' => true]);
-    ProductVariant::factory()->for($product)->create(['price' => $price, ...$variant]);
+    $model = Product::factory()->published()->create($product);
+    $model->categories()->attach(Category::factory()->create(), ['is_primary' => true]);
 
-    return $product;
-}
-
-function variantOf(Product $product): ProductVariant
-{
-    return ProductVariant::query()->where('product_id', $product->id)->sole();
+    return ProductVariant::factory()->for($model)->create(['price' => $price, 'stock_quantity' => 10, ...$variant]);
 }
 
 /**
+ * A row as the page sends it: 20% off, running from an hour ago for a week.
+ *
+ * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
-function promotionPayload(array $overrides = []): array
+function promotionRow(ProductVariant $variant, array $overrides = []): array
 {
     return [
-        'name' => 'Summer sale',
-        'type' => 'percent',
-        'value' => 20,
-        'max_discount' => null,
-        'scope' => 'all',
-        'product_ids' => [],
-        'category_ids' => [],
-        'brand_ids' => [],
-        'tag_ids' => [],
-        'excluded_product_ids' => [],
-        'starts_at' => null,
-        'ends_at' => null,
-        'is_active' => true,
+        'variant_id' => $variant->id,
+        'discount_type' => 'percent',
+        'discount_value' => 20,
+        'max_per_order' => null,
+        'quantity_limit' => null,
+        'starts_at' => now()->subHour()->toIso8601String(),
+        'ends_at' => now()->addWeek()->toIso8601String(),
         ...$overrides,
     ];
+}
+
+/**
+ * @param  list<array<string, mixed>>  $rows
+ * @param  list<int>  $deleted
+ */
+function savePromotions(array $rows, array $deleted = [], ?User $actor = null): TestResponse
+{
+    return actingAs($actor ?? promotionManager())->putJson(route('api.v1.admin.promotions.save'), ['promotions' => $rows, 'deleted' => $deleted]);
 }
 
 describe('access', function () {
     it('returns 401 to guests and 403 to authors', function () {
         getJson(route('api.v1.admin.promotions.index'))->assertUnauthorized();
         actingAs(promotionManager(UserRole::Author))->getJson(route('api.v1.admin.promotions.index'))->assertForbidden();
-        actingAs(promotionManager(UserRole::Author))->postJson(route('api.v1.admin.promotions.store'), promotionPayload())->assertForbidden();
+        savePromotions([], actor: promotionManager(UserRole::Author))->assertForbidden();
+        actingAs(promotionManager(UserRole::Author))->getJson(route('api.v1.admin.promotions.variants'))->assertForbidden();
     });
 });
 
-describe('saving reprices the catalog', function () {
-    it('applies a percentage to every product, rounded down to whole Toman, with an audit entry', function () {
-        app(Settings::class)->set([Settings::PRICE_DISPLAY_CURRENCY => 'IRT']);
-        $product = pricedProduct(123_456);
+describe('saving', function () {
+    it('creates rows per SKU, reprices them with their order limit and logs each one', function () {
+        $percent = promotedVariant(200_000, variant: ['sku' => 'TS-S']);
+        $fixed = promotedVariant(80_000);
 
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['value' => 15]))
-            ->assertCreated()
-            ->assertJsonPath('data.state', 'active');
+        savePromotions([
+            promotionRow($percent, ['discount_value' => 25, 'max_per_order' => 2, 'quantity_limit' => 50]),
+            promotionRow($fixed, ['discount_type' => 'fixed', 'discount_value' => 30_000]),
+        ])
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.state', 'active');
 
-        // 15% of 123,456 = 18,518.4 → 18,510 Rials (whole Toman).
-        expect(variantOf($product)->current_price)->toBe(123_456 - 18_510)
-            ->and(variantOf($product)->discount_source)->toBe(DiscountSource::Promotion)
-            ->and(Activity::query()->where('event', 'promotion.created')->sole()->properties['name'])->toBe('Summer sale');
+        $row = Promotion::query()->where('product_variant_id', $percent->id)->sole();
+
+        expect($percent->fresh()?->current_price)->toBe(150_000)
+            ->and($percent->fresh()?->discount_source)->toBe(DiscountSource::Promotion)
+            ->and($percent->fresh()?->promotion_id)->toBe($row->id)
+            ->and($percent->fresh()?->max_per_order)->toBe(2)
+            ->and($fixed->fresh()?->current_price)->toBe(50_000)
+            ->and(Activity::query()->where('event', 'promotion.created')->count())->toBe(2)
+            ->and(Activity::query()->where('event', 'promotion.created')->where('subject_id', $row->id)->sole()->properties['sku'])->toBe('TS-S');
     });
 
-    it('caps a percentage with the maximum discount and applies a fixed amount', function () {
-        app(Settings::class)->set([Settings::PRICE_DISPLAY_CURRENCY => 'IRR']);
-        $expensive = pricedProduct(1_000_000);
-        $admin = promotionManager();
+    it('updates changed rows, deletes removed ones and restores their price', function () {
+        $kept = promotedVariant(100_000);
+        $removed = promotedVariant(100_000);
+        $keptRow = Promotion::factory()->forVariant($kept)->create();
+        $removedRow = Promotion::factory()->forVariant($removed)->create();
+        artisan('prices:refresh');
 
-        actingAs($admin)->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['value' => 50, 'max_discount' => 100_000]))->assertCreated();
-        expect(variantOf($expensive)->current_price)->toBe(900_000);
+        savePromotions([['id' => $keptRow->id, ...promotionRow($kept, ['discount_value' => 50])]], [$removedRow->id])->assertOk();
 
-        Promotion::query()->delete();
-        actingAs($admin)->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['type' => 'fixed', 'value' => 70_000]))->assertCreated();
-        expect(variantOf($expensive)->current_price)->toBe(930_000);
+        expect($kept->fresh()?->current_price)->toBe(50_000)
+            ->and($removed->fresh()?->current_price)->toBe(100_000)
+            ->and($removed->fresh()?->discount_source)->toBeNull()
+            ->and(Promotion::query()->whereKey($removedRow->id)->exists())->toBeFalse()
+            ->and(Activity::query()->where('event', 'promotion.updated')->sole()->properties['fields'])->toBe(['discount_value'])
+            ->and(Activity::query()->where('event', 'promotion.deleted')->exists())->toBeTrue();
     });
 
-    it('applies to chosen categories with their sub-categories, brands, tags and products, minus excluded ones', function () {
-        $parent = Category::factory()->create();
-        $child = Category::factory()->childOf($parent)->create();
-        $brand = Brand::factory()->create();
-        $tag = Tag::query()->create(['name' => 'Summer', 'slug' => 'summer']);
+    it('lets a variant have several rows that don’t overlap, each applied in its own dates', function () {
+        $variant = promotedVariant(100_000);
 
-        $inChild = pricedProduct(100_000, $child);
-        $excluded = pricedProduct(100_000, $child);
-        $branded = pricedProduct(100_000, attributes: ['brand_id' => $brand->id]);
-        $tagged = pricedProduct(100_000);
-        $tagged->tags()->attach($tag->id);
-        $chosen = pricedProduct(100_000);
-        $other = pricedProduct(100_000);
+        savePromotions([
+            promotionRow($variant, ['discount_value' => 10, 'ends_at' => now()->addDay()->toIso8601String()]),
+            promotionRow($variant, ['discount_value' => 30, 'starts_at' => now()->addDay()->toIso8601String(), 'ends_at' => now()->addDays(3)->toIso8601String()]),
+        ])->assertOk();
 
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.store'), promotionPayload([
-            'scope' => 'selected',
-            'category_ids' => [$parent->id],
-            'brand_ids' => [$brand->id],
-            'tag_ids' => [$tag->id],
-            'product_ids' => [$chosen->id],
-            'excluded_product_ids' => [$excluded->id],
-        ]))->assertCreated();
+        expect($variant->fresh()?->current_price)->toBe(90_000);
 
-        expect([$inChild, $branded, $tagged, $chosen, $excluded, $other])
-            ->sequence(
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(80_000),
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(80_000),
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(80_000),
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(80_000),
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(100_000),
-                fn ($p) => expect(variantOf($p->value)->current_price)->toBe(100_000),
-            );
+        travel(25)->hours();
+        artisan('prices:refresh --due');
+
+        expect($variant->fresh()?->current_price)->toBe(70_000);
+
+        travel(3)->days();
+        artisan('prices:refresh --due');
+
+        expect($variant->fresh()?->current_price)->toBe(100_000);
     });
 
-    it('keeps the lowest price: a better sale price wins over a promotion, never both', function () {
-        $saleWins = pricedProduct(100_000, variant: ['sale_price' => 70_000]);
-        $promotionWins = pricedProduct(100_000, variant: ['sale_price' => 95_000]);
+    it('rejects invalid rows', function (array $row, string $error) {
+        $variant = promotedVariant(100_000);
 
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['value' => 20]))->assertCreated();
-
-        expect(variantOf($saleWins)->current_price)->toBe(70_000)
-            ->and(variantOf($saleWins)->discount_source)->toBe(DiscountSource::Sale)
-            ->and(variantOf($promotionWins)->current_price)->toBe(80_000);
-    });
-
-    it('goes back to the best other price when a promotion is deleted or disabled', function () {
-        $product = pricedProduct(100_000, variant: ['sale_price' => 90_000]);
-        $admin = promotionManager();
-        $id = actingAs($admin)->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['value' => 30]))->json('data.id');
-        expect(variantOf($product)->current_price)->toBe(70_000);
-
-        actingAs($admin)->putJson(route('api.v1.admin.promotions.update', $id), promotionPayload(['value' => 30, 'is_active' => false]))->assertOk();
-        expect(variantOf($product)->current_price)->toBe(90_000);
-
-        actingAs($admin)->putJson(route('api.v1.admin.promotions.update', $id), promotionPayload(['value' => 30]))->assertOk();
-        actingAs($admin)->deleteJson(route('api.v1.admin.promotions.destroy', $id))->assertNoContent();
-
-        expect(variantOf($product)->current_price)->toBe(90_000)
-            ->and(variantOf($product)->discount_source)->toBe(DiscountSource::Sale)
-            ->and(Activity::query()->where('event', 'promotion.updated')->pluck('properties')->map(fn ($p) => $p['fields'])->all())->toBe([['is_active'], ['is_active']]);
-    });
-
-    it('keeps the promotion price when the product is saved again', function () {
-        $admin = promotionManager();
-        $product = pricedProduct(100_000);
-        actingAs($admin)->postJson(route('api.v1.admin.promotions.store'), promotionPayload(['value' => 10]))->assertCreated();
-        $variant = variantOf($product);
-
-        $variant->update(['price' => 200_000]);
-        app(RefreshPricesAction::class)->handle([$product->id]);
-
-        expect($variant->fresh()?->current_price)->toBe(180_000);
-    });
-});
-
-describe('scheduling', function () {
-    it('starts and ends on time with the scheduled refresh', function () {
-        $product = pricedProduct(100_000);
-
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.store'), promotionPayload([
-            'starts_at' => now()->addHour()->toIso8601String(),
-            'ends_at' => now()->addHours(2)->toIso8601String(),
-        ]))->assertCreated()->assertJsonPath('data.state', 'scheduled');
-
-        expect(variantOf($product)->current_price)->toBe(100_000);
-
-        travel(61)->minutes();
-        artisan('prices:refresh --due')->assertSuccessful();
-        expect(variantOf($product)->current_price)->toBe(80_000);
-
-        travel(60)->minutes();
-        artisan('prices:refresh --due')->assertSuccessful();
-        expect(variantOf($product)->current_price)->toBe(100_000);
-    });
-
-    it('lets a sale end on time too', function () {
-        $product = pricedProduct(100_000, variant: ['sale_price' => 60_000, 'sale_ends_at' => now()->addHour()]);
-        expect(variantOf($product)->current_price)->toBe(60_000);
-
-        travel(61)->minutes();
-        artisan('prices:refresh --due')->assertSuccessful();
-
-        expect(variantOf($product)->current_price)->toBe(100_000);
-    });
-});
-
-describe('validation and preview', function () {
-    it('refuses incomplete or out-of-range promotions', function (array $overrides, string $error) {
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.store'), promotionPayload($overrides))
+        savePromotions([promotionRow($variant, $row)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors($error);
+            ->assertJsonValidationErrors([$error]);
     })->with([
-        'percent over 90' => [['value' => 95], 'value'],
-        'max discount on a fixed amount' => [['type' => 'fixed', 'value' => 1000, 'max_discount' => 500], 'max_discount'],
-        'selected with no targets' => [['scope' => 'selected'], 'scope'],
-        'unknown category' => [['scope' => 'selected', 'category_ids' => [999999]], 'category_ids.0'],
-        'end before start' => [['starts_at' => '2030-01-02', 'ends_at' => '2030-01-01'], 'ends_at'],
+        'percent over 90' => [['discount_value' => 91], 'promotions.0.discount_value'],
+        'amount not below the price' => [['discount_type' => 'fixed', 'discount_value' => 100_000], 'promotions.0.discount_value'],
+        'order limit of zero' => [['max_per_order' => 0], 'promotions.0.max_per_order'],
+        'quantity of zero' => [['quantity_limit' => 0], 'promotions.0.quantity_limit'],
+        'end before start' => [['ends_at' => now()->subDay()->toIso8601String()], 'promotions.0.ends_at'],
+        'no start' => [['starts_at' => null], 'promotions.0.starts_at'],
     ]);
 
-    it('counts the products a promotion would apply to', function () {
-        $category = Category::factory()->create();
-        pricedProduct(category: $category);
-        pricedProduct(category: $category);
-        pricedProduct();
+    it('refuses overlapping rows of a variant, unless the saved one is removed in the same save', function () {
+        $variant = promotedVariant(100_000);
+        $saved = Promotion::factory()->forVariant($variant)->create();
 
-        actingAs(promotionManager())->postJson(route('api.v1.admin.promotions.preview'), promotionPayload(['scope' => 'selected', 'category_ids' => [$category->id]]))
-            ->assertOk()
-            ->assertJsonPath('data.products_count', 2);
+        savePromotions([promotionRow($variant)])->assertJsonValidationErrors(['promotions.0.starts_at']);
+        savePromotions([promotionRow($variant), promotionRow(promotedVariant())])
+            ->assertJsonValidationErrors(['promotions.0.starts_at'])
+            ->assertJsonMissingValidationErrors(['promotions.1.starts_at']);
+
+        $other = promotedVariant();
+        savePromotions([promotionRow($other), promotionRow($other)])->assertJsonValidationErrors(['promotions.0.starts_at', 'promotions.1.starts_at']);
+
+        savePromotions([promotionRow($variant)], [$saved->id])->assertOk();
     });
 
-    it('lists promotions by status', function () {
-        Promotion::factory()->create(['name' => 'Running']);
-        Promotion::factory()->create(['name' => 'Later', 'starts_at' => now()->addDay()]);
-        Promotion::factory()->create(['name' => 'Over', 'ends_at' => now()->subDay()]);
-        Promotion::factory()->create(['name' => 'Off', 'is_active' => false]);
+    it('refuses a new row on a deleted variant', function () {
+        $variant = promotedVariant();
+        $variant->delete();
 
-        $names = fn (string $status) => actingAs(promotionManager())->getJson(route('api.v1.admin.promotions.index', ['status' => $status]))->json('data.*.name');
+        savePromotions([promotionRow($variant)])->assertJsonValidationErrors(['promotions.0.variant_id']);
+    });
+});
 
-        expect($names('active'))->toBe(['Running'])
-            ->and($names('scheduled'))->toBe(['Later'])
-            ->and($names('expired'))->toBe(['Over'])
-            ->and($names('disabled'))->toBe(['Off']);
+describe('pricing', function () {
+    it('keeps the lowest price: a lower sale price wins over a promotion', function () {
+        $saleWins = promotedVariant(100_000, variant: ['sale_price' => 70_000]);
+        $promotionWins = promotedVariant(100_000, variant: ['sale_price' => 95_000]);
+
+        savePromotions([promotionRow($saleWins), promotionRow($promotionWins)])->assertOk();
+
+        expect($saleWins->fresh()?->discount_source)->toBe(DiscountSource::Sale)
+            ->and($saleWins->fresh()?->max_per_order)->toBeNull()
+            ->and($promotionWins->fresh()?->current_price)->toBe(80_000);
+    });
+
+    it('stops a row once its discounted quantity is sold', function () {
+        $variant = promotedVariant(100_000);
+        Promotion::factory()->forVariant($variant)->create(['quantity_limit' => 5, 'sold_count' => 5]);
+        artisan('prices:refresh');
+
+        expect($variant->fresh()?->current_price)->toBe(100_000);
+        actingAs(promotionManager())->getJson(route('api.v1.admin.promotions.index'))->assertJsonPath('data.0.state', 'sold_out');
+    });
+
+    it('shows storefronts the promotion, the units left and the order limit', function () {
+        $variant = promotedVariant(100_000, ['slug' => 'shoe']);
+        $row = Promotion::factory()->forVariant($variant)->create(['max_per_order' => 2, 'quantity_limit' => 10, 'sold_count' => 3]);
+        artisan('prices:refresh');
+
+        getJson(route('api.v1.products.show', 'shoe'))
+            ->assertOk()
+            ->assertJsonPath('data.variants.0.price', 80_000)
+            ->assertJsonPath('data.variants.0.discount_source', 'promotion')
+            ->assertJsonPath('data.variants.0.promotion.ends_at', $row->ends_at->toIso8601String())
+            ->assertJsonPath('data.variants.0.promotion.remaining', 7)
+            ->assertJsonPath('data.variants.0.max_per_order', 2);
+    });
+});
+
+describe('adding products', function () {
+    it('lists published products with their enabled variants in stock', function () {
+        $shirt = promotedVariant(100_000, ['name' => 'Shirt'], ['sku' => 'SH-S']);
+        ProductVariant::factory()->for($shirt->product)->create(['sku' => 'SH-M', 'stock_quantity' => 0]);
+        ProductVariant::factory()->for($shirt->product)->create(['sku' => 'SH-L', 'stock_quantity' => 5, 'is_enabled' => false]);
+        promotedVariant(100_000, ['name' => 'Draft', 'status' => 'draft']);
+        Promotion::factory()->forVariant($shirt)->create();
+
+        actingAs(promotionManager())->getJson(route('api.v1.admin.promotions.variants', ['status' => 'published', 'stock' => 'in']))
+            ->assertOk()
+            ->assertJsonPath('data.*.name', ['Shirt'])
+            ->assertJsonPath('data.0.variants.*.sku', ['SH-S'])
+            ->assertJsonPath('data.0.variants.0.has_promotion', true);
+
+        actingAs(promotionManager())->getJson(route('api.v1.admin.promotions.variants'))
+            ->assertJsonPath('data.*.name', ['Draft', 'Shirt'])
+            ->assertJsonPath('data.1.variants.*.sku', ['SH-S', 'SH-M']);
     });
 });

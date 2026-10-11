@@ -13,6 +13,8 @@ import { saleEventsApi } from '../api';
 import {
     applyDates,
     applyDiscount,
+    applyLimit,
+    limitInvalid,
     type DiscountField,
     type EventRow,
     groupByProduct,
@@ -25,6 +27,7 @@ import {
 import AddProductsDialog from './AddProductsDialog.vue';
 import SetDatesDialog from './SetDatesDialog.vue';
 import SetDiscountDialog from './SetDiscountDialog.vue';
+import SetLimitDialog from './SetLimitDialog.vue';
 
 /**
  * The event's variants, grouped by product. Each row has linked %, amount off and final price
@@ -129,6 +132,18 @@ function applyBulkDiscount(field: DiscountField, value: number): void {
             ? t('admin.discounts.events.bulk.appliedSkipped', { n: formatNumber(result.skipped.length) })
             : t('admin.discounts.events.bulk.applied'),
     );
+}
+
+const limitOpen = ref(false);
+
+function applyBulkLimit(limit: number | null): void {
+    rows.value = applyLimit(rows.value, selected.value, limit);
+    limitOpen.value = false;
+    toast.show(t('admin.discounts.limit.applied', { n: formatNumber(selected.value.size) }));
+}
+
+function setLimit(row: EventRow, limit: number | null): void {
+    rows.value = applyLimit(rows.value, new Set([row.variantId]), limit);
 }
 
 function applyBulkDates(startsAt: string, endsAt: string): void {
@@ -260,7 +275,7 @@ const chipClass = (on: boolean): string[] => [
     'inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
     on ? 'border-primary bg-primary-soft text-fg' : 'border-line text-fg-muted hover:text-fg',
 ];
-const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_9rem_9rem_10rem_2.5rem]';
+const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_8.5rem_8.5rem_6.5rem_9rem_2.5rem]';
 </script>
 
 <template>
@@ -340,6 +355,9 @@ const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_9rem_9rem_10rem_2.5rem]'
             <AppButton variant="secondary" size="md" @click="discountOpen = true">{{
                 t('admin.discounts.events.bulk.setDiscount')
             }}</AppButton>
+            <AppButton variant="secondary" size="md" @click="limitOpen = true">{{
+                t('admin.discounts.limit.bulk')
+            }}</AppButton>
             <AppButton variant="secondary" size="md" @click="datesFor = new Set(selected)">{{
                 t('admin.discounts.events.bulk.setDates')
             }}</AppButton>
@@ -377,6 +395,7 @@ const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_9rem_9rem_10rem_2.5rem]'
                 <span>{{ t('admin.discounts.events.fields.percent') }}</span>
                 <span>{{ t('admin.discounts.events.fields.off') }}</span>
                 <span>{{ t('admin.discounts.events.fields.final') }}</span>
+                <span>{{ t('admin.discounts.limit.column') }}</span>
                 <span>{{ t('admin.discounts.events.columns.dates') }}</span>
                 <span />
             </div>
@@ -503,6 +522,20 @@ const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_9rem_9rem_10rem_2.5rem]'
                                     @update:model-value="onType(row, 'final', $event)"
                                 />
                             </div>
+                            <div
+                                :class="limitInvalid(row.maxPerOrder) && 'rounded-lg ring-2 ring-danger'"
+                                :title="t('admin.discounts.limit.hint')"
+                            >
+                                <NumberField
+                                    :model-value="row.maxPerOrder"
+                                    :label="t('admin.discounts.limit.column')"
+                                    :placeholder="t('admin.discounts.limit.none')"
+                                    compact
+                                    :unit="t('admin.discounts.limit.unit')"
+                                    :disabled="!canManage"
+                                    @update:model-value="setLimit(row, $event)"
+                                />
+                            </div>
                             <button
                                 type="button"
                                 :disabled="!canManage"
@@ -564,6 +597,12 @@ const GRID = 'lg:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_9rem_9rem_10rem_2.5rem]'
                 :rows="selectedRows"
                 @close="discountOpen = false"
                 @apply="applyBulkDiscount"
+            />
+            <SetLimitDialog
+                :open="limitOpen"
+                :count="selected.size"
+                @close="limitOpen = false"
+                @apply="applyBulkLimit"
             />
             <SetDatesDialog
                 :open="datesFor !== null"

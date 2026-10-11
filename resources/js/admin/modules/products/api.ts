@@ -23,14 +23,17 @@ export const productsApi = {
         (await http.get<Paginated<ProductListItem>>('/admin/products', { params: filters })).data,
 
     /**
-     * Permission: products.view. The ids of every product matching the list's filters ("select all
-     * matching"); empty above `limit`, with the total.
+     * Permission: products.view. Every product (id, name) matching the list's filters ("select all
+     * matching"); none above `limit`, with the total.
      */
-    ids: async (filters: ProductFilters = {}): Promise<{ ids: number[]; total: number; limit: number }> =>
+    matching: async (
+        filters: ProductFilters = {},
+    ): Promise<{ products: { id: number; name: string }[]; total: number; limit: number }> =>
         (
-            await http.get<Resource<{ ids: number[]; total: number; limit: number }>>('/admin/products/ids', {
-                params: filters,
-            })
+            await http.get<Resource<{ products: { id: number; name: string }[]; total: number; limit: number }>>(
+                '/admin/products/matching',
+                { params: filters },
+            )
         ).data.data,
 
     /** Permission: products.view. Deleted products too. */

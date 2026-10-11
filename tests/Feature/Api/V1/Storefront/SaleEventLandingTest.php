@@ -22,7 +22,7 @@ beforeEach(function () {
 /**
  * A visible product (slug $slug) with one variant at $price, put in $event at $percent off.
  */
-function landingProduct(SaleEvent $event, string $slug, int $price = 100_000, int $percent = 20): ProductVariant
+function landingProduct(SaleEvent $event, string $slug, int $price = 100_000, int $percent = 20, ?int $maxPerOrder = null): ProductVariant
 {
     $product = Product::factory()->published()->create(['slug' => $slug]);
     $product->categories()->attach(Category::factory()->create(), ['is_primary' => true]);
@@ -32,24 +32,25 @@ function landingProduct(SaleEvent $event, string $slug, int $price = 100_000, in
         'product_variant_id' => $variant->id,
         'discount_type' => PromotionType::Percent,
         'discount_value' => $percent,
+        'max_per_order' => $maxPerOrder,
     ]);
     app(RefreshPricesAction::class)->handle([$product->id]);
 
     return $variant;
 }
 
-it('shows the event price and the event on the product page', function () {
+it('shows the event price, its order limit and the event on the product page', function () {
     $event = SaleEvent::factory()->withLanding('yalda')->create(['name' => 'Yalda night']);
-    landingProduct($event, 'shoe');
+    landingProduct($event, 'shoe', maxPerOrder: 2);
 
     getJson(route('api.v1.products.show', 'shoe'))
         ->assertOk()
         ->assertJsonPath('data.variants.0.price', 80_000)
+        ->assertJsonPath('data.variants.0.max_per_order', 2)
         ->assertJsonPath('data.variants.0.discount_source', 'sale_event')
         ->assertJsonPath('data.variants.0.sale_event.name', 'Yalda night')
         ->assertJsonPath('data.variants.0.sale_event.slug', 'yalda')
-        ->assertJsonPath('data.variants.0.sale_event.ends_at', $event->ends_at->toIso8601String())
-        ->assertJsonPath('data.variants.0.promotion', null);
+        ->assertJsonPath('data.variants.0.sale_event.ends_at', $event->ends_at->toIso8601String());
 });
 
 it('goes through upcoming, running and ended, with prices only while running', function () {

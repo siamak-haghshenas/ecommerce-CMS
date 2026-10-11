@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
     applyDiscount,
+    applyLimit,
     discountOf,
     groupByProduct,
     linkedValues,
@@ -29,6 +30,7 @@ const row = (overrides = {}) => ({
     isDeleted: false,
     field: 'percent',
     value: 20,
+    maxPerOrder: null,
     startsAt: '',
     endsAt: '',
     overriddenBy: [],
@@ -74,9 +76,18 @@ describe('payload', () => {
             variant_id: 1,
             discount_type: 'percent',
             discount_value: 20,
+            max_per_order: null,
             starts_at: null,
             ends_at: null,
         });
+    });
+
+    it('sends the order limit, set on the chosen rows, and refuses one below 1', () => {
+        const rows = applyLimit([row(), row({ variantId: 2 })], new Set([2]), 4);
+
+        assert.equal(toItemPayload(rows[1], toIso).max_per_order, 4);
+        assert.equal(rows[0].maxPerOrder, null);
+        assert.equal(rowProblem(row({ maxPerOrder: 0 }), event), 'limit_range');
     });
 
     it('saves a fixed amount off for an amount or a final price', () => {

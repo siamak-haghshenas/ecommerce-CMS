@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Categories;
 
-use App\Actions\Pricing\RefreshPricesAction;
 use App\Actions\Products\RefreshProductSearchTextAction;
 use App\Actions\Seo\ScoreSeoAction;
 use App\Data\Categories\CategoryData;
-use App\Enums\CategoryType;
 use App\Enums\MediaUsageRole;
 use App\Exceptions\CategoryException;
 use App\Models\Category;
@@ -21,7 +19,6 @@ final class UpdateCategoryAction
     public function __construct(
         private readonly ScoreSeoAction $scoreSeo,
         private readonly RefreshProductSearchTextAction $refreshSearchText,
-        private readonly RefreshPricesAction $refreshPrices,
     ) {}
 
     /**
@@ -90,11 +87,6 @@ final class UpdateCategoryAction
                 ->event('category.moved')
                 ->withProperties(['from' => $previousParentId, 'to' => $category->parent_id])
                 ->log('category.moved');
-
-            // Promotions on a category include its sub-categories: the moved branch may gain or lose them.
-            if ($category->type === CategoryType::Product) {
-                $this->refreshPrices->handle();
-            }
         }
 
         return $category;
