@@ -80,6 +80,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-login', fn (Request $request) => Limit::perMinute(5)
             ->by($phoneNumber($request).'|'.$request->ip()));
 
+        // Guessing discount codes: a few checks per minute per customer is plenty for a real cart.
+        RateLimiter::for('coupon-check', fn (Request $request) => Limit::perMinute(10)
+            ->by('coupon-check:'.$request->user()?->getAuthIdentifier()));
+
         // Each AI request is a paid API call: capped per staff member and for the whole store.
         RateLimiter::for('ai', fn (Request $request) => [
             Limit::perHour((int) config('ai.limits.per_user_per_hour'))->by('ai-user:'.$request->user()?->getAuthIdentifier()),

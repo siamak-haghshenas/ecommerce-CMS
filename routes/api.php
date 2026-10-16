@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\V1\Admin\Catalog\OptionController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryOrderController;
+use App\Http\Controllers\Api\V1\Admin\Coupons\CouponController;
+use App\Http\Controllers\Api\V1\Admin\Coupons\CouponSimulationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerStatusController;
@@ -55,6 +57,7 @@ use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as Storefro
 use App\Http\Controllers\Api\V1\Storefront\Catalog\SaleEventController as StorefrontSaleEventController;
 use App\Http\Controllers\Api\V1\Storefront\Content\MenuController as StorefrontMenuController;
 use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
+use App\Http\Controllers\Api\V1\Storefront\Coupons\CouponCheckController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -125,6 +128,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->name('pages.preview');
     Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
     Route::get('menus/{location}', [StorefrontMenuController::class, 'show'])->name('menus.show');
+
+    // Coupons: a logged-in customer checks a code against their cart (applied at checkout later).
+    Route::post('coupons/check', CouponCheckController::class)
+        ->middleware(['auth:sanctum', 'active', 'throttle:coupon-check'])
+        ->name('coupons.check');
 
     /*
     |--------------------------------------------------------------------------
@@ -347,6 +355,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::post('variants', SaleEventVariantController::class)->name('variants');
                     Route::put('{saleEvent}', [SaleEventController::class, 'update'])->whereNumber('saleEvent')->name('update');
                     Route::delete('{saleEvent}', [SaleEventController::class, 'destroy'])->whereNumber('saleEvent')->name('destroy');
+                });
+            });
+
+            // Coupons: discount codes customers enter at checkout (usage counted once orders exist).
+            Route::prefix('coupons')->name('coupons.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewDiscounts))->group(function () {
+                    Route::get('/', [CouponController::class, 'index'])->name('index');
+                    Route::get('{coupon}', [CouponController::class, 'show'])->whereNumber('coupon')->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageDiscounts))->group(function () {
+                    Route::post('/', [CouponController::class, 'store'])->name('store');
+                    Route::post('simulate', CouponSimulationController::class)->name('simulate');
+                    Route::put('{coupon}', [CouponController::class, 'update'])->whereNumber('coupon')->name('update');
+                    Route::delete('{coupon}', [CouponController::class, 'destroy'])->whereNumber('coupon')->name('destroy');
                 });
             });
 

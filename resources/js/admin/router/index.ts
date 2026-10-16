@@ -148,11 +148,31 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.saleEventCreate', permission: Permission.ManageDiscounts },
             },
             {
-                path: 'discounts/sale-events/:id(\d+)',
+                path: 'discounts/sale-events/:id(\\d+)',
                 name: 'sale-event',
                 component: () => import('../modules/discounts/pages/SaleEventEditorPage.vue'),
                 props: (route) => ({ id: Number(route.params.id) }),
                 meta: { title: 'pageTitles.saleEvent', permission: Permission.ViewDiscounts },
+            },
+            {
+                path: 'discounts/coupons',
+                name: 'coupons',
+                component: () => import('../modules/discounts/pages/CouponsPage.vue'),
+                meta: { title: 'pageTitles.coupons', permission: Permission.ViewDiscounts },
+            },
+            {
+                path: 'discounts/coupons/new',
+                name: 'coupon-create',
+                component: () => import('../modules/discounts/pages/CouponEditorPage.vue'),
+                props: (route) => ({ id: null, copyFrom: Number(route.query.from) || null }),
+                meta: { title: 'pageTitles.couponCreate', permission: Permission.ManageDiscounts },
+            },
+            {
+                path: 'discounts/coupons/:id(\\d+)',
+                name: 'coupon',
+                component: () => import('../modules/discounts/pages/CouponEditorPage.vue'),
+                props: (route) => ({ id: Number(route.params.id), copyFrom: null }),
+                meta: { title: 'pageTitles.coupon', permission: Permission.ViewDiscounts },
             },
             {
                 path: 'menus',

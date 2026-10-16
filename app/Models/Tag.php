@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\IsCouponTarget;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 #[Fillable(['name', 'slug'])]
 class Tag extends Model
 {
+    use IsCouponTarget;
+
     /**
      * @return BelongsToMany<Product, $this>
      */

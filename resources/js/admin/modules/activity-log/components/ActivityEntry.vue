@@ -60,6 +60,9 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'sale_event.updated': { icon: 'pen', tone: 'neutral' },
     'sale_event.deleted': { icon: 'trash', tone: 'danger' },
     'sale_event.reordered': { icon: 'swap', tone: 'neutral' },
+    'coupon.created': { icon: 'plus', tone: 'primary' },
+    'coupon.updated': { icon: 'pen', tone: 'neutral' },
+    'coupon.deleted': { icon: 'trash', tone: 'danger' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -97,6 +100,10 @@ const subjectLink = computed(() => {
         return { name: 'discounts' };
     }
 
+    if (subject.type === 'coupon') {
+        return { name: 'coupon', params: { id: subject.id } };
+    }
+
     if (subject.type === 'media') {
         return { name: 'media', query: { file: subject.id } };
     }
@@ -124,6 +131,11 @@ const missingSubject = computed(() => {
         typeof properties.name === 'string'
     ) {
         return properties.name;
+    }
+
+    // A deleted coupon keeps its code.
+    if (event.startsWith('coupon.') && typeof properties.code === 'string') {
+        return properties.code;
     }
 
     // A removed promotion row keeps its SKU.

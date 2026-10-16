@@ -39,6 +39,9 @@ final readonly class AnonymiseCustomerAction
                 OtpCode::query()->where('phone_number', $customer->phone_number)->delete();
             }
 
+            // Coupons limited to chosen customers would otherwise keep listing them.
+            $customer->coupons()->detach();
+
             $customer->forceFill([
                 'name' => self::ANONYMISED_NAME,
                 'phone_number' => null,

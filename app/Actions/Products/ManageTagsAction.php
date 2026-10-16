@@ -33,13 +33,15 @@ final readonly class ManageTagsAction
     }
 
     /**
-     * Move every product and post of $tag to $into, then delete $tag.
+     * Move every product, post and coupon of $tag to $into, then delete $tag.
      */
     public function merge(User $actor, Tag $tag, Tag $into): Tag
     {
         DB::transaction(function () use ($tag, $into): void {
             $into->products()->syncWithoutDetaching($tag->products()->pluck('products.id')->all());
             $into->posts()->syncWithoutDetaching($tag->posts()->withTrashed()->pluck('posts.id')->all());
+            // Coupons limited to the merged tag keep their items.
+            $into->coupons()->syncWithoutDetaching($tag->coupons()->pluck('coupons.id')->all());
             $tag->delete();
         });
 

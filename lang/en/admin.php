@@ -27,6 +27,7 @@ return [
         'stock_changed' => 'The stock changed while you were editing (for example, an order was placed). Reload the product and enter the stock again.',
         'brand_list_changed' => 'The brands have changed in the meantime. Refresh and try again.',
         'sale_event_list_changed' => 'The sale events have changed in the meantime. Refresh and try again.',
+        'coupon_in_use' => 'Orders used this coupon, so it can’t be deleted. Disable it instead.',
         'ai_not_configured' => 'AI suggestions are not set up yet. Ask the store administrator to add the AI API key.',
         'ai_unavailable' => 'The AI service is not responding right now. Please try again in a few minutes.',
         'ai_invalid_response' => 'The AI service returned an unusable answer. Please try again.',
@@ -52,6 +53,15 @@ return [
             'not_below_price' => 'The discount must be less than the variant’s price.',
             'outside_event' => 'These dates must fall inside the event’s dates, with the end after the start.',
             'variant_deleted' => 'This variant has been deleted, so it can’t be added.',
+        ],
+    ],
+    'coupons' => [
+        'errors' => [
+            'not_a_customer' => 'This account isn’t a customer who can use coupons.',
+            'percent_max' => 'The discount can be at most :max%.',
+            'end_before_start' => 'The end must be after the start.',
+            'no_targets' => 'Choose at least one category, brand, tag or product.',
+            'excluded_and_chosen' => 'This product is chosen above; it can’t be excluded too.',
         ],
     ],
     'posts' => [

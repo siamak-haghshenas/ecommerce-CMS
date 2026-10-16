@@ -2,6 +2,10 @@ import { http } from '@/shared/http/client';
 import type { Paginated, Resource } from '@/shared/types/api';
 import type { ProductFilters } from '../products/types';
 import type {
+    CouponDetail,
+    CouponFilters,
+    CouponList,
+    CouponSimulation,
     Promotion,
     PromotionPayload,
     PromotionPickerProduct,
@@ -10,6 +14,7 @@ import type {
     SaleEventFilters,
     SaleEventPreview,
     SaleEventVariant,
+    SaveCouponPayload,
     SaveSaleEventPayload,
 } from './types';
 
@@ -63,6 +68,63 @@ export const saleEventsApi = {
     preview: async (id: number): Promise<SaleEventPreview> =>
         (await http.post<Resource<SaleEventPreview>>(`/admin/sale-events/${id}/preview`)).data.data,
 };
+
+export const couponsApi = {
+    /** Permission: discounts.view. Paginated, newest first; `meta.status_counts` for the status chips. */
+    list: async (filters: CouponFilters = {}): Promise<CouponList> =>
+        (await http.get<CouponList>('/admin/coupons', { params: filters })).data,
+
+    /** Permission: discounts.view. With the linked categories, brands, tags, products and customers. */
+    show: async (id: number): Promise<CouponDetail> =>
+        (await http.get<Resource<CouponDetail>>(`/admin/coupons/${id}`)).data.data,
+
+    /** Permission: discounts.manage. */
+    create: async (payload: SaveCouponPayload): Promise<CouponDetail> =>
+        (await http.post<Resource<CouponDetail>>('/admin/coupons', payload)).data.data,
+
+    /** Permission: discounts.manage. */
+    update: async (id: number, payload: SaveCouponPayload): Promise<CouponDetail> =>
+        (await http.put<Resource<CouponDetail>>(`/admin/coupons/${id}`, payload)).data.data,
+
+    /** Permission: discounts.manage. Refused (409 `coupon_in_use`) once an order used it: disable it instead. */
+    remove: async (id: number): Promise<void> => {
+        await http.delete(`/admin/coupons/${id}`);
+    },
+
+    /** Permission: discounts.manage. The unsaved coupon applied to a sample cart; nothing is saved. */
+    simulate: async (
+        coupon: SaveCouponPayload,
+        items: { variant_id: number; quantity: number }[],
+    ): Promise<CouponSimulation> =>
+        (await http.post<Resource<CouponSimulation>>('/admin/coupons/simulate', { coupon, items })).data.data,
+};
+
+/** The payload of a saved coupon, e.g. to switch it on or off from the list. */
+export function couponPayloadOf(coupon: CouponDetail): SaveCouponPayload {
+    return {
+        code: coupon.code,
+        name: coupon.name,
+        type: coupon.type,
+        value: coupon.value,
+        max_discount: coupon.max_discount,
+        min_order_amount: coupon.min_order_amount,
+        applies_to: coupon.applies_to,
+        category_ids: coupon.targets.categories.map((item) => item.id),
+        brand_ids: coupon.targets.brands.map((item) => item.id),
+        tag_ids: coupon.targets.tags.map((item) => item.id),
+        product_ids: coupon.targets.products.map((item) => item.id),
+        excluded_product_ids: coupon.excluded_products.map((item) => item.id),
+        exclude_discounted: coupon.exclude_discounted,
+        customer_scope: coupon.customer_scope,
+        customer_ids: coupon.customers.map((customer) => customer.id),
+        usage_limit: coupon.usage_limit,
+        per_customer_limit: coupon.per_customer_limit,
+        first_order_only: coupon.first_order_only,
+        starts_at: coupon.starts_at,
+        ends_at: coupon.ends_at,
+        is_active: coupon.is_active,
+    };
+}
 
 /** The payload of a saved sale event, e.g. to switch it on or off from the list. */
 export function saleEventPayloadOf(event: SaleEventDetail): SaveSaleEventPayload {

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import AppBadge from '@/shared/ui/AppBadge.vue';
 
-/** The tabs of Sales › Discounts: promotions, sale events and (later) coupons. */
-defineProps<{ active: 'promotions' | 'events' }>();
+/** The tabs of Sales › Discounts: promotions, sale events and coupons. */
+defineProps<{ active: 'promotions' | 'events' | 'coupons' }>();
 
 const { t } = useI18n();
 
@@ -27,9 +26,11 @@ const tabClass = (on: boolean): string[] => [
             :aria-current="active === 'events' ? 'page' : undefined"
             >{{ t('admin.discounts.tabs.events') }}</RouterLink
         >
-        <span :class="tabClass(false)" :title="t('admin.nav.soon')">
-            {{ t('admin.discounts.tabs.coupons') }}
-            <AppBadge>{{ t('admin.nav.soon') }}</AppBadge>
-        </span>
+        <RouterLink
+            :to="{ name: 'coupons' }"
+            :class="tabClass(active === 'coupons')"
+            :aria-current="active === 'coupons' ? 'page' : undefined"
+            >{{ t('admin.discounts.tabs.coupons') }}</RouterLink
+        >
     </nav>
 </template>

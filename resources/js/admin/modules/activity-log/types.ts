@@ -46,6 +46,9 @@ export type ActivityEvent =
     | 'sale_event.updated'
     | 'sale_event.deleted'
     | 'sale_event.reordered'
+    | 'coupon.created'
+    | 'coupon.updated'
+    | 'coupon.deleted'
     | 'tag.renamed'
     | 'tag.merged'
     | 'tag.deleted'
@@ -72,6 +75,7 @@ export interface ActivityUser {
         | 'post'
         | 'promotion'
         | 'sale_event'
+        | 'coupon'
         | 'tag'
         | 'media'
         | 'media_folder';

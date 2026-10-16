@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -115,6 +116,16 @@ class User extends Authenticatable
     public function avatarAssets(): MorphToMany
     {
         return $this->mediaAssetsFor(MediaUsageRole::Avatar);
+    }
+
+    /**
+     * The coupons limited to this customer (`customer_scope` `selected`).
+     *
+     * @return BelongsToMany<Coupon, $this>
+     */
+    public function coupons(): BelongsToMany
+    {
+        return $this->belongsToMany(Coupon::class, 'coupon_customer');
     }
 
     /**

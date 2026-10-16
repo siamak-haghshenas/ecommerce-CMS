@@ -7,6 +7,7 @@ namespace App\Http\Resources\V1\Admin;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\MediaAsset;
 use App\Models\MediaFolder;
 use App\Models\Option;
@@ -48,7 +49,7 @@ class ActivityResource extends JsonResource
     /**
      * A user or category, or null when there is none (or it has been deleted).
      *
-     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'promotion'|'sale_event'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
+     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'promotion'|'sale_event'|'coupon'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
      */
     private function summary(mixed $model): ?array
     {
@@ -62,6 +63,10 @@ class ActivityResource extends JsonResource
 
         if ($model instanceof SaleEvent) {
             return ['type' => 'sale_event', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof Coupon) {
+            return ['type' => 'coupon', 'id' => $model->id, 'name' => $model->code, 'is_anonymised' => false];
         }
 
         if ($model instanceof Promotion) {

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Contracts\SeoSubject;
 use App\Enums\MediaUsageRole;
 use App\Models\Concerns\HasSeo;
+use App\Models\Concerns\IsCouponTarget;
 use App\Models\Concerns\UsesMediaLibrary;
 use Database\Factories\BrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Brand extends Model implements SeoSubject
 {
     /** @use HasFactory<BrandFactory> */
-    use HasFactory, HasSeo, UsesMediaLibrary;
+    use HasFactory, HasSeo, IsCouponTarget, UsesMediaLibrary;
 
     /**
      * Get the attributes that should be cast.

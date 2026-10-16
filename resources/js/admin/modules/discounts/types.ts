@@ -1,3 +1,4 @@
+import type { Paginated } from '@/shared/types/api';
 import type { MediaPicture } from '../media/types';
 
 /** A percentage or a fixed amount off each unit. */
@@ -180,4 +181,143 @@ export interface PromotionPickerProduct {
         /** It has a row that hasn't ended: a new one must not overlap it. */
         has_promotion: boolean;
     }[];
+}
+
+// ---- coupons ----
+
+/** Percent or Rials off the eligible items, or free shipping. */
+export type CouponType = 'percent' | 'fixed' | 'free_shipping';
+
+export type CouponState = 'active' | 'scheduled' | 'used_up' | 'expired' | 'disabled';
+
+/** Something a coupon is linked to (a category, brand, tag or product), with its name for display. */
+export interface CouponLink {
+    id: number;
+    name: string;
+}
+
+/** The items a coupon applies to when `applies_to` is `selected`; categories include their sub-categories. */
+export interface CouponTargets {
+    categories: CouponLink[];
+    brands: CouponLink[];
+    tags: CouponLink[];
+    products: CouponLink[];
+}
+
+export type CouponTargetKind = keyof CouponTargets;
+
+/** A customer allowed to use a coupon (`customer_scope` `selected`). */
+export interface CouponCustomer {
+    id: number;
+    name: string;
+    phone_number: string;
+    /** Orders of this customer that used the coupon. */
+    used_count: number;
+}
+
+/** A row of the list; the detail view adds the linked items and customers. Amounts are Rials. */
+export interface Coupon {
+    id: number;
+    /** Uppercase Latin letters and digits. */
+    code: string;
+    /** For staff only. */
+    name: string;
+    type: CouponType;
+    /** A percentage (1–90) or Rials off the order; null for free shipping. */
+    value: number | null;
+    /** The most Rials a percent coupon takes off; null: no cap. */
+    max_discount: number | null;
+    /** The least the eligible items must add up to; null: no minimum. */
+    min_order_amount: number | null;
+    applies_to: 'all' | 'selected';
+    targets_count: Record<CouponTargetKind, number>;
+    excluded_count: number;
+    /** Items priced by a sale, sale event or promotion don't count. */
+    exclude_discounted: boolean;
+    customer_scope: 'all' | 'selected';
+    customers_count: number;
+    /** Null: unlimited. */
+    usage_limit: number | null;
+    per_customer_limit: number | null;
+    /** Counted by orders. */
+    used_count: number;
+    first_order_only: boolean;
+    /** Null: from when it was saved. */
+    starts_at: string | null;
+    /** Null: never ends. */
+    ends_at: string | null;
+    is_active: boolean;
+    state: CouponState;
+    created_at: string | null;
+    updated_at: string | null;
+}
+
+export interface CouponDetail extends Coupon {
+    targets: CouponTargets;
+    excluded_products: CouponLink[];
+    customers: CouponCustomer[];
+}
+
+export interface CouponFilters {
+    q?: string;
+    status?: CouponState;
+    page?: number;
+    per_page?: number;
+}
+
+export interface CouponList {
+    data: Coupon[];
+    meta: Paginated<Coupon>['meta'] & {
+        /** Coupons per state for the status chips (the search applied, not the status). */
+        status_counts: Record<CouponState | 'all', number>;
+    };
+}
+
+export interface SaveCouponPayload {
+    code: string;
+    name: string;
+    type: CouponType;
+    value: number | null;
+    max_discount: number | null;
+    min_order_amount: number | null;
+    applies_to: 'all' | 'selected';
+    category_ids: number[];
+    brand_ids: number[];
+    tag_ids: number[];
+    product_ids: number[];
+    excluded_product_ids: number[];
+    exclude_discounted: boolean;
+    customer_scope: 'all' | 'selected';
+    customer_ids: number[];
+    usage_limit: number | null;
+    per_customer_limit: number | null;
+    first_order_only: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    is_active: boolean;
+}
+
+/** Why a line of the sample order gets no coupon discount. */
+export type CouponLineReason = 'not_targeted' | 'excluded' | 'discounted';
+
+/** The unsaved coupon applied to a sample cart, by the rules checkout will use. Amounts are Rials. */
+export interface CouponSimulation {
+    lines: {
+        variant_id: number;
+        quantity: number;
+        /** The current price (sales, sale events and promotions applied). */
+        unit_price: number;
+        total: number;
+        eligible: boolean;
+        reason: CouponLineReason | null;
+    }[];
+    subtotal: number;
+    eligible_subtotal: number;
+    /** A percent discount before `max_discount`; equal to `discount` when no cap applied. */
+    uncapped_discount: number;
+    discount: number;
+    free_shipping: boolean;
+    /** Set when the coupon wouldn't apply to this cart at all. */
+    problem: 'min_order' | 'no_eligible_items' | null;
+    total: number;
 }

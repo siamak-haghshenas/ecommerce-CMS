@@ -8,6 +8,7 @@ use App\Contracts\SeoSubject;
 use App\Enums\CategoryType;
 use App\Enums\MediaUsageRole;
 use App\Models\Concerns\HasSeo;
+use App\Models\Concerns\IsCouponTarget;
 use App\Models\Concerns\UsesMediaLibrary;
 use App\Support\CategoryTree;
 use Database\Factories\CategoryFactory;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Category extends Model implements SeoSubject
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, HasSeo, UsesMediaLibrary;
+    use HasFactory, HasSeo, IsCouponTarget, UsesMediaLibrary;
 
     protected static function booted(): void
     {
