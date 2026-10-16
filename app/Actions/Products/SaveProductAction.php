@@ -55,6 +55,7 @@ final readonly class SaveProductAction
                 'brand_id' => $data->brandId,
                 'track_stock' => $data->trackStock,
                 'allow_backorders' => $data->allowBackorders,
+                'comments_enabled' => $data->commentsEnabled,
                 'low_stock_threshold' => $data->lowStockThreshold,
                 'weight_grams' => $data->weightGrams,
                 'length_mm' => $data->lengthMm,

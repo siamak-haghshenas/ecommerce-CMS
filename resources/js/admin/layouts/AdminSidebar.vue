@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useLocale } from '@/shared/composables/useLocale';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
 import AppAvatar from '@/shared/ui/AppAvatar.vue';
 import AppIcon from '@/shared/ui/AppIcon.vue';
@@ -8,8 +9,9 @@ import AppSpinner from '@/shared/ui/AppSpinner.vue';
 import BrandMark from '@/shared/ui/BrandMark.vue';
 import BylineDialog from '../modules/account/components/BylineDialog.vue';
 import { useAdminAuthStore } from '../modules/auth/store';
-import { navigation } from '../navigation';
-import { ROLE_KEYS } from '../permissions';
+import { useCommentsStore } from '../modules/comments/store';
+import { type NavItem, navigation } from '../navigation';
+import { Permission, ROLE_KEYS } from '../permissions';
 
 /**
  * collapsed: an icon-only rail (desktop). Labels stay available to screen readers
@@ -19,11 +21,43 @@ withDefaults(defineProps<{ inDrawer?: boolean; collapsed?: boolean }>(), { inDra
 const emit = defineEmits<{ navigate: [] }>();
 
 const { t } = useI18n();
+const { formatNumber } = useLocale();
 const router = useRouter();
 const route = useRoute();
 const auth = useAdminAuthStore();
 const loggingOut = ref(false);
 const bylineOpen = ref(false);
+const comments = useCommentsStore();
+
+const moderates = computed(() => auth.can(Permission.ModerateComments));
+
+// The pending badges follow new comments: checked in the background and on every page change.
+onMounted(() => {
+    if (moderates.value) {
+        comments.watch();
+    }
+});
+
+watch(
+    () => route.fullPath,
+    () => {
+        if (moderates.value) {
+            void comments.refresh();
+        }
+    },
+);
+
+/** The live count of an item with a badge; nothing while zero or unknown. */
+function badgeOf(item: NavItem): number | null {
+    const count =
+        item.badge === 'pendingPostComments'
+            ? comments.pending?.post
+            : item.badge === 'pendingProductComments'
+              ? comments.pending?.product
+              : undefined;
+
+    return count ? count : null;
+}
 
 /** A section is active on its own page and its sub-pages (a customer's detail is "Customers"); the dashboard only on itself. */
 function isActive(to: RouteLocationRaw): boolean {
@@ -98,7 +132,15 @@ async function logout(): Promise<void> {
                                 "
                             >
                                 <AppIcon :name="item.icon" :class="isActive(item.to) ? 'text-primary' : ''" />
-                                <span :class="collapsed ? 'sr-only' : 'truncate'">{{ t(item.label) }}</span>
+                                <span :class="collapsed ? 'sr-only' : 'grow truncate'">{{ t(item.label) }}</span>
+                                <span
+                                    v-if="badgeOf(item) !== null"
+                                    :class="[
+                                        'rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning',
+                                        collapsed && 'sr-only',
+                                    ]"
+                                    >{{ t('admin.nav.badge', { n: formatNumber(badgeOf(item) ?? 0) }) }}</span
+                                >
                             </a>
                         </RouterLink>
                         <span

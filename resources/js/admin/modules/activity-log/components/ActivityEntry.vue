@@ -63,6 +63,12 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'coupon.created': { icon: 'plus', tone: 'primary' },
     'coupon.updated': { icon: 'pen', tone: 'neutral' },
     'coupon.deleted': { icon: 'trash', tone: 'danger' },
+    'comment.approved': { icon: 'check', tone: 'primary' },
+    'comment.rejected': { icon: 'ban', tone: 'neutral' },
+    'comment.spammed': { icon: 'alert', tone: 'danger' },
+    'comment.replied': { icon: 'message', tone: 'primary' },
+    'comment.reply_deleted': { icon: 'trash', tone: 'neutral' },
+    'comment.deleted': { icon: 'trash', tone: 'danger' },
     'tag.renamed': { icon: 'pen', tone: 'neutral' },
     'tag.merged': { icon: 'swap', tone: 'neutral' },
     'tag.deleted': { icon: 'trash', tone: 'danger' },
@@ -104,6 +110,14 @@ const subjectLink = computed(() => {
         return { name: 'coupon', params: { id: subject.id } };
     }
 
+    if (subject.type === 'comment') {
+        const { type, item_id: itemId } = props.activity.properties;
+
+        const page = type === 'product' ? 'product-comments' : 'post-comments';
+
+        return { name: page, query: { status: 'all', item: typeof itemId === 'number' ? itemId : undefined } };
+    }
+
     if (subject.type === 'media') {
         return { name: 'media', query: { file: subject.id } };
     }
@@ -131,6 +145,11 @@ const missingSubject = computed(() => {
         typeof properties.name === 'string'
     ) {
         return properties.name;
+    }
+
+    // A deleted comment keeps no text or name.
+    if (event.startsWith('comment.')) {
+        return t('admin.activity.deletedComment');
     }
 
     // A deleted coupon keeps its code.

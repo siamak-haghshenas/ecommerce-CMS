@@ -6,6 +6,7 @@ namespace App\Actions\Customers;
 
 use App\Actions\Auth\EndUserSessionsAction;
 use App\Exceptions\AccountActionException;
+use App\Models\Comment;
 use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,9 @@ final readonly class AnonymiseCustomerAction
 
             // Coupons limited to chosen customers would otherwise keep listing them.
             $customer->coupons()->detach();
+
+            // Their comments are their words: they go with the personal data.
+            Comment::query()->where('user_id', $customer->id)->delete();
 
             $customer->forceFill([
                 'name' => self::ANONYMISED_NAME,

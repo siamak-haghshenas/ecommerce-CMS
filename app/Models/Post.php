@@ -8,6 +8,7 @@ use App\Contracts\SeoSubject;
 use App\Data\Posts\PostFilters;
 use App\Enums\MediaUsageRole;
 use App\Enums\PostStatus;
+use App\Models\Concerns\HasComments;
 use App\Models\Concerns\HasSeo;
 use App\Models\Concerns\UsesMediaLibrary;
 use App\Support\CategoryTree;
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Post extends Model implements SeoSubject
 {
     /** @use HasFactory<PostFactory> */
-    use HasFactory, HasSeo, Prunable, SoftDeletes, UsesMediaLibrary;
+    use HasComments, HasFactory, HasSeo, Prunable, SoftDeletes, UsesMediaLibrary;
 
     public const int TRASH_DAYS = 30;
 

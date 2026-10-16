@@ -9,6 +9,7 @@ use App\Data\Products\ProductFilters;
 use App\Enums\MediaUsageRole;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
+use App\Models\Concerns\HasComments;
 use App\Models\Concerns\HasSeo;
 use App\Models\Concerns\UsesMediaLibrary;
 use App\Support\CategoryTree;
@@ -34,13 +35,13 @@ use Illuminate\Support\Facades\DB;
  */
 #[Fillable([
     'type', 'name', 'slug', 'short_description', 'description', 'status', 'published_at', 'brand_id',
-    'track_stock', 'allow_backorders', 'low_stock_threshold', 'weight_grams', 'length_mm', 'width_mm',
+    'track_stock', 'allow_backorders', 'comments_enabled', 'low_stock_threshold', 'weight_grams', 'length_mm', 'width_mm',
     'height_mm', 'meta_title', 'meta_description', 'focus_keyphrase',
 ])]
 class Product extends Model implements SeoSubject
 {
     /** @use HasFactory<ProductFactory> */
-    use HasFactory, HasSeo, SoftDeletes, UsesMediaLibrary;
+    use HasComments, HasFactory, HasSeo, SoftDeletes, UsesMediaLibrary;
 
     /**
      * Get the attributes that should be cast.
@@ -56,6 +57,7 @@ class Product extends Model implements SeoSubject
             'brand_id' => 'integer',
             'track_stock' => 'boolean',
             'allow_backorders' => 'boolean',
+            'comments_enabled' => 'boolean',
             'low_stock_threshold' => 'integer',
             'weight_grams' => 'integer',
             'length_mm' => 'integer',

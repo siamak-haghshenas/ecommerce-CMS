@@ -10,6 +10,8 @@ export interface NavItem {
     to?: RouteLocationRaw;
     /** Hidden when the user lacks it (a list: any one of them). */
     permission?: PermissionName | PermissionName[];
+    /** A live count beside the label: comments of that kind waiting for moderation. */
+    badge?: 'pendingPostComments' | 'pendingProductComments';
 }
 
 export interface NavGroup {
@@ -75,6 +77,13 @@ export const navigation: NavGroup[] = [
                 permission: Permission.ManageProducts,
             },
             { label: 'admin.nav.tags', icon: 'tag', to: { name: 'tags' }, permission: Permission.ViewProducts },
+            {
+                label: 'admin.nav.productComments',
+                icon: 'message',
+                to: { name: 'product-comments' },
+                permission: Permission.ModerateComments,
+                badge: 'pendingProductComments',
+            },
         ],
     },
     {
@@ -83,6 +92,13 @@ export const navigation: NavGroup[] = [
             { label: 'admin.nav.pages', icon: 'file', to: { name: 'pages' }, permission: Permission.ViewPages },
             { label: 'admin.nav.menus', icon: 'menu', to: { name: 'menus' }, permission: Permission.ViewMenus },
             { label: 'admin.nav.blog', icon: 'pen', to: { name: 'posts' }, permission: Permission.ViewPosts },
+            {
+                label: 'admin.nav.postComments',
+                icon: 'message',
+                to: { name: 'post-comments' },
+                permission: Permission.ModerateComments,
+                badge: 'pendingPostComments',
+            },
             { label: 'admin.nav.media', icon: 'image', to: { name: 'media' }, permission: Permission.ViewMedia },
         ],
     },

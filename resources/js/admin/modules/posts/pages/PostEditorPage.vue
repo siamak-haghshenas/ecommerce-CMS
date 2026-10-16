@@ -665,6 +665,12 @@ const cardClass = 'flex flex-col gap-4.5 rounded-2xl border border-line bg-surfa
                         <span class="flex flex-col gap-0.5">
                             <span class="text-sm font-semibold">{{ t('admin.posts.commentsEnabled') }}</span>
                             <span class="text-[13px] text-fg-muted">{{ t('admin.posts.commentsEnabledHint') }}</span>
+                            <RouterLink
+                                v-if="id !== null && auth.can(Permission.ModerateComments)"
+                                :to="{ name: 'post-comments', query: { item: id, status: 'all' } }"
+                                class="mt-1 self-start rounded text-[13px] font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                >{{ t('admin.posts.viewComments') }}</RouterLink
+                            >
                         </span>
                     </label>
                 </div>

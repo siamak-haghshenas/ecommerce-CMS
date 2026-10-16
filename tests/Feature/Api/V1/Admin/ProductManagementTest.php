@@ -139,6 +139,23 @@ describe('create', function () {
         expect($now)->not->toBeNull();
     });
 
+    it('takes comments by default and saves the switch', function () {
+        actingAs(productManager())
+            ->postJson(route('api.v1.admin.products.store'), productPayload())
+            ->assertCreated()
+            ->assertJsonPath('data.comments_enabled', true);
+
+        $closed = actingAs(productManager())
+            ->postJson(route('api.v1.admin.products.store'), productPayload([
+                'slug' => 'closed', 'comments_enabled' => false,
+                'variants' => [['sku' => 'CLOSED', 'price' => 1, 'is_enabled' => true]],
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('data.comments_enabled', false);
+
+        expect(Product::query()->findOrFail($closed->json('data.id'))->comments_enabled)->toBeFalse();
+    });
+
     it('refuses to publish without a category or an enabled variant', function () {
         actingAs(productManager())
             ->postJson(route('api.v1.admin.products.store'), productPayload(['status' => 'published']))

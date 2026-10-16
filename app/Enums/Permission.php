@@ -56,6 +56,9 @@ enum Permission: string
     case ViewPosts = 'posts.view';
     case ManagePosts = 'posts.manage';
 
+    /** Approve, reject, mark as spam, reply to and delete blog comments. */
+    case ModerateComments = 'comments.moderate';
+
     /** Sale events (and, later, coupons). */
     case ViewDiscounts = 'discounts.view';
     case ManageDiscounts = 'discounts.manage';

@@ -74,6 +74,7 @@ export interface Product {
     tags: { id: number; name: string; slug: string }[];
     track_stock: boolean;
     allow_backorders: boolean;
+    comments_enabled: boolean;
     low_stock_threshold: number | null;
     low_stock_threshold_effective: number;
     weight_grams: number | null;
@@ -123,6 +124,7 @@ export interface SaveProductPayload {
     tags: string[];
     track_stock: boolean;
     allow_backorders: boolean;
+    comments_enabled: boolean;
     low_stock_threshold: number | null;
     weight_grams: number | null;
     length_mm: number | null;

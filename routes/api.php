@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\V1\Admin\Catalog\OptionController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\Categories\CategoryOrderController;
+use App\Http\Controllers\Api\V1\Admin\Comments\CommentController as AdminCommentController;
+use App\Http\Controllers\Api\V1\Admin\Comments\CommentModerationController;
+use App\Http\Controllers\Api\V1\Admin\Comments\CommentReplyController;
 use App\Http\Controllers\Api\V1\Admin\Coupons\CouponController;
 use App\Http\Controllers\Api\V1\Admin\Coupons\CouponSimulationController;
 use App\Http\Controllers\Api\V1\Admin\Customers\CustomerAnonymisationController;
@@ -55,6 +58,7 @@ use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\SaleEventController as StorefrontSaleEventController;
+use App\Http\Controllers\Api\V1\Storefront\Comments\CommentController as StorefrontCommentController;
 use App\Http\Controllers\Api\V1\Storefront\Content\MenuController as StorefrontMenuController;
 use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
 use App\Http\Controllers\Api\V1\Storefront\Coupons\CouponCheckController;
@@ -107,12 +111,24 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->middleware('throttle:60,1')
             ->name('posts.preview');
         Route::get('posts/{slug}', [StorefrontPostController::class, 'show'])->name('posts.show');
+        // Comments: approved ones are public; logged-in customers post (pending until moderated).
+        Route::get('posts/{slug}/comments', [StorefrontCommentController::class, 'index'])->defaults('type', 'post')->name('posts.comments.index');
+        Route::post('posts/{slug}/comments', [StorefrontCommentController::class, 'store'])
+            ->defaults('type', 'post')
+            ->middleware(['auth:sanctum', 'active', 'throttle:comments'])
+            ->name('posts.comments.store');
     });
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
     Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
     Route::get('products/filters', [StorefrontProductController::class, 'filters'])->name('products.filters');
     Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+    // Comments on products, like blog posts': approved ones are public, customers post (pending).
+    Route::get('products/{slug}/comments', [StorefrontCommentController::class, 'index'])->defaults('type', 'product')->name('products.comments.index');
+    Route::post('products/{slug}/comments', [StorefrontCommentController::class, 'store'])
+        ->defaults('type', 'product')
+        ->middleware(['auth:sanctum', 'active', 'throttle:comments'])
+        ->name('products.comments.store');
     // Sale event landing pages (data only); their products come from `products?sale_event={slug}`.
     Route::get('sale-events', [StorefrontSaleEventController::class, 'index'])->name('sale-events.index');
     Route::get('sale-events/preview/{token}', [StorefrontSaleEventController::class, 'preview'])
@@ -356,6 +372,18 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::put('{saleEvent}', [SaleEventController::class, 'update'])->whereNumber('saleEvent')->name('update');
                     Route::delete('{saleEvent}', [SaleEventController::class, 'destroy'])->whereNumber('saleEvent')->name('destroy');
                 });
+            });
+
+            // Comments on posts and products: moderation (approve, reject, spam), the store's reply and delete.
+            Route::prefix('comments')->name('comments.')->middleware(PermissionMiddleware::using(Permission::ModerateComments))->group(function () {
+                Route::get('/', [AdminCommentController::class, 'index'])->name('index');
+                Route::get('pending-count', [AdminCommentController::class, 'pendingCount'])->name('pending-count');
+                Route::post('status', [CommentModerationController::class, 'bulk'])->name('status.bulk');
+                Route::post('delete', [AdminCommentController::class, 'bulkDestroy'])->name('destroy.bulk');
+                Route::put('{comment}/status', [CommentModerationController::class, 'update'])->whereNumber('comment')->name('status');
+                Route::put('{comment}/reply', [CommentReplyController::class, 'update'])->whereNumber('comment')->name('reply.update');
+                Route::delete('{comment}/reply', [CommentReplyController::class, 'destroy'])->whereNumber('comment')->name('reply.destroy');
+                Route::delete('{comment}', [AdminCommentController::class, 'destroy'])->whereNumber('comment')->name('destroy');
             });
 
             // Coupons: discount codes customers enter at checkout (usage counted once orders exist).

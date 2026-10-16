@@ -129,6 +129,20 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.post', permission: Permission.ViewPosts },
             },
             {
+                path: 'blog/comments',
+                name: 'post-comments',
+                component: () => import('../modules/comments/pages/CommentsPage.vue'),
+                props: { type: 'post' },
+                meta: { title: 'pageTitles.postComments', permission: Permission.ModerateComments },
+            },
+            {
+                path: 'products/comments',
+                name: 'product-comments',
+                component: () => import('../modules/comments/pages/CommentsPage.vue'),
+                props: { type: 'product' },
+                meta: { title: 'pageTitles.productComments', permission: Permission.ModerateComments },
+            },
+            {
                 path: 'discounts',
                 name: 'discounts',
                 component: () => import('../modules/discounts/pages/PromotionsPage.vue'),

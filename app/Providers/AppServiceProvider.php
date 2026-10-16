@@ -80,6 +80,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-login', fn (Request $request) => Limit::perMinute(5)
             ->by($phoneNumber($request).'|'.$request->ip()));
 
+        // Comments wait for moderation; this keeps one account from flooding the queue.
+        RateLimiter::for('comments', fn (Request $request) => [
+            Limit::perMinute(3)->by('comments-minute:'.$request->user()?->getAuthIdentifier()),
+            Limit::perDay(30)->by('comments-day:'.$request->user()?->getAuthIdentifier()),
+        ]);
+
         // Guessing discount codes: a few checks per minute per customer is plenty for a real cart.
         RateLimiter::for('coupon-check', fn (Request $request) => Limit::perMinute(10)
             ->by('coupon-check:'.$request->user()?->getAuthIdentifier()));

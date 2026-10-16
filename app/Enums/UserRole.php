@@ -65,6 +65,7 @@ enum UserRole: string
                 Permission::ManageBlogCategories,
                 Permission::ViewPosts,
                 Permission::ManagePosts,
+                Permission::ModerateComments,
             ],
             self::Author => [
                 Permission::AccessAdminPanel,
@@ -77,6 +78,7 @@ enum UserRole: string
                 Permission::ManageBlogCategories,
                 Permission::ViewPosts,
                 Permission::ManagePosts,
+                Permission::ModerateComments,
             ],
         };
     }

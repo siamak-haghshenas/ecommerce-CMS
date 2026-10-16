@@ -32,6 +32,7 @@ final readonly class ProductData
         public array $tagNames,
         public bool $trackStock,
         public bool $allowBackorders,
+        public bool $commentsEnabled,
         public ?int $lowStockThreshold,
         public ?int $weightGrams,
         public ?int $lengthMm,

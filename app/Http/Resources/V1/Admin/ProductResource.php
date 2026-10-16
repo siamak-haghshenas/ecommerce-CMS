@@ -46,6 +46,7 @@ class ProductResource extends JsonResource
             'tags' => $this->tags->map(fn (Tag $tag): array => ['id' => $tag->id, 'name' => $tag->name, 'slug' => $tag->slug])->all(),
             'track_stock' => $this->track_stock,
             'allow_backorders' => $this->allow_backorders,
+            'comments_enabled' => $this->acceptsComments(),
             'low_stock_threshold' => $this->low_stock_threshold,
             'low_stock_threshold_effective' => $this->lowStockThreshold(),
             'weight_grams' => $this->weight_grams,

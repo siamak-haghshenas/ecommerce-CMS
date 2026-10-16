@@ -60,6 +60,9 @@ class ProductResource extends JsonResource
             'images' => $this->images(),
             'price' => ['min' => $current->min(), 'max' => $current->max()],
             'in_stock' => $variants->contains(fn (ProductVariant $variant): bool => $this->resource->isAvailable($variant)),
+            'comments_enabled' => $this->acceptsComments(),
+            // Approved comments only.
+            'comments_count' => $this->comments()->approved()->count(),
             // Only the values the enabled variants use, so storefronts never offer a dead choice.
             'options' => $this->options->map(fn ($option): array => [
                 'id' => $option->id,

@@ -61,6 +61,7 @@ const FIELDS = [
     'tags',
     'track_stock',
     'allow_backorders',
+    'comments_enabled',
     'low_stock_threshold',
     'weight_grams',
     'length_mm',
@@ -117,6 +118,7 @@ const fields = reactive({
     tags: [] as string[],
     trackStock: true,
     allowBackorders: false,
+    commentsEnabled: true,
     lowStockThreshold: null as number | null,
     weightGrams: null as number | null,
     lengthMm: null as number | null,
@@ -158,6 +160,7 @@ function fill(loaded: Product | null): void {
     fields.tags = loaded?.tags.map((tag) => tag.name) ?? [];
     fields.trackStock = loaded?.track_stock ?? true;
     fields.allowBackorders = loaded?.allow_backorders ?? false;
+    fields.commentsEnabled = loaded?.comments_enabled ?? true;
     fields.lowStockThreshold = loaded?.low_stock_threshold ?? null;
     fields.weightGrams = loaded?.weight_grams ?? null;
     fields.lengthMm = loaded?.length_mm ?? null;
@@ -308,6 +311,7 @@ function payload(): SaveProductPayload {
         tags: fields.tags,
         track_stock: fields.trackStock,
         allow_backorders: fields.allowBackorders,
+        comments_enabled: fields.commentsEnabled,
         low_stock_threshold: fields.lowStockThreshold,
         weight_grams: fields.weightGrams,
         length_mm: fields.lengthMm,
@@ -595,6 +599,25 @@ const selectClass =
                         :error="form.errors.description"
                         @normalized="acceptNormalized('description')"
                     />
+                    <label
+                        class="flex cursor-pointer items-start gap-2.5 self-start rounded-xl border border-line p-3.5"
+                    >
+                        <input
+                            v-model="fields.commentsEnabled"
+                            type="checkbox"
+                            class="mt-1 size-4 accent-[var(--color-primary)]"
+                        />
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-semibold">{{ t('admin.products.commentsEnabled') }}</span>
+                            <span class="text-[13px] text-fg-muted">{{ t('admin.products.commentsEnabledHint') }}</span>
+                            <RouterLink
+                                v-if="id !== null && auth.can(Permission.ModerateComments)"
+                                :to="{ name: 'product-comments', query: { item: id, status: 'all' } }"
+                                class="mt-1 self-start rounded text-[13px] font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                >{{ t('admin.products.viewComments') }}</RouterLink
+                            >
+                        </span>
+                    </label>
                 </section>
 
                 <section id="organization" :class="cardClass" aria-labelledby="organization-title">

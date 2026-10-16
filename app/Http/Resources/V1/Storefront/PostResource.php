@@ -70,6 +70,8 @@ class PostResource extends JsonResource
             ],
             'tags' => $this->tags->map(fn (Tag $tag): array => ['slug' => $tag->slug, 'name' => $tag->name])->all(),
             'comments_enabled' => $this->comments_enabled,
+            // Approved comments only.
+            'comments_count' => $this->comments()->approved()->count(),
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'canonical_url' => $this->canonical_url,
