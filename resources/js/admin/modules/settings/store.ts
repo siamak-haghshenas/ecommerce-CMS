@@ -5,7 +5,12 @@ import { useLocale } from '@/shared/composables/useLocale';
 import { settingsApi } from './api';
 import type { StoreSettings } from './types';
 
-const DEFAULTS: StoreSettings = { price_display_currency: 'IRT', low_stock_threshold: 5, storefront_preview_url: null };
+const DEFAULTS: StoreSettings = {
+    price_display_currency: 'IRT',
+    low_stock_threshold: 5,
+    storefront_preview_url: null,
+    default_weight_grams: null,
+};
 
 /** Store settings, loaded once per session; defaults apply until they arrive. */
 export const useSettingsStore = defineStore('admin-settings', () => {

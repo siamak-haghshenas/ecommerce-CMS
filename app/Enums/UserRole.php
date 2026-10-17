@@ -55,6 +55,8 @@ enum UserRole: string
                 Permission::ManageProducts,
                 Permission::ViewDiscounts,
                 Permission::ManageDiscounts,
+                Permission::ViewShipping,
+                Permission::ManageShipping,
                 Permission::ViewMedia,
                 Permission::UploadMedia,
                 Permission::ManageMedia,

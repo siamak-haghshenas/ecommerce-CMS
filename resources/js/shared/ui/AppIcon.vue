@@ -83,6 +83,24 @@ const ICONS = {
         { tag: 'path', attrs: { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' } },
         { tag: 'path', attrs: { d: 'm9 12 2 2 4-4' } },
     ],
+    truck: [
+        { tag: 'path', attrs: { d: 'M14 18V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2' } },
+        { tag: 'path', attrs: { d: 'M15 18H9M14 8h4l4 4.5V17a1 1 0 0 1-1 1h-2' } },
+        { tag: 'circle', attrs: { cx: 7, cy: 18, r: 2 } },
+        { tag: 'circle', attrs: { cx: 17, cy: 18, r: 2 } },
+    ],
+    scale: [
+        { tag: 'path', attrs: { d: 'M6 8h12l2 13H4z' } },
+        { tag: 'circle', attrs: { cx: 12, cy: 5, r: 2 } },
+    ],
+    box: [
+        { tag: 'path', attrs: { d: 'M21 8 12 3 3 8v8l9 5 9-5z' } },
+        { tag: 'path', attrs: { d: 'm3 8 9 5 9-5M12 13v8' } },
+    ],
+    mapPin: [
+        { tag: 'path', attrs: { d: 'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z' } },
+        { tag: 'circle', attrs: { cx: 12, cy: 10, r: 3 } },
+    ],
     cart: [
         { tag: 'circle', attrs: { cx: 8, cy: 21, r: 1 } },
         { tag: 'circle', attrs: { cx: 19, cy: 21, r: 1 } },

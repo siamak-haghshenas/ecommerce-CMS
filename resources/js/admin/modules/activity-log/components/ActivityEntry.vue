@@ -63,6 +63,10 @@ const ICONS: Record<ActivityEvent, { icon: IconName; tone: 'primary' | 'danger' 
     'coupon.created': { icon: 'plus', tone: 'primary' },
     'coupon.updated': { icon: 'pen', tone: 'neutral' },
     'coupon.deleted': { icon: 'trash', tone: 'danger' },
+    'shipping_method.created': { icon: 'plus', tone: 'primary' },
+    'shipping_method.updated': { icon: 'pen', tone: 'neutral' },
+    'shipping_method.deleted': { icon: 'trash', tone: 'danger' },
+    'shipping_method.reordered': { icon: 'swap', tone: 'neutral' },
     'comment.approved': { icon: 'check', tone: 'primary' },
     'comment.rejected': { icon: 'ban', tone: 'neutral' },
     'comment.spammed': { icon: 'alert', tone: 'danger' },
@@ -110,6 +114,10 @@ const subjectLink = computed(() => {
         return { name: 'coupon', params: { id: subject.id } };
     }
 
+    if (subject.type === 'shipping_method') {
+        return { name: 'shipping-method', params: { id: subject.id } };
+    }
+
     if (subject.type === 'comment') {
         const { type, item_id: itemId } = props.activity.properties;
 
@@ -135,13 +143,17 @@ const missingSubject = computed(() => {
         return t('admin.activity.topLevel');
     }
 
+    if (event === 'shipping_method.reordered') {
+        return t('admin.shipping.title');
+    }
+
     // Menus have no subject: the entry names the menu.
     if (event === 'menu.updated' && (properties.location === 'header' || properties.location === 'footer')) {
         return t(`admin.menus.${properties.location}`);
     }
 
     if (
-        /^(category|brand|attribute|option|product|promotion|tag|media|media_folder)\./.test(event) &&
+        /^(category|brand|attribute|option|product|promotion|tag|media|media_folder|shipping_method)\./.test(event) &&
         typeof properties.name === 'string'
     ) {
         return properties.name;

@@ -21,10 +21,14 @@ final class Settings
     /** Where a storefront shows previews, with a {token} placeholder; null: not set. */
     public const string STOREFRONT_PREVIEW_URL = 'storefront_preview_url';
 
+    /** The weight (grams) shipping uses for a product without one; null: such products can't be weighed. */
+    public const string DEFAULT_WEIGHT_GRAMS = 'default_weight_grams';
+
     private const array DEFAULTS = [
         self::PRICE_DISPLAY_CURRENCY => 'IRT',
         self::LOW_STOCK_THRESHOLD => 5,
         self::STOREFRONT_PREVIEW_URL => null,
+        self::DEFAULT_WEIGHT_GRAMS => null,
     ];
 
     private const string CACHE_KEY = 'store-settings';
@@ -44,6 +48,13 @@ final class Settings
         $url = $this->get(self::STOREFRONT_PREVIEW_URL);
 
         return is_string($url) && $url !== '' ? $url : null;
+    }
+
+    public function defaultWeightGrams(): ?int
+    {
+        $grams = $this->get(self::DEFAULT_WEIGHT_GRAMS);
+
+        return is_numeric($grams) ? (int) $grams : null;
     }
 
     /**

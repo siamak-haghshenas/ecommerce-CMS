@@ -148,6 +148,31 @@ class Product extends Model implements SeoSubject
     }
 
     /**
+     * Products without a weight (shipping uses the store's default weight, if there is one).
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function missingWeight(Builder $query): void
+    {
+        $query->whereNull('weight_grams');
+    }
+
+    /**
+     * Products missing a dimension (volume shipping can't measure them).
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function missingDimensions(Builder $query): void
+    {
+        $query->where(fn (Builder $missing) => $missing
+            ->whereNull('length_mm')->orWhere('length_mm', 0)
+            ->orWhereNull('width_mm')->orWhere('width_mm', 0)
+            ->orWhereNull('height_mm')->orWhere('height_mm', 0));
+    }
+
+    /**
      * The admin list's filters (also the bulk editor's).
      *
      * @param  Builder<self>  $query
@@ -186,6 +211,12 @@ class Product extends Model implements SeoSubject
                 ->where(fn (Builder $starts) => $starts->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
                 ->where(fn (Builder $ends) => $ends->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>', now())));
         }
+
+        match ($filters->shipping) {
+            'missing_weight' => $query->missingWeight(),
+            'missing_dimensions' => $query->missingDimensions(),
+            default => null,
+        };
 
         if ($filters->quick === 'inactive') {
             $query->whereHas('variants', fn (Builder $variants) => $variants->where('is_enabled', false));

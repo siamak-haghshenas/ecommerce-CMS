@@ -59,6 +59,8 @@ it('returns the current staff member with roles and permissions', function () {
             'comments.moderate',
             'discounts.view',
             'discounts.manage',
+            'shipping.view',
+            'shipping.manage',
         ]);
 });
 

@@ -189,6 +189,38 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: 'pageTitles.coupon', permission: Permission.ViewDiscounts },
             },
             {
+                path: 'shipping',
+                name: 'shipping-methods',
+                component: () => import('../modules/shipping/pages/ShippingMethodsPage.vue'),
+                meta: { title: 'pageTitles.shipping', permission: Permission.ViewShipping },
+            },
+            {
+                path: 'shipping/new',
+                name: 'shipping-method-create',
+                component: () => import('../modules/shipping/pages/ShippingMethodEditorPage.vue'),
+                props: (route) => ({
+                    id: null,
+                    copyFrom: Number(route.query.from) || null,
+                    initialType: ['weight', 'volume', 'courier'].includes(String(route.query.type))
+                        ? route.query.type
+                        : null,
+                    initialName: typeof route.query.name === 'string' ? route.query.name : null,
+                }),
+                meta: { title: 'pageTitles.shippingCreate', permission: Permission.ManageShipping },
+            },
+            {
+                path: 'shipping/:id(\\d+)',
+                name: 'shipping-method',
+                component: () => import('../modules/shipping/pages/ShippingMethodEditorPage.vue'),
+                props: (route) => ({
+                    id: Number(route.params.id),
+                    copyFrom: null,
+                    initialType: null,
+                    initialName: null,
+                }),
+                meta: { title: 'pageTitles.shippingMethod', permission: Permission.ViewShipping },
+            },
+            {
                 path: 'menus',
                 name: 'menus',
                 component: () => import('../modules/menus/pages/MenusPage.vue'),

@@ -92,7 +92,7 @@ describe('settings', function () {
         actingAs(staffMember(UserRole::Author))
             ->getJson(route('api.v1.admin.settings.show'))
             ->assertOk()
-            ->assertExactJson(['data' => ['price_display_currency' => 'IRT', 'low_stock_threshold' => 5, 'storefront_preview_url' => null]]);
+            ->assertExactJson(['data' => ['price_display_currency' => 'IRT', 'low_stock_threshold' => 5, 'storefront_preview_url' => null, 'default_weight_grams' => null]]);
     });
 
     it('lets only the super admin change them', function () {

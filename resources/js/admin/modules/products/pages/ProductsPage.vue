@@ -80,6 +80,12 @@ const trashed = computed({
 });
 /** Set by the Tags page ("show products"); shown as a removable chip. */
 const tagId = computed(() => Number(queryString('tag')) || null);
+/** Set by the shipping page's warning; shown as a removable chip. */
+const shippingFilter = computed(() =>
+    queryString('shipping') === 'missing_weight' || queryString('shipping') === 'missing_dimensions'
+        ? (queryString('shipping') as 'missing_weight' | 'missing_dimensions')
+        : null,
+);
 const page = computed(() => Math.max(1, Number(queryString('page')) || 1));
 
 const statusOptions = computed(() => [
@@ -116,6 +122,7 @@ async function load(): Promise<void> {
         category_id: category.value === 'all' ? undefined : Number(category.value),
         brand_id: brand.value === 'all' ? undefined : Number(brand.value),
         tag_id: tagId.value ?? undefined,
+        shipping: shippingFilter.value ?? undefined,
         needs_seo: needsSeo.value ? 1 : undefined,
         trashed: trashed.value ? 1 : undefined,
         page: page.value,
@@ -275,6 +282,16 @@ const toggleClass = (on: boolean): string[] => [
                 @click="updateQuery({ tag: undefined })"
             >
                 {{ t('admin.products.tagFilter') }}
+                <AppIcon name="close" :size="14" />
+            </button>
+            <button
+                v-if="shippingFilter"
+                type="button"
+                :class="toggleClass(true)"
+                :aria-label="t('admin.products.clearShippingFilter')"
+                @click="updateQuery({ shipping: undefined })"
+            >
+                {{ t(`admin.products.shippingFilter.${shippingFilter}`) }}
                 <AppIcon name="close" :size="14" />
             </button>
             <button type="button" :aria-pressed="trashed" :class="toggleClass(trashed)" @click="trashed = !trashed">

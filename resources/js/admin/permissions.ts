@@ -32,6 +32,8 @@ export const Permission = {
     ModerateComments: 'comments.moderate',
     ViewDiscounts: 'discounts.view',
     ManageDiscounts: 'discounts.manage',
+    ViewShipping: 'shipping.view',
+    ManageShipping: 'shipping.manage',
     ManageSettings: 'settings.manage',
 } as const;
 

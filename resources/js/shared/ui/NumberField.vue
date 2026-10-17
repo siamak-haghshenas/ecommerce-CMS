@@ -8,7 +8,9 @@ import AppIcon from './AppIcon.vue';
 /**
  * A whole number typed with any digits (۱۲۳ or 123), shown with thousands separators when not
  * editing. `factor` converts between what is shown and what is stored, e.g. prices shown in
- * Toman (factor 10) are stored in Rials. `compact` drops the label for table cells.
+ * Toman (factor 10) are stored in Rials. `decimals` allows that many decimal places in what is
+ * shown (stored values stay whole: kilos with 3 decimals are stored in grams with factor 1000).
+ * `compact` drops the label for table cells.
  */
 const props = withDefaults(
     defineProps<{
@@ -22,8 +24,9 @@ const props = withDefaults(
         compact?: boolean;
         placeholder?: string;
         disabled?: boolean;
+        decimals?: number;
     }>(),
-    { factor: 1, min: 0, optional: false, compact: false, disabled: false },
+    { factor: 1, min: 0, optional: false, compact: false, disabled: false, decimals: 0 },
 );
 
 const model = defineModel<number | null>({ required: true });
@@ -56,12 +59,16 @@ watch(
 
 function onInput(value: string): void {
     text.value = value;
-    const digits = toLatinDigits(value).replace(/[,٬،\s]/g, '');
+    // The Persian decimal separator (٫) and a slash typed for it count as a decimal point.
+    const digits = toLatinDigits(value)
+        .replace(/[,٬،\s]/g, '')
+        .replace(/[٫/]/g, '.');
+    const pattern = props.decimals > 0 ? new RegExp(`^-?\\d+(\\.\\d{0,${props.decimals}})?$`) : /^-?\d+$/;
 
     if (digits === '') {
         model.value = null;
-    } else if (/^-?\d+$/.test(digits)) {
-        model.value = Number(digits) * props.factor;
+    } else if (pattern.test(digits)) {
+        model.value = Math.round(Number(digits) * props.factor);
     }
 }
 
@@ -100,7 +107,7 @@ const describedBy = computed(
                 :id="id"
                 :value="text"
                 type="text"
-                inputmode="numeric"
+                :inputmode="decimals > 0 ? 'decimal' : 'numeric'"
                 autocomplete="off"
                 :disabled="disabled"
                 :placeholder="placeholder"

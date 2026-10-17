@@ -17,6 +17,7 @@ use App\Models\Post;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\SaleEvent;
+use App\Models\ShippingMethod;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -50,7 +51,7 @@ class ActivityResource extends JsonResource
     /**
      * A user or category, or null when there is none (or it has been deleted).
      *
-     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'promotion'|'sale_event'|'coupon'|'comment'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
+     * @return array{type: 'user'|'category'|'brand'|'page'|'post'|'promotion'|'sale_event'|'coupon'|'shipping_method'|'comment'|'attribute'|'option'|'product'|'tag'|'media'|'media_folder', id: int, name: string, is_anonymised: bool}|null
      */
     private function summary(mixed $model): ?array
     {
@@ -64,6 +65,10 @@ class ActivityResource extends JsonResource
 
         if ($model instanceof SaleEvent) {
             return ['type' => 'sale_event', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
+        }
+
+        if ($model instanceof ShippingMethod) {
+            return ['type' => 'shipping_method', 'id' => $model->id, 'name' => $model->name, 'is_anonymised' => false];
         }
 
         if ($model instanceof Coupon) {

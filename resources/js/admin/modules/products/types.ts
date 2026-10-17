@@ -160,6 +160,8 @@ export interface ProductFilters {
     per_page?: number;
     /** The bulk edit page's quick filters. */
     quick?: 'out' | 'low' | 'sale' | 'inactive';
+    /** Products shipping can't measure (set by the shipping page's warning). */
+    shipping?: 'missing_weight' | 'missing_dimensions';
 }
 
 export interface StockMovement {

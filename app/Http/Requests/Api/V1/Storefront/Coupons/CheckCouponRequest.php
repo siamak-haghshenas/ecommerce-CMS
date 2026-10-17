@@ -6,8 +6,6 @@ namespace App\Http\Requests\Api\V1\Storefront\Coupons;
 
 use App\Data\Coupons\CouponItem;
 use App\Http\Requests\Concerns\HasCouponItemFields;
-use App\Models\ProductVariant;
-use App\Support\Catalog\StorefrontProductQuery;
 use App\Support\Digits;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -50,22 +48,8 @@ class CheckCouponRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->isNotEmpty()) {
-                    return;
-                }
-
-                $ids = array_map(fn (CouponItem $item): int => $item->variantId, $this->couponItems());
-                $available = ProductVariant::query()
-                    ->whereKey($ids)
-                    ->where('is_enabled', true)
-                    ->whereIn('product_id', StorefrontProductQuery::visible()->select('products.id'))
-                    ->pluck('id')
-                    ->all();
-
-                foreach ($ids as $i => $id) {
-                    if (! in_array($id, $available, true)) {
-                        $validator->errors()->add("items.{$i}.variant_id", __('coupons.errors.item_unavailable'));
-                    }
+                if ($validator->errors()->isEmpty()) {
+                    $this->checkItemsOnSale($validator);
                 }
             },
         ];

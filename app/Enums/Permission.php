@@ -63,6 +63,10 @@ enum Permission: string
     case ViewDiscounts = 'discounts.view';
     case ManageDiscounts = 'discounts.manage';
 
+    /** Shipping methods and their rates. */
+    case ViewShipping = 'shipping.view';
+    case ManageShipping = 'shipping.manage';
+
     /** Store settings (price display currency, low-stock default). No role lists it: super admin only. */
     case ManageSettings = 'settings.manage';
 }

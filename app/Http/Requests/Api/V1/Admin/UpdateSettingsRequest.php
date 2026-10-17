@@ -29,6 +29,8 @@ class UpdateSettingsRequest extends FormRequest
             Settings::LOW_STOCK_THRESHOLD => ['sometimes', 'integer', 'min:0', 'max:1000000'],
             // e.g. https://shop.example/preview?token={token}; null removes it.
             Settings::STOREFRONT_PREVIEW_URL => ['sometimes', 'nullable', 'string', 'max:2048'],
+            // Grams; null removes it (products without a weight then can't use weight shipping).
+            Settings::DEFAULT_WEIGHT_GRAMS => ['sometimes', 'nullable', 'integer', 'min:1', 'max:1000000'],
         ];
     }
 

@@ -41,6 +41,12 @@ export const navigation: NavGroup[] = [
                 to: { name: 'discounts' },
                 permission: Permission.ViewDiscounts,
             },
+            {
+                label: 'admin.nav.shipping',
+                icon: 'truck',
+                to: { name: 'shipping-methods' },
+                permission: Permission.ViewShipping,
+            },
         ],
     },
     {

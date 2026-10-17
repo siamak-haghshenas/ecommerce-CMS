@@ -31,6 +31,7 @@ class IndexProductsRequest extends FormRequest
             'sort' => ['nullable', Rule::in(['newest', 'name', 'updated'])],
             'per_page' => ['nullable', 'integer', 'between:5,100'],
             'quick' => ['nullable', Rule::in(['out', 'low', 'sale', 'inactive'])],
+            'shipping' => ['nullable', Rule::in(['missing_weight', 'missing_dimensions'])],
         ];
     }
 
@@ -50,6 +51,7 @@ class IndexProductsRequest extends FormRequest
             sort: $this->string('sort', 'newest')->toString(),
             perPage: $integer('per_page') ?? 20,
             quick: $this->filled('quick') ? $this->string('quick')->toString() : null,
+            shipping: $this->filled('shipping') ? $this->string('shipping')->toString() : null,
         );
     }
 }

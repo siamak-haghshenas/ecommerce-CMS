@@ -26,6 +26,8 @@ final readonly class ProductFilters
         public int $perPage = 20,
         /** The bulk editor's quick filters: "out", "low", "sale" (a running sale) or "inactive" (a disabled variant). */
         public ?string $quick = null,
+        /** "missing_weight" or "missing_dimensions": products shipping can't measure. */
+        public ?string $shipping = null,
     ) {}
 
     /**

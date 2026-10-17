@@ -21,12 +21,22 @@ const { t } = useI18n();
 const toast = useToast();
 const auth = useAdminAuthStore();
 const store = useSettingsStore();
-const form = useApiForm(['price_display_currency', 'low_stock_threshold', 'storefront_preview_url'] as const);
+const form = useApiForm([
+    'price_display_currency',
+    'low_stock_threshold',
+    'storefront_preview_url',
+    'default_weight_grams',
+] as const);
 
 /** Only the super admin changes settings; everyone else sees them. */
 const canManage = computed(() => auth.can(Permission.ManageSettings));
 
-const fields = reactive({ currency: 'IRT' as PriceDisplayCurrency, lowStock: 5 as number | null, previewUrl: '' });
+const fields = reactive({
+    currency: 'IRT' as PriceDisplayCurrency,
+    lowStock: 5 as number | null,
+    previewUrl: '',
+    defaultWeight: null as number | null,
+});
 const loading = ref(true);
 const loadError = ref<string | null>(null);
 
@@ -44,6 +54,7 @@ async function load(): Promise<void> {
         fields.currency = settings.price_display_currency;
         fields.lowStock = settings.low_stock_threshold;
         fields.previewUrl = settings.storefront_preview_url ?? '';
+        fields.defaultWeight = settings.default_weight_grams;
     } catch (caught) {
         loadError.value = toApiError(caught).message;
     } finally {
@@ -59,6 +70,7 @@ async function save(): Promise<void> {
             price_display_currency: fields.currency,
             low_stock_threshold: fields.lowStock ?? 0,
             storefront_preview_url: fields.previewUrl.trim() === '' ? null : fields.previewUrl.trim(),
+            default_weight_grams: fields.defaultWeight,
         }),
     );
 
@@ -112,6 +124,17 @@ async function save(): Promise<void> {
                 :hint="t('admin.settings.lowStockHint')"
                 :disabled="!canManage"
                 :error="form.errors.low_stock_threshold"
+            />
+
+            <NumberField
+                v-model="fields.defaultWeight"
+                :label="t('admin.settings.defaultWeight')"
+                :hint="t('admin.settings.defaultWeightHint')"
+                :unit="t('admin.shipping.units.grams')"
+                :min="1"
+                optional
+                :disabled="!canManage"
+                :error="form.errors.default_weight_grams"
             />
 
             <fieldset :disabled="!canManage">

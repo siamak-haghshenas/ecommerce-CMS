@@ -48,6 +48,10 @@ use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventPreviewController;
 use App\Http\Controllers\Api\V1\Admin\SaleEvents\SaleEventVariantController;
 use App\Http\Controllers\Api\V1\Admin\SeoSuggestionController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Admin\Shipping\ProvinceController;
+use App\Http\Controllers\Api\V1\Admin\Shipping\ShippingMethodController;
+use App\Http\Controllers\Api\V1\Admin\Shipping\ShippingMethodOrderController;
+use App\Http\Controllers\Api\V1\Admin\Shipping\ShippingSimulationController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffRoleController;
 use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
@@ -62,6 +66,8 @@ use App\Http\Controllers\Api\V1\Storefront\Comments\CommentController as Storefr
 use App\Http\Controllers\Api\V1\Storefront\Content\MenuController as StorefrontMenuController;
 use App\Http\Controllers\Api\V1\Storefront\Content\PageController as StorefrontPageController;
 use App\Http\Controllers\Api\V1\Storefront\Coupons\CouponCheckController;
+use App\Http\Controllers\Api\V1\Storefront\Shipping\ProvinceController as StorefrontProvinceController;
+use App\Http\Controllers\Api\V1\Storefront\Shipping\ShippingQuoteController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -149,6 +155,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('coupons/check', CouponCheckController::class)
         ->middleware(['auth:sanctum', 'active', 'throttle:coupon-check'])
         ->name('coupons.check');
+
+    // Shipping: provinces and cities for address forms; the methods a customer can choose for their cart.
+    Route::get('provinces', StorefrontProvinceController::class)->name('provinces.index');
+    Route::post('shipping/quote', ShippingQuoteController::class)
+        ->middleware(['auth:sanctum', 'active', 'throttle:shipping-quote'])
+        ->name('shipping.quote');
 
     /*
     |--------------------------------------------------------------------------
@@ -400,6 +412,26 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     Route::delete('{coupon}', [CouponController::class, 'destroy'])->whereNumber('coupon')->name('destroy');
                 });
             });
+
+            // Shipping methods: weight, volume or city courier, in the order customers see them.
+            Route::prefix('shipping-methods')->name('shipping-methods.')->group(function () {
+                Route::middleware(PermissionMiddleware::using(Permission::ViewShipping))->group(function () {
+                    Route::get('/', [ShippingMethodController::class, 'index'])->name('index');
+                    Route::get('{shippingMethod}', [ShippingMethodController::class, 'show'])->whereNumber('shippingMethod')->name('show');
+                });
+
+                Route::middleware(PermissionMiddleware::using(Permission::ManageShipping))->group(function () {
+                    Route::post('/', [ShippingMethodController::class, 'store'])->name('store');
+                    Route::put('order', ShippingMethodOrderController::class)->name('order');
+                    Route::post('simulate', ShippingSimulationController::class)->name('simulate');
+                    Route::put('{shippingMethod}', [ShippingMethodController::class, 'update'])->whereNumber('shippingMethod')->name('update');
+                    Route::delete('{shippingMethod}', [ShippingMethodController::class, 'destroy'])->whereNumber('shippingMethod')->name('destroy');
+                });
+            });
+
+            Route::get('provinces', ProvinceController::class)
+                ->middleware(PermissionMiddleware::using(Permission::ViewShipping))
+                ->name('provinces.index');
 
             // The specification fields of the product editor for the chosen categories.
             Route::get('attributes/applicable', ApplicableAttributeController::class)
