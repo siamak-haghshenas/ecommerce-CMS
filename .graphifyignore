@@ -1,0 +1,22 @@
+# graphify: build the graph from app/ and resources/js/ only.
+
+# Every file and dot-folder at the project root (README, CLAUDE.md, composer.json, .claude, ...).
+/*.*
+/artisan
+
+# Top-level folders other than app/ and resources/.
+/bootstrap/
+/config/
+/database/
+/graphify-out/
+/lang/
+/node_modules/
+/public/
+/routes/
+/storage/
+/tests/
+/vendor/
+
+# resources/: only js/.
+/resources/css/
+/resources/views/

@@ -92,6 +92,22 @@ describe('list', function () {
             ->and(json_encode($card))->not->toContain('stock_quantity');
     });
 
+    it('gives simple products their variant and deals the soonest discount end', function () {
+        $endsAt = now()->addHours(5)->startOfSecond();
+        $simple = catalogProduct(['published_at' => now()->subDay()], [['price' => 2000, 'sale_price' => 1500, 'sale_ends_at' => $endsAt]]);
+        catalogProduct(['published_at' => now()->subDays(2)], [
+            ['price' => 2000, 'sale_price' => 1500],
+            ['price' => 3000],
+        ]);
+
+        $cards = getJson(route('api.v1.products.index'))->assertOk()->json('data');
+
+        expect($cards[0]['variant_id'])->toBe($simple->variants()->value('id'))
+            ->and($cards[0]['discount_ends_at'])->toBe($endsAt->toIso8601String())
+            ->and($cards[1]['variant_id'])->toBeNull()
+            ->and($cards[1]['discount_ends_at'])->toBeNull();
+    });
+
     it('treats untracked stock and backorders as available and hides inactive brands', function () {
         $hiddenBrand = Brand::factory()->hidden()->create();
         catalogProduct(['track_stock' => false, 'brand_id' => $hiddenBrand->id], [['price' => 1, 'stock' => 0]]);

@@ -10,5 +10,6 @@ return [
         'range_end_required' => 'Only the last range can be without an upper limit.',
         'range_end_after_start' => 'The end of a range must be above its start.',
         'days_order' => 'The longest delivery time can’t be shorter than the shortest.',
+        'coupon_without_items' => 'Send a discount code together with the items; without items, the cart’s discount code is used.',
     ],
 ];

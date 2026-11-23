@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Exceptions\ApiExceptionRenderer;
+use App\Http\Middleware\AuthenticateIfTokenSent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetLocaleFromHeader;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -21,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->appendToGroup('api', SetLocaleFromHeader::class);
-        $middleware->alias(['active' => EnsureUserIsActive::class]);
+        $middleware->alias([
+            'active' => EnsureUserIsActive::class,
+            'auth.optional' => AuthenticateIfTokenSent::class,
+        ]);
 
         // Set the locale before authentication and throttling so their errors are translated too.
         $middleware->prependToPriorityList(

@@ -14,8 +14,9 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 /**
- * The address's city, the cart (enabled variants of products the storefront shows) and an
- * optional coupon code (checked like `coupons/check`).
+ * The address's city and either the items (enabled variants of products the storefront shows)
+ * with an optional coupon code (checked like `coupons/check`), or neither: then the customer's
+ * cart and its coupon are used.
  */
 class QuoteShippingRequest extends FormRequest
 {
@@ -37,7 +38,7 @@ class QuoteShippingRequest extends FormRequest
     {
         return [
             'city_id' => ['required', 'integer', Rule::exists('cities', 'id')],
-            ...$this->couponItemRules(),
+            ...$this->couponItemRules(required: false),
             'coupon' => ['nullable', 'string', 'max:100'],
         ];
     }
@@ -49,9 +50,19 @@ class QuoteShippingRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->isEmpty()) {
-                    $this->checkItemsOnSale($validator);
+                if (! $validator->errors()->isEmpty()) {
+                    return;
                 }
+
+                if (! $this->has('items')) {
+                    if ($this->filled('coupon')) {
+                        $validator->errors()->add('coupon', __('shipping.errors.coupon_without_items'));
+                    }
+
+                    return;
+                }
+
+                $this->checkItemsOnSale($validator);
             },
         ];
     }
@@ -62,11 +73,13 @@ class QuoteShippingRequest extends FormRequest
     }
 
     /**
-     * @return list<CouponItem>
+     * The items sent, or null: use the customer's cart.
+     *
+     * @return list<CouponItem>|null
      */
-    public function cartItems(): array
+    public function cartItems(): ?array
     {
-        return $this->couponItems();
+        return $this->has('items') ? $this->couponItems() : null;
     }
 
     public function couponCode(): ?string

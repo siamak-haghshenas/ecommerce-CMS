@@ -190,6 +190,25 @@ class ProductVariant extends Model
     }
 
     /**
+     * When the discount giving the current price ends: the sale's end, the promotion row's, or the
+     * sale event item's (else the event's). Null without a discount or for a sale with no end date.
+     */
+    public function discountEndsAt(): ?CarbonInterface
+    {
+        if (! $this->isDiscounted()) {
+            return null;
+        }
+
+        return match ($this->discount_source) {
+            DiscountSource::Sale => $this->sale_ends_at,
+            DiscountSource::Promotion => $this->promotion?->ends_at,
+            DiscountSource::SaleEvent => $this->saleEvent === null ? null
+                : $this->saleEventItems->firstWhere('sale_event_id', $this->sale_event_id)->ends_at ?? $this->saleEvent->ends_at,
+            default => null,
+        };
+    }
+
+    /**
      * The discount in whole percent, else 0.
      */
     public function discountPercent(): int

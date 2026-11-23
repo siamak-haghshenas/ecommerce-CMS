@@ -27,6 +27,9 @@ final class SearchStorefrontProductsAction
             'brand',
             'galleryAssets.media',
             'variants' => fn ($variants) => $variants->where('is_enabled', true),
+            'variants.promotion',
+            'variants.saleEvent',
+            'variants.saleEventItems',
         ]);
 
         match ($filters->sort) {

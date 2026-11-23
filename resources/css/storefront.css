@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+@import 'vazirmatn/Vazirmatn-Variable-font-face.css';
+
+@source '../js/storefront/**/*.{ts,vue}';
+@source '../views/storefront.blade.php';
+
+/*
+ * The storefront's design tokens (template "آمپر، قرمز و مشکی", see frontstore.md):
+ * red and black on light grey, no dark mode. Components use these (bg-ink, text-primary-ink, ...)
+ * and never raw colors.
+ */
+@theme {
+    --font-sans: Vazirmatn, Tahoma, sans-serif;
+
+    --color-ink: #18181b;
+    --color-ink-2: #27272a;
+    --color-line-dark: #3f3f46;
+    --color-muted: #52525b;
+    --color-muted-2: #71717a;
+    --color-line-strong: #d4d4d8;
+    --color-line: #e4e4e7;
+    --color-bg: #f4f4f5;
+    --color-bg-2: #fafafa;
+    --color-surface: #ffffff;
+    --color-primary: #dc2626;
+    --color-primary-ink: #991b1b;
+    --color-primary-soft: #fef2f2;
+    --color-primary-ring: #fee2e2;
+    --color-primary-on-dark: #f87171;
+
+    --container-store: 1336px;
+}
+
+@layer base {
+    html {
+        color-scheme: light;
+    }
+
+    body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+    a {
+        color: var(--color-primary-ink);
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: var(--color-primary);
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+@utility scrollbar-none {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

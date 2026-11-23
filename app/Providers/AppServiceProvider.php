@@ -90,6 +90,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('coupon-check', fn (Request $request) => Limit::perMinute(10)
             ->by('coupon-check:'.$request->user()?->getAuthIdentifier()));
 
+        // Guests have no account yet: their cart changes are counted per address.
+        RateLimiter::for('cart', fn (Request $request) => Limit::perMinute(60)
+            ->by('cart:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         RateLimiter::for('shipping-quote', fn (Request $request) => Limit::perMinute(30)
             ->by('shipping-quote:'.$request->user()?->getAuthIdentifier()));
 

@@ -58,6 +58,10 @@ use App\Http\Controllers\Api\V1\Admin\Staff\StaffStatusController;
 use App\Http\Controllers\Api\V1\Storefront\Auth as StorefrontAuth;
 use App\Http\Controllers\Api\V1\Storefront\Blog\BlogCategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Blog\PostController as StorefrontPostController;
+use App\Http\Controllers\Api\V1\Storefront\Cart\CartController;
+use App\Http\Controllers\Api\V1\Storefront\Cart\CartCouponController;
+use App\Http\Controllers\Api\V1\Storefront\Cart\CartItemController;
+use App\Http\Controllers\Api\V1\Storefront\Cart\CartMergeController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\BrandController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Storefront\Catalog\ProductController as StorefrontProductController;
@@ -150,6 +154,24 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->name('pages.preview');
     Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
     Route::get('menus/{location}', [StorefrontMenuController::class, 'show'])->name('menus.show');
+
+    // Cart: a logged-in customer's (Bearer token) or a guest's (X-Cart-Token); a guest gets a token on the first add.
+    Route::prefix('cart')->name('cart.')->group(function () {
+        Route::middleware(['auth.optional', 'active', 'throttle:cart'])->group(function () {
+            Route::get('/', [CartController::class, 'show'])->name('show');
+            Route::delete('/', [CartController::class, 'destroy'])->name('destroy');
+            Route::post('items', [CartItemController::class, 'store'])->name('items.store');
+            Route::put('items/{variant}', [CartItemController::class, 'update'])->whereNumber('variant')->name('items.update');
+            Route::delete('items/{variant}', [CartItemController::class, 'destroy'])->whereNumber('variant')->name('items.destroy');
+            Route::put('coupon', [CartCouponController::class, 'update'])->name('coupon.update');
+            Route::delete('coupon', [CartCouponController::class, 'destroy'])->name('coupon.destroy');
+        });
+
+        // After a login: the guest cart moves into the customer's.
+        Route::post('merge', CartMergeController::class)
+            ->middleware(['auth:sanctum', 'active', 'throttle:cart'])
+            ->name('merge');
+    });
 
     // Coupons: a logged-in customer checks a code against their cart (applied at checkout later).
     Route::post('coupons/check', CouponCheckController::class)

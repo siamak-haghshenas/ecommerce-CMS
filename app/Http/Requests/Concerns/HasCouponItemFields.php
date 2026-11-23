@@ -21,12 +21,13 @@ trait HasCouponItemFields
 
     /**
      * @param  list<mixed>  $variantRules  more rules for each `variant_id`
+     * @param  bool  $required  false: `items` may be left out (the customer's cart is used)
      * @return array<string, list<mixed>>
      */
-    protected function couponItemRules(array $variantRules = []): array
+    protected function couponItemRules(array $variantRules = [], bool $required = true): array
     {
         return [
-            'items' => ['required', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
+            'items' => [$required ? 'required' : 'sometimes', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
             'items.*' => ['array:variant_id,quantity'],
             'items.*.variant_id' => ['required', 'integer', 'distinct', ...$variantRules],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:'.self::MAX_QUANTITY],

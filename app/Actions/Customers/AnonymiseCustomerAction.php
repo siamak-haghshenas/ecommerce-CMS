@@ -6,6 +6,7 @@ namespace App\Actions\Customers;
 
 use App\Actions\Auth\EndUserSessionsAction;
 use App\Exceptions\AccountActionException;
+use App\Models\Cart;
 use App\Models\Comment;
 use App\Models\OtpCode;
 use App\Models\User;
@@ -45,6 +46,9 @@ final readonly class AnonymiseCustomerAction
 
             // Their comments are their words: they go with the personal data.
             Comment::query()->where('user_id', $customer->id)->delete();
+
+            // What they were about to buy is theirs too (its lines go with it).
+            Cart::query()->where('user_id', $customer->id)->delete();
 
             $customer->forceFill([
                 'name' => self::ANONYMISED_NAME,

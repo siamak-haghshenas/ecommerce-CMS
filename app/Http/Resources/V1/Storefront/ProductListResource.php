@@ -29,6 +29,11 @@ class ProductListResource extends JsonResource
         $current = $variants->map(fn (ProductVariant $variant): int => $variant->currentPrice());
         $regular = $variants->map(fn (ProductVariant $variant): int => $variant->price);
         $image = $this->galleryAssets->first()?->picture();
+        $discountEnds = $variants
+            ->map(fn (ProductVariant $variant) => $variant->discountEndsAt())
+            ->filter()
+            ->sort()
+            ->first();
 
         return [
             'id' => $this->id,
@@ -44,6 +49,10 @@ class ProductListResource extends JsonResource
             'discount_percent' => (int) $variants->max(fn (ProductVariant $variant): int => $variant->discountPercent()),
             'in_stock' => $variants->contains(fn (ProductVariant $variant): bool => $this->resource->isAvailable($variant)),
             'has_variants' => $variants->count() > 1,
+            // The only variant of a simple product, so a card can add it to the cart; null when there are several.
+            'variant_id' => $variants->count() === 1 ? $variants->first()?->id : null,
+            // The soonest end of a discount giving a variant its price (deal countdowns); null: none ends.
+            'discount_ends_at' => $discountEnds?->toIso8601String(),
         ];
     }
 }

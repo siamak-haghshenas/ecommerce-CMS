@@ -8,5 +8,8 @@ Route::view('/admin/{path?}', 'admin')
     ->where('path', '.*')
     ->name('admin');
 
-// This project is a headless CMS: there is no built-in storefront, so the root opens the admin panel.
-Route::redirect('/', '/admin');
+// The bundled storefront (a Vue SPA that uses only the Storefront API) answers every other
+// address, except the API, Sanctum, stored files and the health check.
+Route::view('/{path?}', 'storefront')
+    ->where('path', '^(?!(admin|api|sanctum|storage)(/|$)|up$).*')
+    ->name('storefront');
